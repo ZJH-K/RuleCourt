@@ -31,6 +31,10 @@ class DuplicateRulePackageError(RulePackageValidationError):
     """The same source revision and checksum has already been registered."""
 
 
+class AmbiguousPublicRuleError(RulePackageValidationError):
+    """A public rule ID exists in more than one enabled package."""
+
+
 class RuleScopeInput(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -507,18 +511,26 @@ class RuleStore:
             ).fetchall()
             return [self._public_rule(row) for row in rows]
 
-    def get_public_rule(self, rule_id: str) -> dict[str, Any] | None:
+    def get_public_rule(self, rule_id: str, package_id: str | None = None) -> dict[str, Any] | None:
         with self._connect() as db:
-            row = db.execute(
-                """SELECT n.*, p.id AS package_id, p.game_id, p.title AS package_title,
+            query = """SELECT n.*, p.id AS package_id, p.game_id, p.title AS package_title,
                 p.source_type, p.revision, p.published_at, p.authority, p.locator,
                 p.scope_strategy, p.checksum
                 FROM rule_nodes n JOIN rule_packages p ON p.id=n.package_id
-                WHERE n.id=? AND p.status='verified' AND p.enabled=1""",
-                (rule_id,),
-            ).fetchone()
-            if row is None:
+                WHERE n.id=? AND p.status='verified' AND p.enabled=1"""
+            params: list[Any] = [rule_id]
+            if package_id is not None:
+                query += " AND p.id=?"
+                params.append(package_id)
+            query += " ORDER BY p.revision, p.id"
+            rows = db.execute(query, params).fetchall()
+            if not rows:
                 return None
+            if len(rows) > 1:
+                raise AmbiguousPublicRuleError(
+                    "rule ID exists in multiple enabled packages; pass package_id"
+                )
+            row = rows[0]
             result = self._public_rule(row)
             result["relations"] = [
                 dict(item)

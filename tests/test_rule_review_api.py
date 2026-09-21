@@ -156,3 +156,31 @@ def test_candidate_fixture_is_explicitly_unverified_and_importable(tmp_path):
         assert {"applies_when", "acceptable_evidence", "satisfied_when"} <= {
             key for obligation in result["coverage_obligations"] for key in obligation
         }
+
+
+def test_public_rule_lookup_requires_a_package_for_duplicate_enabled_versions(tmp_path):
+    with TestClient(create_app(tmp_path / "cases.sqlite3", provider=None)) as client:
+        first = client.post("/api/rule-packages", json=package_payload()).json()
+        second = client.post(
+            "/api/rule-packages",
+            json=package_payload(title="Root Law later candidate", revision="2025-11"),
+        ).json()
+        for package in (first, second):
+            package_id = package["id"]
+            review = client.post(
+                f"/api/rule-packages/{package_id}/reviews",
+                json={
+                    "status": "verified",
+                    "reviewer_id": "human-reviewer-version-test",
+                    "basis": "Compared the versioned package source and relations.",
+                    "evidence": ["review-note:T02-version-test"],
+                },
+            )
+            assert review.status_code == 200
+            assert client.post(f"/api/rule-packages/{package_id}/enable").status_code == 200
+
+        ambiguous = client.get("/api/rules/root-4.2")
+        assert ambiguous.status_code == 409
+        selected = client.get("/api/rules/root-4.2", params={"package_id": first["id"]})
+        assert selected.status_code == 200
+        assert selected.json()["source"]["id"] == first["id"]

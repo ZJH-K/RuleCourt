@@ -10,8 +10,7 @@
     "name": "M0 candidate: clearing movement, rule, and battle excerpts",
     "included_factions": [
       "eyrie",
-      "marquise",
-      "woodland"
+      "marquise"
     ],
     "included_actions": [
       "move",

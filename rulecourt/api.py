@@ -9,6 +9,7 @@ from fastapi.responses import FileResponse
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from .rules import (
+    AmbiguousPublicRuleError,
     DuplicateRulePackageError,
     RulePackageInput,
     RulePackageValidationError,
@@ -130,8 +131,11 @@ def create_app(db_path: str | Path, provider=None, model: str | None = None) -> 
         return rule_store.search_public(q, limit)
 
     @app.get("/api/rules/{rule_id}")
-    def inspect_rule(rule_id: str):
-        rule = rule_store.get_public_rule(rule_id)
+    def inspect_rule(rule_id: str, package_id: str | None = None):
+        try:
+            rule = rule_store.get_public_rule(rule_id, package_id)
+        except AmbiguousPublicRuleError as exc:
+            raise HTTPException(409, str(exc)) from exc
         if rule is None:
             raise HTTPException(404, "Rule not found")
         return rule
