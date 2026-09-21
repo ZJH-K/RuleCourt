@@ -236,6 +236,11 @@ class NaturalLanguageStateExtractor:
         completeness_assertions: list[ProposedCompletenessAssertion] = []
         unknown_fields: list[str] = []
         recognized = False
+        fact_operation = (
+            "correct"
+            if re.match(r"^(?:更正|纠正|其实|correction\b|actually\b)", text, re.IGNORECASE)
+            else "assert"
+        )
         seen_changes: set[tuple[str, str]] = set()
         seen_assertions: set[tuple[str, str]] = set()
 
@@ -264,11 +269,11 @@ class NaturalLanguageStateExtractor:
             actor = _faction(actor_match.group(0))
 
         explicit_scope = re.search(
-            r"普通移动|局部(?:移动|裁决)|范围|scope|only\s+includes|只按|仅按|root\s+move|m0",
+            r"(?:我确认|确认|同意|只按|仅按|范围(?:只|仅)?(?:为|是|包括)|scope\s*(?:is|includes)|only\s+includes)",
             text,
             re.IGNORECASE,
         )
-        if explicit_scope:
+        if explicit_scope and not re.search(r"[?？]|什么|是否|能否|怎么", text):
             recognized = True
             asserted_value = (
                 None if re.search(r"不确定|尚未确认|unknown", text, re.IGNORECASE) else True
@@ -279,6 +284,27 @@ class NaturalLanguageStateExtractor:
                 _scope_assumption(text, message_id, asserted_value=asserted_value)
             )
 
+        retract_match = re.search(
+            rf"(?:撤回|取消|不确定)\s*(?P<clearing>{_CLEARING})\s*(?:的)?\s*"
+            rf"(?P<faction>{_FACTION})\s*(?P<piece>{_PIECE})(?:数量)?",
+            text,
+            re.IGNORECASE,
+        )
+        if retract_match:
+            clearing = _clearing(retract_match.group("clearing"))
+            faction = _faction(retract_match.group("faction"))
+            piece = _piece(retract_match.group("piece"))
+            if faction is not None and piece is not None:
+                field_path = f"clearings.{clearing}.presence.{faction}.{piece}"
+                changes.append(
+                    ProposedFactChange(
+                        operation="retract",
+                        field_path=field_path,
+                        evidence=[_evidence(field_path, message_id, retract_match.group(0))],
+                    )
+                )
+                unknown_fields.append(field_path)
+                recognized = True
         move_match = re.search(
             rf"(?:从|from)\s*(?P<origin>{_CLEARING})\s*(?:到|移到|移动到|to|→|->)\s*(?P<destination>{_CLEARING})",
             text,
@@ -299,7 +325,7 @@ class NaturalLanguageStateExtractor:
                 if key not in seen_changes:
                     changes.append(
                         ProposedFactChange(
-                            operation="assert",
+                            operation=fact_operation,
                             field_path=field_path,
                             value=value,
                             evidence=[_evidence(field_path, message_id, source_span)],
@@ -309,7 +335,7 @@ class NaturalLanguageStateExtractor:
             if actor:
                 changes.append(
                     ProposedFactChange(
-                        operation="assert",
+                        operation=fact_operation,
                         field_path="action.actor",
                         value=actor,
                         evidence=[_evidence("action.actor", message_id, source_span)],
@@ -374,7 +400,7 @@ class NaturalLanguageStateExtractor:
                 if key not in seen_changes:
                     changes.append(
                         ProposedFactChange(
-                            operation="assert",
+                            operation=fact_operation,
                             field_path=field_path,
                             value=count,
                             evidence=[_evidence(field_path, message_id, source_span)],
@@ -478,7 +504,7 @@ class NaturalLanguageStateExtractor:
                 if key not in seen_changes:
                     changes.append(
                         ProposedFactChange(
-                            operation="assert",
+                            operation=fact_operation,
                             field_path=field_path,
                             value=target_ids,
                             evidence=[_evidence(field_path, message_id, match.group(0))],

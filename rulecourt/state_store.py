@@ -300,6 +300,7 @@ class StateStore:
                 _now(),
             ),
         )
+        self._invalidate_completeness_for_fact(db, case_id, change.field_path)
         return True, conflict is not None, [conflict] if conflict else []
 
     @staticmethod
@@ -307,14 +308,29 @@ class StateStore:
         db: sqlite3.Connection, case_id: str, field_path: str
     ) -> None:
         parts = field_path.split(".")
-        if len(parts) < 5 or parts[0] != "clearings" or parts[2] != "presence":
+        if len(parts) == 3 and parts[0] == "clearings" and parts[2] == "adjacent_to":
+            target = field_path
+        elif len(parts) >= 5 and parts[0] == "clearings" and parts[2] == "presence":
+            target = ".".join(parts[:3])
+        else:
             return
-        target = ".".join(parts[:3])
-        db.execute(
-            """UPDATE completeness_assertions SET status='invalidated'
+        rows = db.execute(
+            """SELECT id, covered_scope FROM completeness_assertions
             WHERE case_id=? AND collection_target=? AND status IN ('proposed', 'confirmed')""",
             (case_id, target),
         )
+        for row in rows:
+            if parts[2] == "presence":
+                scope = json.loads(row["covered_scope"])
+                if scope.get("faction") not in (None, parts[3]) or scope.get("piece_type") not in (
+                    None,
+                    parts[4],
+                ):
+                    continue
+            db.execute(
+                "UPDATE completeness_assertions SET status='invalidated' WHERE id=?",
+                (row["id"],),
+            )
 
     @staticmethod
     def _build_state(db: sqlite3.Connection, case_id: str) -> dict[str, Any]:
@@ -524,7 +540,10 @@ class StateStore:
             )
             unknown_fields = _unique(unknown_fields + patch.unknown_fields)
             for change in patch.changes:
-                unknown_fields = [item for item in unknown_fields if item != change.field_path]
+                if change.operation == "retract":
+                    unknown_fields = _unique(unknown_fields + [change.field_path])
+                else:
+                    unknown_fields = [item for item in unknown_fields if item != change.field_path]
             combined_issues = fact_issues
             db.execute(
                 """INSERT INTO state_observations(case_id, unknown_fields, issues, updated_at)

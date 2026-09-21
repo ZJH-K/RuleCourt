@@ -104,3 +104,59 @@ def test_out_of_scope_declaration_is_explained_and_not_accepted(tmp_path):
             event["type"] == "state_rejected"
             for event in client.get(f"/api/cases/{case_id}/events").json()
         )
+
+
+def test_scope_question_does_not_confirm_an_assumption(tmp_path):
+    with TestClient(create_app(tmp_path / "case.sqlite3", provider=PassiveProvider())) as client:
+        case_id = new_case(client)
+        submit(client, case_id, "这个范围是什么？")
+        case = client.get(f"/api/cases/{case_id}").json()
+        assert case["scope_assumptions"] == []
+        assert case["revision"] == 0
+
+
+def test_explicit_correction_invalidates_old_complete_zero(tmp_path):
+    with TestClient(create_app(tmp_path / "case.sqlite3", provider=PassiveProvider())) as client:
+        case_id = new_case(client)
+        submit(client, case_id, "A 只有 0 个老鹰兵，老鹰兵清单是完整的。")
+        result = submit(client, case_id, "更正：A 有 2 个老鹰兵。")
+        assert result["state_update"]["accepted"] is True
+        case = client.get(f"/api/cases/{case_id}").json()
+        assert case["confirmed_state"]["clearings"]["A"]["presence"]["eyrie"]["warriors"] == 2
+        assert case["completeness_assertions"][0]["status"] == "invalidated"
+
+
+def test_explicit_adjacency_correction_replaces_complete_list(tmp_path):
+    with TestClient(create_app(tmp_path / "case.sqlite3", provider=PassiveProvider())) as client:
+        case_id = new_case(client)
+        submit(client, case_id, "A 只与 B 相邻。")
+        result = submit(client, case_id, "更正：A 与 C 相邻。")
+        assert result["state_update"]["accepted"] is True
+        case = client.get(f"/api/cases/{case_id}").json()
+        assert case["confirmed_state"]["clearings"]["A"]["adjacent_to"] == ["C"]
+        assert case["completeness_assertions"][0]["status"] == "invalidated"
+
+
+def test_retraction_restores_unknown_and_invalidates_complete_list(tmp_path):
+    with TestClient(create_app(tmp_path / "case.sqlite3", provider=PassiveProvider())) as client:
+        case_id = new_case(client)
+        submit(client, case_id, "A 只有 0 个老鹰兵，老鹰兵清单是完整的。")
+        result = submit(client, case_id, "撤回 A 的老鹰兵数量。")
+        assert result["state_update"]["accepted"] is True
+        case = client.get(f"/api/cases/{case_id}").json()
+        assert "clearings.A.presence.eyrie.warriors" in case["unknown_fields"]
+        assert "presence" not in case["confirmed_state"].get("clearings", {}).get("A", {})
+        assert case["completeness_assertions"][0]["status"] == "invalidated"
+
+
+def test_unrelated_presence_list_stays_complete_after_another_faction_changes(tmp_path):
+    with TestClient(create_app(tmp_path / "case.sqlite3", provider=PassiveProvider())) as client:
+        case_id = new_case(client)
+        submit(client, case_id, "A 只有 0 个老鹰兵，老鹰兵清单是完整的。")
+        result = submit(client, case_id, "A 有 3 个猫兵。")
+        assert result["state_update"]["accepted"] is True
+        case = client.get(f"/api/cases/{case_id}").json()
+        presence = case["confirmed_state"]["clearings"]["A"]["presence"]
+        assert presence["eyrie"]["warriors"] == 0
+        assert presence["marquise"]["warriors"] == 3
+        assert case["completeness_assertions"][0]["status"] == "confirmed"
