@@ -98,7 +98,15 @@ class RuleCourtController:
                 stop_reason=result.stop_reason,
                 model=self.model,
             )
-            reason = "INVESTIGATION_FAILED" if result.error else "DOMAIN_NOT_IMPLEMENTED"
+            if result.error:
+                reason = "INVESTIGATION_FAILED"
+            elif not any(
+                event.get("name") == "inspect_case" and event.get("status") == "ok"
+                for event in result.tool_events
+            ):
+                reason = "INVESTIGATION_INCOMPLETE"
+            else:
+                reason = "DOMAIN_NOT_IMPLEMENTED"
         except Exception as exc:  # noqa: BLE001 - provider failures become public run results
             self.store.add_event(
                 case_id, run_id, "investigation_failed", error_type=type(exc).__name__
