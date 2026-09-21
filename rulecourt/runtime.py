@@ -9,6 +9,8 @@ from nanobot.agent.tools.base import Tool
 from nanobot.agent.tools.registry import ToolRegistry
 from nanobot.utils.llm_runtime import LLMRuntime
 
+from .state import NaturalLanguageStateExtractor
+from .state_store import StateStore
 from .store import CaseStore
 
 
@@ -51,15 +53,53 @@ async def _no_compaction(*args, **kwargs):
 
 
 class RuleCourtController:
-    def __init__(self, store: CaseStore, provider, model: str):
+    def __init__(self, store: CaseStore, provider, model: str, state_store: StateStore):
         self.store = store
         self.provider = provider
         self.model = model
+        self.state_store = state_store
+        self.extractor = NaturalLanguageStateExtractor()
 
     async def investigate(self, case_id: str, text: str) -> dict[str, Any]:
         run_id = str(uuid4())
-        self.store.add_message(case_id, text)
+        message_id = self.store.add_message(case_id, text)
         self.store.add_event(case_id, run_id, "message_received")
+        before = self.store.get(case_id)
+        assert before is not None
+        proposal = self.extractor.extract(
+            text,
+            message_id=message_id,
+            expected_revision=before["revision"],
+            current_state=before["confirmed_state"],
+        )
+        state_update = None
+        if proposal.patch is not None:
+            state_update = self.state_store.apply_patch(case_id, proposal.patch)
+        elif proposal.issues:
+            state_update = {
+                "accepted": False,
+                "state_revision": before["revision"],
+                "sufficient": False,
+                "missing_fields": proposal.unknown_fields,
+                "issues": proposal.issues,
+            }
+        if state_update is not None:
+            self.store.add_event(
+                case_id,
+                run_id,
+                "state_accepted" if state_update["accepted"] else "state_rejected",
+                state_revision=state_update["state_revision"],
+                issues=state_update["issues"],
+            )
+            if not state_update["accepted"]:
+                issue_codes = {issue["code"] for issue in state_update["issues"]}
+                reason = (
+                    "STATE_SCOPE_OUT_OF_BOUNDS"
+                    if "SCOPE_OUT_OF_BOUNDS" in issue_codes
+                    else "STATE_UPDATE_REJECTED"
+                )
+                verdict = self.store.add_verdict(case_id, run_id, "UNRESOLVED", reason)
+                return {**verdict, "state_update": state_update}
         tools = ToolRegistry()
         tools.register(InspectCase(case_id, self.store))
         case = self.store.get(case_id)
@@ -112,4 +152,5 @@ class RuleCourtController:
                 case_id, run_id, "investigation_failed", error_type=type(exc).__name__
             )
             reason = "INVESTIGATION_FAILED"
-        return self.store.add_verdict(case_id, run_id, "UNRESOLVED", reason)
+        verdict = self.store.add_verdict(case_id, run_id, "UNRESOLVED", reason)
+        return verdict if state_update is None else {**verdict, "state_update": state_update}

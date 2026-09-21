@@ -63,7 +63,10 @@ def package_payload(**overrides):
 
 
 def test_rule_package_is_draft_until_review_and_public_index_stays_empty(tmp_path):
-    with TestClient(create_app(tmp_path / "cases.sqlite3", provider=None)) as client:
+    with TestClient(
+        create_app(tmp_path / "cases.sqlite3", provider=None, maintenance_token="test-secret"),
+        headers={"X-RuleCourt-Maintenance-Token": "test-secret"},
+    ) as client:
         assert "Rule package review" in client.get("/rules").text
         response = client.post("/api/rule-packages", json=package_payload())
         assert response.status_code == 201
@@ -82,7 +85,10 @@ def test_rule_package_is_draft_until_review_and_public_index_stays_empty(tmp_pat
 
 
 def test_verified_package_can_be_enabled_and_public_rules_exclude_private_coverage(tmp_path):
-    with TestClient(create_app(tmp_path / "cases.sqlite3", provider=None)) as client:
+    with TestClient(
+        create_app(tmp_path / "cases.sqlite3", provider=None, maintenance_token="test-secret"),
+        headers={"X-RuleCourt-Maintenance-Token": "test-secret"},
+    ) as client:
         package_id = client.post("/api/rule-packages", json=package_payload()).json()["id"]
         review = client.post(
             f"/api/rule-packages/{package_id}/reviews",
@@ -111,7 +117,10 @@ def test_verified_package_can_be_enabled_and_public_rules_exclude_private_covera
 
 
 def test_disputed_or_unreviewed_package_cannot_be_enabled(tmp_path):
-    with TestClient(create_app(tmp_path / "cases.sqlite3", provider=None)) as client:
+    with TestClient(
+        create_app(tmp_path / "cases.sqlite3", provider=None, maintenance_token="test-secret"),
+        headers={"X-RuleCourt-Maintenance-Token": "test-secret"},
+    ) as client:
         draft_id = client.post("/api/rule-packages", json=package_payload()).json()["id"]
         assert client.post(f"/api/rule-packages/{draft_id}/enable").status_code == 409
 
@@ -133,7 +142,10 @@ def test_disputed_or_unreviewed_package_cannot_be_enabled(tmp_path):
 
 
 def test_package_validation_requires_matching_checksum_and_safe_coverage_shape(tmp_path):
-    with TestClient(create_app(tmp_path / "cases.sqlite3", provider=None)) as client:
+    with TestClient(
+        create_app(tmp_path / "cases.sqlite3", provider=None, maintenance_token="test-secret"),
+        headers={"X-RuleCourt-Maintenance-Token": "test-secret"},
+    ) as client:
         bad_checksum = client.post("/api/rule-packages", json=package_payload(checksum="0" * 64))
         assert bad_checksum.status_code == 422
 
@@ -146,7 +158,10 @@ def test_package_validation_requires_matching_checksum_and_safe_coverage_shape(t
 def test_candidate_fixture_is_explicitly_unverified_and_importable(tmp_path):
     fixture_path = Path(__file__).parents[1] / "examples" / "root-m0-candidate-package.json"
     package = json.loads(fixture_path.read_text(encoding="utf-8"))
-    with TestClient(create_app(tmp_path / "cases.sqlite3", provider=None)) as client:
+    with TestClient(
+        create_app(tmp_path / "cases.sqlite3", provider=None, maintenance_token="test-secret"),
+        headers={"X-RuleCourt-Maintenance-Token": "test-secret"},
+    ) as client:
         response = client.post("/api/rule-packages", json=package)
         assert response.status_code == 201
         result = response.json()
@@ -159,7 +174,10 @@ def test_candidate_fixture_is_explicitly_unverified_and_importable(tmp_path):
 
 
 def test_public_rule_lookup_requires_a_package_for_duplicate_enabled_versions(tmp_path):
-    with TestClient(create_app(tmp_path / "cases.sqlite3", provider=None)) as client:
+    with TestClient(
+        create_app(tmp_path / "cases.sqlite3", provider=None, maintenance_token="test-secret"),
+        headers={"X-RuleCourt-Maintenance-Token": "test-secret"},
+    ) as client:
         first = client.post("/api/rule-packages", json=package_payload()).json()
         second = client.post(
             "/api/rule-packages",
@@ -184,3 +202,46 @@ def test_public_rule_lookup_requires_a_package_for_duplicate_enabled_versions(tm
         selected = client.get("/api/rules/root-4.2", params={"package_id": first["id"]})
         assert selected.status_code == 200
         assert selected.json()["source"]["id"] == first["id"]
+
+
+def test_coverage_and_review_operations_require_maintainer_token(tmp_path):
+    app = create_app(tmp_path / "cases.sqlite3", provider=None, maintenance_token="test-secret")
+    with TestClient(app) as client:
+        token = {"X-RuleCourt-Maintenance-Token": "test-secret"}
+        imported = client.post("/api/rule-packages", json=package_payload(), headers=token)
+        assert imported.status_code == 201
+        package_id = imported.json()["id"]
+        assert client.get("/api/rule-packages").status_code == 403
+        assert client.get(f"/api/rule-packages/{package_id}").status_code == 403
+        assert (
+            client.get(
+                f"/api/rule-packages/{package_id}",
+                headers={"X-RuleCourt-Maintenance-Token": "wrong"},
+            ).status_code
+            == 403
+        )
+        assert client.post("/api/rule-packages", json=package_payload()).status_code == 403
+        assert (
+            client.post(
+                f"/api/rule-packages/{package_id}/reviews",
+                json={
+                    "status": "verified",
+                    "reviewer_id": "self-signed",
+                    "basis": "Unverified claim",
+                    "evidence": ["none"],
+                },
+            ).status_code
+            == 403
+        )
+        assert client.post(f"/api/rule-packages/{package_id}/enable").status_code == 403
+        assert client.get("/api/rules").json() == []
+        assert client.get(f"/api/rule-packages/{package_id}", headers=token).json()[
+            "coverage_obligations"
+        ]
+
+
+def test_maintenance_endpoints_remain_closed_without_configured_token(tmp_path, monkeypatch):
+    monkeypatch.delenv("RULECOURT_MAINTENANCE_TOKEN", raising=False)
+    with TestClient(create_app(tmp_path / "cases.sqlite3", provider=None)) as client:
+        assert client.get("/api/rule-packages").status_code == 503
+        assert client.post("/api/rule-packages", json=package_payload()).status_code == 503

@@ -1,10 +1,11 @@
 """Public Case API and minimal browser view."""
 
 import os
+import secrets
 from pathlib import Path
 from typing import Any
 
-from fastapi import FastAPI, HTTPException
+from fastapi import Depends, FastAPI, Header, HTTPException
 from fastapi.responses import FileResponse
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
@@ -17,6 +18,7 @@ from .rules import (
     RuleStore,
 )
 from .runtime import RuleCourtController
+from .state_store import StateStore
 from .store import CaseStore
 
 
@@ -38,7 +40,12 @@ class UserMessage(BaseModel):
         return value
 
 
-def create_app(db_path: str | Path, provider=None, model: str | None = None) -> FastAPI:
+def create_app(
+    db_path: str | Path,
+    provider=None,
+    model: str | None = None,
+    maintenance_token: str | None = None,
+) -> FastAPI:
     if provider is None:
         from nanobot.providers.openai_compat_provider import OpenAICompatProvider
 
@@ -53,14 +60,28 @@ def create_app(db_path: str | Path, provider=None, model: str | None = None) -> 
 
     store = CaseStore(Path(db_path))
     rule_store = RuleStore(Path(db_path))
-    controller = RuleCourtController(store, provider, model)
+    state_store = StateStore(Path(db_path))
+    controller = RuleCourtController(store, provider, model, state_store)
     app = FastAPI(title="RuleCourt")
+    maintenance_token = maintenance_token or os.getenv("RULECOURT_MAINTENANCE_TOKEN")
+
+    def require_maintainer(
+        x_rulecourt_maintenance_token: str | None = Header(default=None),
+    ) -> None:
+        if not maintenance_token:
+            raise HTTPException(503, "Rule package maintenance is not configured")
+        if not x_rulecourt_maintenance_token or not secrets.compare_digest(
+            x_rulecourt_maintenance_token, maintenance_token
+        ):
+            raise HTTPException(403, "Maintainer token required")
 
     def require_case(case_id: str) -> dict[str, Any]:
         case = store.get(case_id)
         if case is None:
             raise HTTPException(404, "Case not found")
-        return case
+        state_view = state_store.view(case_id)
+        assert state_view is not None
+        return {**case, **state_view}
 
     @app.get("/")
     def index():
@@ -88,7 +109,7 @@ def create_app(db_path: str | Path, provider=None, model: str | None = None) -> 
         require_case(case_id)
         return store.events(case_id)
 
-    @app.post("/api/rule-packages", status_code=201)
+    @app.post("/api/rule-packages", status_code=201, dependencies=[Depends(require_maintainer)])
     def import_rule_package(request: RulePackageInput):
         try:
             return rule_store.import_package(request)
@@ -97,25 +118,25 @@ def create_app(db_path: str | Path, provider=None, model: str | None = None) -> 
         except RulePackageValidationError as exc:
             raise HTTPException(422, str(exc)) from exc
 
-    @app.get("/api/rule-packages")
+    @app.get("/api/rule-packages", dependencies=[Depends(require_maintainer)])
     def list_rule_packages():
         return rule_store.list_packages()
 
-    @app.get("/api/rule-packages/{package_id}")
+    @app.get("/api/rule-packages/{package_id}", dependencies=[Depends(require_maintainer)])
     def get_rule_package(package_id: str):
         package = rule_store.get_package(package_id)
         if package is None:
             raise HTTPException(404, "Rule package not found")
         return package
 
-    @app.post("/api/rule-packages/{package_id}/reviews")
+    @app.post("/api/rule-packages/{package_id}/reviews", dependencies=[Depends(require_maintainer)])
     def review_rule_package(package_id: str, request: RuleReviewInput):
         try:
             return rule_store.review(package_id, request)
         except KeyError as exc:
             raise HTTPException(404, "Rule package not found") from exc
 
-    @app.post("/api/rule-packages/{package_id}/enable")
+    @app.post("/api/rule-packages/{package_id}/enable", dependencies=[Depends(require_maintainer)])
     def enable_rule_package(package_id: str):
         try:
             return rule_store.enable(package_id)

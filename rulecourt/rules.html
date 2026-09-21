@@ -17,6 +17,7 @@
 <body>
   <h1>Rule package review</h1>
   <p>Import candidate material, record review evidence, and enable only a verified package.</p>
+  <p><label for="token">Maintainer token</label><br><input id="token" type="password" autocomplete="off"><button id="unlock">Open review</button></p>
   <h2>Import package</h2>
   <textarea id="package" aria-label="Rule package JSON" spellcheck="false">{
   "game_id": "root",
@@ -42,8 +43,10 @@
   <div id="packages"></div>
   <script>
     const el = id => document.getElementById(id);
+    let maintenanceToken = "";
     async function request(path, options) {
-      const response = await fetch(path, options);
+      const requestOptions = {...options, headers: {...options?.headers, "X-RuleCourt-Maintenance-Token": maintenanceToken}};
+      const response = await fetch(path, requestOptions);
       const body = await response.json();
       if (!response.ok) throw new Error(body.detail || `Request failed (${response.status})`);
       return body;
@@ -98,7 +101,12 @@
         el('notice').textContent = 'Imported as draft.'; await refresh();
       } catch (error) { el('notice').textContent = error.message; }
     };
-    refresh().catch(error => { el('notice').textContent = error.message; });
+    el('unlock').onclick = async () => {
+      maintenanceToken = el('token').value;
+      el('token').value = '';
+      try { await refresh(); el('notice').textContent = 'Review opened.'; }
+      catch (error) { el('notice').textContent = error.message; }
+    };
   </script>
 </body>
 </html>

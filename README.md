@@ -11,9 +11,7 @@ and resolved in `uv.lock`.
 
 ```powershell
 uv sync --extra dev
-$env:OPENAI_API_KEY = "your-key"
-$env:RULECOURT_MODEL = "gpt-4o-mini"
-uv run uvicorn rulecourt.api:app --reload
+uv run uvicorn rulecourt.api:app --reload --env-file .env
 ```
 
 Open <http://127.0.0.1:8000/>. The default database is `rulecourt.sqlite3`.
@@ -38,6 +36,14 @@ versioned rule packages as `draft`, record a `verified` or `disputed` review wit
 a reviewer and evidence basis, and enable only a reviewed verified package.
 Public search is available at `/api/rules`; private coverage obligations are
 returned only from the package review view.
+
+Set `RULECOURT_MAINTENANCE_TOKEN` in the ignored local `.env` before starting the
+server. Enter that value in the review page to open maintenance operations. The
+secret stays in page memory and is sent in the `X-RuleCourt-Maintenance-Token`
+header. Without a configured token, maintenance APIs return 503; without the
+correct token, they return 403. Public rule search remains readable. This local
+review record is a T02 demo; independent source verification and formal human
+signoff belong to T03.
 
 The unverified demo package is
 [`examples/root-m0-candidate-package.json`](examples/root-m0-candidate-package.json).
