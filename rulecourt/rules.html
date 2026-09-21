@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>RuleCourt rule package review</title>
+  <style>
+    body { font: 16px system-ui, sans-serif; max-width: 960px; margin: 2rem auto; padding: 0 1rem; color: #21313a; }
+    textarea { width: 100%; min-height: 260px; box-sizing: border-box; padding: .75rem; font-family: ui-monospace, monospace; }
+    input { padding: .55rem; margin: .2rem 0; width: min(100%, 32rem); box-sizing: border-box; }
+    button { padding: .5rem .8rem; margin: .2rem; cursor: pointer; }
+    article { border: 1px solid #cbd3d8; border-radius: 8px; padding: 1rem; margin: 1rem 0; }
+    pre { white-space: pre-wrap; overflow-wrap: anywhere; background: #f4f6f7; padding: .75rem; }
+    .draft { color: #805b00; } .verified { color: #176b3a; } .disputed { color: #9b2c2c; }
+  </style>
+</head>
+<body>
+  <h1>Rule package review</h1>
+  <p>Import candidate material, record review evidence, and enable only a verified package.</p>
+  <h2>Import package</h2>
+  <textarea id="package" aria-label="Rule package JSON" spellcheck="false">{
+  "game_id": "root",
+  "title": "Root M0 candidate package",
+  "source_type": "law",
+  "revision": "2025-10",
+  "authority": "official",
+  "locator": "https://rules.ledergames.com/?locale=en-US&printing=p1&product=root",
+  "scope_strategy": {
+    "name": "M0 local move candidate",
+    "included_factions": ["marquise", "eyrie"],
+    "included_actions": ["move", "rule"],
+    "notes": ["Unverified candidate; T03 human review is required."]
+  },
+  "source_content": "Paste the source text used for this candidate package.",
+  "checksum": "replace-with-sha256-of-source-content",
+  "rules": [],
+  "relations": [],
+  "coverage_obligations": []
+}</textarea>
+  <p><button id="import">Import as draft</button> <span id="notice" role="status"></span></p>
+  <h2>Registered packages</h2>
+  <div id="packages"></div>
+  <script>
+    const el = id => document.getElementById(id);
+    async function request(path, options) {
+      const response = await fetch(path, options);
+      const body = await response.json();
+      if (!response.ok) throw new Error(body.detail || `Request failed (${response.status})`);
+      return body;
+    }
+    function button(label, action) {
+      const b = document.createElement('button'); b.textContent = label; b.onclick = action; return b;
+    }
+    async function showPackage(id, target) {
+      const data = await request(`/api/rule-packages/${encodeURIComponent(id)}`);
+      const pre = document.createElement('pre'); pre.textContent = JSON.stringify(data, null, 2);
+      target.replaceChildren(pre);
+    }
+    async function reviewPackage(id, status) {
+      const reviewer = prompt('Reviewer ID', 'human-reviewer');
+      if (!reviewer) return;
+      const basis = prompt('Review basis', 'Checked source locator, revision, and recorded rule text.');
+      if (!basis) return;
+      const evidence = prompt('Evidence reference', 'review-note:T02-demo');
+      if (!evidence) return;
+      await request(`/api/rule-packages/${encodeURIComponent(id)}/reviews`, {
+        method: 'POST', headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({status, reviewer_id: reviewer, basis, evidence: [evidence]})
+      });
+      await refresh();
+    }
+    async function enablePackage(id) {
+      await request(`/api/rule-packages/${encodeURIComponent(id)}/enable`, {method: 'POST'});
+      await refresh();
+    }
+    async function refresh() {
+      const packages = await request('/api/rule-packages');
+      const root = el('packages'); root.replaceChildren();
+      for (const item of packages) {
+        const article = document.createElement('article');
+        const heading = document.createElement('h3');
+        heading.textContent = `${item.title} · ${item.revision} · ${item.status}${item.enabled ? ' · enabled' : ''}`;
+        heading.className = item.status;
+        article.append(heading);
+        article.append(button('Inspect package', () => showPackage(item.id, details)));
+        article.append(button('Verify', () => reviewPackage(item.id, 'verified')));
+        article.append(button('Mark disputed', () => reviewPackage(item.id, 'disputed')));
+        article.append(button('Enable', () => enablePackage(item.id)));
+        const details = document.createElement('div'); article.append(details);
+        root.append(article);
+      }
+    }
+    el('import').onclick = async () => {
+      try {
+        await request('/api/rule-packages', {
+          method: 'POST', headers: {'Content-Type': 'application/json'}, body: el('package').value
+        });
+        el('notice').textContent = 'Imported as draft.'; await refresh();
+      } catch (error) { el('notice').textContent = error.message; }
+    };
+    refresh().catch(error => { el('notice').textContent = error.message; });
+  </script>
+</body>
+</html>

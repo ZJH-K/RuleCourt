@@ -1,0 +1,236 @@
+{
+  "game_id": "root",
+  "title": "Root Law of Root October 2025 candidate excerpts (unverified)",
+  "source_type": "law",
+  "revision": "2025-10",
+  "published_at": null,
+  "authority": "official",
+  "locator": "https://rules.ledergames.com/?locale=en-US&printing=p1&product=root",
+  "scope_strategy": {
+    "name": "M0 candidate: clearing movement, rule, and battle excerpts",
+    "included_factions": [
+      "eyrie",
+      "marquise",
+      "woodland"
+    ],
+    "included_actions": [
+      "move",
+      "rule"
+    ],
+    "notes": [
+      "This is an unverified candidate package for T03 human review.",
+      "The scope covers only clearing movement and rule excerpts and does not claim complete turn legality.",
+      "Rule IDs are package-local design identifiers, not official source identifiers."
+    ]
+  },
+  "source_content": "Candidate transcription set for manual T03 review.\r\nTarget: Root Law of Root, October 2025.\r\nEvery excerpt below must be compared with the official source before verification.\r\n2.1 Clearing: A clearing is a location on the map connected by paths.\r\n2.2 Path: A path connects adjacent clearings for movement.\r\n2.5 Rule: A faction rules a clearing if it has more warriors and buildings there than any other faction.\r\n4.2 Move: A faction may move warriors from one clearing to an adjacent clearing.\r\n4.2.1 Move restriction: A faction must rule the origin or destination clearing to move.\r\n7.2.2 Lords of the Forest: The Eyrie Dynasties rule a clearing with their roosts as described by their faction rules.",
+  "checksum": "71d904c3d639410edc9e4192956a2fc4d73094c9a5714d8ff57be96c7db00500",
+  "rules": [
+    {
+      "id": "root-2.1",
+      "section": "2.1",
+      "parent_section": "2",
+      "title": "Clearing",
+      "text": "A clearing is a location on the map connected by paths.",
+      "scope": {
+        "factions": [],
+        "actions": [],
+        "phases": [],
+        "tags": [
+          "map"
+        ]
+      },
+      "keywords": [
+        "clearing",
+        "map",
+        "path"
+      ]
+    },
+    {
+      "id": "root-2.5",
+      "section": "2.5",
+      "parent_section": "2",
+      "title": "Rule",
+      "text": "A faction rules a clearing if it has more warriors and buildings there than any other faction.",
+      "scope": {
+        "factions": [],
+        "actions": [
+          "rule"
+        ],
+        "phases": [],
+        "tags": [
+          "control"
+        ]
+      },
+      "keywords": [
+        "rule",
+        "warriors",
+        "buildings"
+      ]
+    },
+    {
+      "id": "root-4.2",
+      "section": "4.2",
+      "parent_section": "4",
+      "title": "Move",
+      "text": "A faction may move warriors from one clearing to an adjacent clearing.",
+      "scope": {
+        "factions": [],
+        "actions": [
+          "move"
+        ],
+        "phases": [
+          "daylight"
+        ],
+        "tags": [
+          "movement"
+        ]
+      },
+      "keywords": [
+        "move",
+        "adjacent",
+        "warriors"
+      ]
+    },
+    {
+      "id": "root-4.2.1",
+      "section": "4.2.1",
+      "parent_section": "4.2",
+      "title": "Move restriction",
+      "text": "A faction must rule the origin or destination clearing to move.",
+      "scope": {
+        "factions": [],
+        "actions": [
+          "move"
+        ],
+        "phases": [
+          "daylight"
+        ],
+        "tags": [
+          "movement",
+          "rule"
+        ]
+      },
+      "keywords": [
+        "move",
+        "origin",
+        "destination",
+        "rule"
+      ]
+    },
+    {
+      "id": "root-7.2.2",
+      "section": "7.2.2",
+      "parent_section": "7.2",
+      "title": "Lords of the Forest",
+      "text": "The Eyrie Dynasties rule a clearing with their roosts as described by their faction rules.",
+      "scope": {
+        "factions": [
+          "eyrie"
+        ],
+        "actions": [
+          "rule"
+        ],
+        "phases": [],
+        "tags": [
+          "faction-rule"
+        ]
+      },
+      "keywords": [
+        "eyrie",
+        "roost",
+        "rule"
+      ]
+    },
+    {
+      "id": "root-2.2",
+      "section": "2.2",
+      "parent_section": "2",
+      "title": "Path",
+      "text": "A path connects adjacent clearings for movement.",
+      "scope": {
+        "factions": [],
+        "actions": [
+          "move"
+        ],
+        "phases": [],
+        "tags": [
+          "map",
+          "movement"
+        ]
+      },
+      "keywords": [
+        "path",
+        "adjacent",
+        "movement"
+      ]
+    }
+  ],
+  "relations": [
+    {
+      "source_rule_id": "root-4.2.1",
+      "target_rule_id": "root-4.2",
+      "relation": "exception_to"
+    },
+    {
+      "source_rule_id": "root-7.2.2",
+      "target_rule_id": "root-2.5",
+      "relation": "clarifies"
+    },
+    {
+      "source_rule_id": "root-4.2",
+      "target_rule_id": "root-2.2",
+      "relation": "depends_on"
+    }
+  ],
+  "coverage_obligations": [
+    {
+      "id": "movement-adjacency",
+      "rule_ids": [
+        "root-4.2",
+        "root-4.2.1"
+      ],
+      "applies_when": [
+        "The proposed action is a Move between clearings."
+      ],
+      "acceptable_evidence": [
+        "The official source text for sections 4.2 and 4.2.1 has been compared by a human reviewer."
+      ],
+      "satisfied_when": [
+        "The origin and destination are adjacent and the faction rules one of them."
+      ]
+    },
+    {
+      "id": "rule-control",
+      "rule_ids": [
+        "root-2.5",
+        "root-7.2.2"
+      ],
+      "applies_when": [
+        "The proposed action depends on which faction rules a clearing."
+      ],
+      "acceptable_evidence": [
+        "The official source text for sections 2.5 and 7.2.2 has been compared by a human reviewer."
+      ],
+      "satisfied_when": [
+        "The controlling faction is determined from the recorded warriors, buildings, and faction exception."
+      ]
+    },
+    {
+      "id": "movement-path",
+      "rule_ids": [
+        "root-2.1",
+        "root-2.2"
+      ],
+      "applies_when": [
+        "The proposed action moves warriors between clearings."
+      ],
+      "acceptable_evidence": [
+        "The official source text for sections 2.1 and 2.2 has been compared by a human reviewer."
+      ],
+      "satisfied_when": [
+        "The origin and destination are clearings connected by a path."
+      ]
+    }
+  ]
+}

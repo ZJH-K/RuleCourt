@@ -1,4 +1,4 @@
-# RuleCourt T01
+# RuleCourt M0
 
 This first slice stores Cases and public investigation events. Domain rules and
 verified evidence are not installed, so every run ends in `UNRESOLVED`.
@@ -30,4 +30,17 @@ uv run ruff check rulecourt tests
 uv run ruff format --check rulecourt tests
 uv run pytest -q
 ```
+
+## T02 rule review
+
+Open <http://127.0.0.1:8000/rules> for the local maintenance view. It can import
+versioned rule packages as `draft`, record a `verified` or `disputed` review with
+a reviewer and evidence basis, and enable only a reviewed verified package.
+Public search is available at `/api/rules`; private coverage obligations are
+returned only from the package review view.
+
+The unverified demo package is
+[`examples/root-m0-candidate-package.json`](examples/root-m0-candidate-package.json).
+It points to the official [Leder Games Root rules library](https://rules.ledergames.com/?locale=en-US&printing=p1&product=root),
+but its excerpts and package-local IDs still require T03 human review.
 
