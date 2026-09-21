@@ -12,6 +12,7 @@
     section { border: 1px solid #cbd3d8; border-radius: 8px; padding: 1rem; margin-top: 1rem; }
     pre { white-space: pre-wrap; overflow-wrap: anywhere; }
     .muted { color: #52626d; }
+    .warning { color: #8a4b08; background: #fff6e5; border-radius: 4px; padding: .5rem .75rem; }
   </style>
 </head>
 <body>
@@ -26,12 +27,19 @@
     <button id="submit">Submit</button>
     <p id="notice" role="status"></p>
     <h3>Confirmed state</h3><pre id="state"></pre>
+    <p class="muted">A confirmed 0 is different from an omitted or unknown field. A partial list does not imply that it is exhaustive.</p>
+    <h3>Facts and sources</h3><div id="facts"></div>
+    <h3>Unknowns</h3><div id="unknowns"></div>
+    <h3>Scope assumptions</h3><div id="assumptions"></div>
+    <h3>Completeness assertions</h3><div id="completeness"></div>
+    <h3>State corrections and clarifications</h3><div id="state-issues"></div>
     <h3>Messages</h3><div id="messages"></div>
     <h3>Verdicts</h3><div id="verdicts"></div>
     <h3>Public events</h3><div id="events"></div>
   </section>
   <script>
     let caseId = new URLSearchParams(location.search).get('case');
+    let latestStateUpdate = null;
     const el = id => document.getElementById(id);
     async function request(path, options) {
       const response = await fetch(path, options);
@@ -45,6 +53,43 @@
         return p;
       }));
     }
+    function list(target, items, render, empty) {
+      if (items.length === 0) {
+        target.replaceChildren(Object.assign(document.createElement('p'), {textContent: empty}));
+        return;
+      }
+      lines(target, items, render);
+    }
+    function value(value) {
+      return typeof value === 'string' ? value : JSON.stringify(value);
+    }
+    function sources(refs) {
+      return (refs || []).map(ref => {
+        const span = ref.source_span ? ` “${ref.source_span}”` : '';
+        return `${ref.source_message_id}${span}`;
+      }).join('; ') || 'source unavailable';
+    }
+    function renderState(data) {
+      list(el('facts'), data.state_facts || [], fact =>
+        `${fact.field_path} = ${value(fact.value)} (${fact.status}); source: ${sources(fact.evidence_refs)}`,
+        'No accepted facts yet.');
+      list(el('unknowns'), data.unknown_fields || [], field =>
+        `${field} is still unknown; do not treat it as zero or as an empty list.`,
+        'No unknown fields recorded.');
+      list(el('assumptions'), data.scope_assumptions || [], assumption =>
+        `${assumption.scope_id}.${assumption.predicate_id} = ${assumption.asserted_value === null ? 'unknown' : assumption.asserted_value} (${assumption.status}); source: ${sources(assumption.evidence_refs)}`,
+        'No scope assumptions recorded.');
+      list(el('completeness'), data.completeness_assertions || [], assertion =>
+        `${assertion.collection_target} is ${assertion.completeness} for ${value(assertion.covered_scope)} (${assertion.status}); members: ${value(assertion.member_snapshot.members || [])}; source: ${sources(assertion.evidence_refs)}`,
+        'No completeness assertions recorded. Lists are partial by default.');
+      const issues = [...(data.state_issues || []), ...((latestStateUpdate && latestStateUpdate.issues) || [])];
+      list(el('state-issues'), issues, issue =>
+        `${issue.code}: ${issue.message}${issue.field_path ? ` (${issue.field_path})` : ''}`,
+        'No state corrections or clarifications needed.');
+      el('state-issues').querySelectorAll('p').forEach(item => {
+        if (!item.textContent.startsWith('No ')) item.className = 'warning';
+      });
+    }
     async function refresh() {
       if (!caseId) return;
       const [data, events] = await Promise.all([
@@ -54,6 +99,7 @@
       el('case').hidden = false;
       el('case-id').textContent = caseId;
       el('state').textContent = JSON.stringify(data.confirmed_state, null, 2);
+      renderState(data);
       lines(el('messages'), data.messages, x => x.text);
       lines(el('verdicts'), data.verdicts, x => `${x.status}: ${x.reason} (revision ${x.revision})`);
       lines(el('events'), events, x => `${x.type}${x.name ? ': ' + x.name + ' (' + x.status + ')' : ''}`);
@@ -62,6 +108,7 @@
       try {
         const data = await request('/api/cases', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: '{}'});
         caseId = data.id;
+        latestStateUpdate = null;
         history.pushState({}, '', `?case=${encodeURIComponent(caseId)}`);
         await refresh();
       } catch (error) { el('notice').textContent = error.message; }
@@ -70,13 +117,16 @@
       el('submit').disabled = true;
       el('notice').textContent = 'Investigating…';
       try {
-        await request(`/api/cases/${encodeURIComponent(caseId)}/messages`, {
+        const result = await request(`/api/cases/${encodeURIComponent(caseId)}/messages`, {
           method: 'POST', headers: {'Content-Type': 'application/json'},
           body: JSON.stringify({text: el('message').value})
         });
+        latestStateUpdate = result.state_update || null;
         el('message').value = '';
         await refresh();
-        el('notice').textContent = 'Investigation saved.';
+        el('notice').textContent = result.state_update && !result.state_update.accepted
+          ? 'The state proposal needs clarification; no pseudo-verdict was recorded.'
+          : 'Investigation saved.';
       } catch (error) { el('notice').textContent = error.message; }
       finally { el('submit').disabled = false; }
     };
