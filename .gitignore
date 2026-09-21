@@ -1,0 +1,7 @@
+.venv/
+.nanobot-reference/
+*.sqlite3
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+dist/

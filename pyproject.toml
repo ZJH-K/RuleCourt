@@ -1,0 +1,39 @@
+[project]
+name = "rulecourt"
+version = "0.1.0"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.115,<1",
+    "uvicorn>=0.30,<1",
+    "nanobot-ai @ git+https://github.com/HKUDS/nanobot.git@12a9a8a692c7e8fc6d3d293afdddcdaa390436df",
+]
+
+[project.optional-dependencies]
+dev = ["basedpyright>=1.39,<2", "httpx>=0.27,<1", "pytest>=8,<10", "ruff>=0.9,<1"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.uv]
+extra-build-variables = { nanobot-ai = { NANOBOT_SKIP_WEBUI_BUILD = '1' } }
+
+[tool.hatch.metadata]
+allow-direct-references = true
+
+[tool.hatch.build.targets.wheel]
+packages = ["rulecourt"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+
+
+
+
+[tool.basedpyright]
+include = ['rulecourt']
+typeCheckingMode = 'basic'
+

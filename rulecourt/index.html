@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>RuleCourt</title>
+  <style>
+    body { font: 16px system-ui, sans-serif; max-width: 760px; margin: 3rem auto; padding: 0 1rem; color: #21313a; }
+    h1 { margin-bottom: .2rem; } p { line-height: 1.5; }
+    textarea { width: 100%; min-height: 110px; box-sizing: border-box; padding: .75rem; }
+    button { padding: .6rem 1rem; cursor: pointer; }
+    section { border: 1px solid #cbd3d8; border-radius: 8px; padding: 1rem; margin-top: 1rem; }
+    pre { white-space: pre-wrap; overflow-wrap: anywhere; }
+    .muted { color: #52626d; }
+  </style>
+</head>
+<body>
+  <h1>RuleCourt</h1>
+  <p class="muted">Create a Case and inspect the saved investigation. Local move rules are not available yet.</p>
+  <button id="create">Create Case</button>
+  <section id="case" hidden>
+    <h2>Case <small id="case-id"></small></h2>
+    <label for="message">Your question</label>
+    <textarea id="message" placeholder="Describe your proposed move"></textarea>
+    <button id="submit">Submit</button>
+    <p id="notice" role="status"></p>
+    <h3>Confirmed state</h3><pre id="state"></pre>
+    <h3>Messages</h3><div id="messages"></div>
+    <h3>Verdicts</h3><div id="verdicts"></div>
+    <h3>Public events</h3><div id="events"></div>
+  </section>
+  <script>
+    let caseId = new URLSearchParams(location.search).get('case');
+    const el = id => document.getElementById(id);
+    async function request(path, options) {
+      const response = await fetch(path, options);
+      if (!response.ok) throw new Error(`Request failed (${response.status})`);
+      return response.json();
+    }
+    function lines(target, items, render) {
+      target.replaceChildren(...items.map(item => {
+        const p = document.createElement('p');
+        p.textContent = render(item);
+        return p;
+      }));
+    }
+    async function refresh() {
+      if (!caseId) return;
+      const [data, events] = await Promise.all([
+        request(`/api/cases/${encodeURIComponent(caseId)}`),
+        request(`/api/cases/${encodeURIComponent(caseId)}/events`)
+      ]);
+      el('case').hidden = false;
+      el('case-id').textContent = caseId;
+      el('state').textContent = JSON.stringify(data.confirmed_state, null, 2);
+      lines(el('messages'), data.messages, x => x.text);
+      lines(el('verdicts'), data.verdicts, x => `${x.status}: ${x.reason} (revision ${x.revision})`);
+      lines(el('events'), events, x => `${x.type}${x.name ? ': ' + x.name + ' (' + x.status + ')' : ''}`);
+    }
+    el('create').onclick = async () => {
+      try {
+        const data = await request('/api/cases', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: '{}'});
+        caseId = data.id;
+        history.pushState({}, '', `?case=${encodeURIComponent(caseId)}`);
+        await refresh();
+      } catch (error) { el('notice').textContent = error.message; }
+    };
+    el('submit').onclick = async () => {
+      el('submit').disabled = true;
+      el('notice').textContent = 'Investigating…';
+      try {
+        await request(`/api/cases/${encodeURIComponent(caseId)}/messages`, {
+          method: 'POST', headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({text: el('message').value})
+        });
+        el('message').value = '';
+        await refresh();
+        el('notice').textContent = 'Investigation saved.';
+      } catch (error) { el('notice').textContent = error.message; }
+      finally { el('submit').disabled = false; }
+    };
+    refresh().catch(error => { el('notice').textContent = error.message; });
+  </script>
+</body>
+</html>
