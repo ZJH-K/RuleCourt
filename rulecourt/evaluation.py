@@ -441,15 +441,11 @@ class EvaluationCase(BaseModel):
         return source_ids
 
     def _source_kind_errors(self, provenance: Mapping[str, str]) -> list[str]:
-        expected: dict[str, SourceKind | None] = {}
+        expected: dict[str, set[SourceKind]] = {}
 
         def require_kind(source_ids: set[str], kind: SourceKind) -> None:
             for source_id in source_ids:
-                previous = expected.get(source_id)
-                if previous is not None and previous != kind:
-                    expected[source_id] = None
-                else:
-                    expected[source_id] = kind
+                expected.setdefault(source_id, set()).add(kind)
 
         require_kind({self.label_source}, "human_review")
         require_kind(set(self.fact_sources.values()), "primary_fact")
@@ -461,9 +457,13 @@ class EvaluationCase(BaseModel):
         require_kind(set(self.review.evidence), "human_review")
 
         invalid: list[str] = []
-        for source_id, expected_kind in expected.items():
+        for source_id, expected_kinds in expected.items():
             actual_kind = provenance.get(source_id)
-            if expected_kind is None or actual_kind != expected_kind:
+            if len(expected_kinds) != 1:
+                invalid.append(source_id)
+                continue
+            expected_kind = next(iter(expected_kinds))
+            if actual_kind != expected_kind:
                 invalid.append(source_id)
                 continue
             prefixes = _SOURCE_ID_PREFIXES[expected_kind]

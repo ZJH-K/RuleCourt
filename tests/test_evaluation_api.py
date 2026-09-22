@@ -644,6 +644,30 @@ def test_formal_provenance_kind_must_match_the_field_using_it():
         dataset.scoring_manifest(_signoff(dataset), signing_key=TEST_SIGNOFF_KEY)
 
 
+def test_formal_provenance_rejects_one_source_used_for_multiple_roles():
+    data = _case(
+        "ambiguous-provenance",
+        "family-ambiguous-provenance",
+        coverage_tags=list(REQUIRED_COVERAGE_TAGS),
+    )
+    shared = "reviewed:shared-source"
+    data["label_source"] = shared
+    data["clarification_facts"]["clearings.A.adjacent_to"]["source"] = shared
+    data["fact_sources"]["clearings.A.adjacent_to"] = shared
+    data["evidence"] = [shared]
+    data["review"]["evidence"] = [shared]
+    data["source_provenance"] = [{"source_id": shared, "kind": "human_review"}]
+    companion = _case("ambiguous-provenance-companion", "family-ambiguous-provenance-companion")
+    dataset = CaseDataset(
+        dataset_version="golden-v1",
+        cases=[EvaluationCase.model_validate(data), EvaluationCase.model_validate(companion)],
+    )
+    dataset.split_by_family(holdout_fraction=0.2, seed=11)
+
+    with pytest.raises(ValueError, match="source_kind"):
+        dataset.scoring_manifest(_signoff(dataset), signing_key=TEST_SIGNOFF_KEY)
+
+
 def test_disputed_case_requires_a_reviewer():
     data = _case("disputed-no-reviewer", "family-disputed-no-reviewer", "disputed")
     data["review"] = {
