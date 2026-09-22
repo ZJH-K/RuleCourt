@@ -626,6 +626,56 @@ def test_engine_output_cannot_be_the_only_verified_source():
         dataset.scoring_manifest(_signoff(dataset), signing_key=TEST_SIGNOFF_KEY)
 
 
+def test_formal_provenance_kind_must_match_the_field_using_it():
+    data = _case(
+        "wrong-provenance-kind",
+        "family-wrong-provenance-kind",
+        coverage_tags=list(REQUIRED_COVERAGE_TAGS),
+    )
+    data["source_provenance"][1]["kind"] = "official_rule"
+    companion = _case("provenance-companion", "family-provenance-companion")
+    dataset = CaseDataset(
+        dataset_version="golden-v1",
+        cases=[EvaluationCase.model_validate(data), EvaluationCase.model_validate(companion)],
+    )
+    dataset.split_by_family(holdout_fraction=0.2, seed=11)
+
+    with pytest.raises(ValueError, match="source_kind"):
+        dataset.scoring_manifest(_signoff(dataset), signing_key=TEST_SIGNOFF_KEY)
+
+
+def test_disputed_case_requires_a_reviewer():
+    data = _case("disputed-no-reviewer", "family-disputed-no-reviewer", "disputed")
+    data["review"] = {
+        "status": "disputed",
+        "rule_version": "root-law-2025-10",
+        "reviewed_at": "2026-09-22T00:00:00Z",
+        "basis": "The source is ambiguous.",
+        "evidence": ["review-note:disputed"],
+        "report": "The case needs adjudication.",
+        "dispute_reasons": ["ambiguous_source_text"],
+    }
+
+    with pytest.raises(ValueError, match="reviewer_id"):
+        EvaluationCase.model_validate(data)
+
+
+def test_human_signoff_rejects_conflicting_coverage_attestations():
+    with pytest.raises(ValueError, match="both reviewed and waived"):
+        HumanSignoff(
+            dataset_version="golden-v1",
+            dataset_digest="0" * 64,
+            approved_case_ids=[],
+            reviewer_ids=[],
+            coverage_reviewed=["partial"],
+            coverage_waivers={"partial": "not in scope"},
+            signed_by="human-reviewer-1",
+            signed_at="2026-09-22T01:00:00Z",
+            approval_reference="t15-conflict",
+            signature="pending",
+        )
+
+
 def test_case_correction_history_and_dispute_reasons_round_trip(tmp_path):
     data = _case("disputed-1", "family-disputed", "disputed")
     data["review"] = {

@@ -228,6 +228,11 @@ _COVERAGE_ALIASES = {
     "unsupported_interaction": {"unsupported", "unsupported_interaction"},
 }
 _ENGINE_SOURCE_MARKERS = {"agent", "candidate", "engine", "llm", "model"}
+_SOURCE_ID_PREFIXES: dict[SourceKind, tuple[str, ...]] = {
+    "official_rule": ("root-", "official:", "rule:", "rules:"),
+    "primary_fact": ("fact:", "fixture:", "golden:", "primary:", "source:"),
+    "human_review": ("human:", "manual:", "review-note:", "reviewed:"),
+}
 SIGNOFF_KEY_ENV = "RULECOURT_GOLDEN_SIGNOFF_KEY"
 
 
@@ -400,6 +405,7 @@ class EvaluationCase(BaseModel):
             return [
                 name
                 for name, value in (
+                    ("reviewer_id", self.review.reviewer_id),
                     ("basis", self.review.basis),
                     ("report", self.review.report),
                 )
@@ -419,7 +425,7 @@ class EvaluationCase(BaseModel):
         if review_errors:
             if self.review.status == "verified":
                 raise ValueError("verified cases require review " + ", ".join(review_errors))
-            raise ValueError("disputed cases require review basis and report")
+            raise ValueError("disputed cases require review " + ", ".join(review_errors))
         return self
 
     def _required_source_ids(self) -> set[str]:
@@ -433,6 +439,37 @@ class EvaluationCase(BaseModel):
             source for fixture in self.clarification_facts.values() for source in fixture.source
         )
         return source_ids
+
+    def _source_kind_errors(self, provenance: Mapping[str, str]) -> list[str]:
+        expected: dict[str, SourceKind | None] = {}
+
+        def require_kind(source_ids: set[str], kind: SourceKind) -> None:
+            for source_id in source_ids:
+                previous = expected.get(source_id)
+                if previous is not None and previous != kind:
+                    expected[source_id] = None
+                else:
+                    expected[source_id] = kind
+
+        require_kind({self.label_source}, "human_review")
+        require_kind(set(self.fact_sources.values()), "primary_fact")
+        require_kind(
+            {source for fixture in self.clarification_facts.values() for source in fixture.source},
+            "primary_fact",
+        )
+        require_kind(set(self.evidence), "official_rule")
+        require_kind(set(self.review.evidence), "human_review")
+
+        invalid: list[str] = []
+        for source_id, expected_kind in expected.items():
+            actual_kind = provenance.get(source_id)
+            if expected_kind is None or actual_kind != expected_kind:
+                invalid.append(source_id)
+                continue
+            prefixes = _SOURCE_ID_PREFIXES[expected_kind]
+            if not source_id.casefold().startswith(prefixes):
+                invalid.append(source_id)
+        return sorted(set(invalid))
 
     def scoring_validation_errors(self, *, formal: bool = False) -> list[str]:
         """Return scoring errors without changing the review status."""
@@ -459,6 +496,8 @@ class EvaluationCase(BaseModel):
                     errors.append("engine_only_source")
                 if any(not fixture.source for fixture in self.clarification_facts.values()):
                     errors.append("fact_source_provenance")
+                if self._source_kind_errors(provenance):
+                    errors.append("source_kind")
             errors.extend(f"checks.{name}" for name in self.review.missing_checks)
             if self.review.dispute_reasons:
                 errors.append("verified_case_has_dispute_reasons")
@@ -576,6 +615,15 @@ class HumanSignoff(BaseModel):
                 raise ValueError(f"coverage waiver {tag} needs a reason")
             waivers[tag] = reason
         return waivers
+
+    @model_validator(mode="after")
+    def reject_conflicting_coverage_attestations(self) -> HumanSignoff:
+        overlap = set(self.coverage_reviewed) & set(self.coverage_waivers)
+        if overlap:
+            raise ValueError(
+                "coverage cannot be both reviewed and waived: " + ", ".join(sorted(overlap))
+            )
+        return self
 
     def signing_payload(self) -> bytes:
         payload = self.model_dump(
@@ -741,7 +789,7 @@ class CaseDataset(BaseModel):
         reviewer_ids = {
             case.review.reviewer_id
             for case in self.cases
-            if case.review.status == "verified" and case.review.reviewer_id
+            if case.review.status in {"verified", "disputed"} and case.review.reviewer_id
         }
         if not reviewer_ids <= set(signoff.reviewer_ids):
             errors.append("reviewer_ids")
