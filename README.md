@@ -126,3 +126,51 @@ uv run rulecourt-eval manifest golden-cases-v1.json
 
 The checked-in candidate fixture remains draft; it cannot be promoted by the
 replay runner or scored as formal truth.
+
+## T12 LLM-only and Vanilla Vector RAG baselines
+
+Both baselines use the T11 replay runner, fact responder, clarification limits,
+and offline scorer. LLM-only receives the fixed rule version and user facts,
+without retrieved excerpts. Vanilla Vector RAG embeds each public rule excerpt
+and the accumulated user facts, then supplies cosine top-k matches to the model.
+It uses no lexical search, reranker, domain engine, or private coverage table.
+The model's declared four-state result is retained; citation provenance errors
+and required reference-ID coverage are reported separately so an unsupported
+LEGAL answer still counts as a wrong allow. Reference coverage does not establish
+semantic support.
+
+Start with the reproducible development configuration:
+
+~~~powershell
+uv run rulecourt-baselines examples/m0-candidate-cases.json --rules examples/root-m0-candidate-package.json --config examples/t12-baseline-config.json --dry-run
+~~~
+
+Copy the config to a new experiment file, replace its generation/embedding model
+placeholders with fixed provider model versions, and set the embedding endpoint.
+Generation uses OPENAI_BASE_URL (or the provider default); both services use
+OPENAI_API_KEY from the environment. Set per-1,000-token prices in the config
+if monetary estimates are wanted. Then run:
+
+~~~powershell
+uv run rulecourt-baselines examples/m0-candidate-cases.json --rules examples/root-m0-candidate-package.json --config my-t12-config.json --output t12-trial-001.json
+~~~
+
+Use --format markdown for a readable report. Existing output files are refused
+to preserve prior runs. BaselineReport.from_json(path).to_markdown() renders a
+saved JSON report without rerunning providers. The runner classes also expose
+run_case and run_dataset for running either strategy independently; use an
+asynchronous provider and call close() when finished.
+
+Reports retain first and complete results, every retrieval round, source text,
+rule IDs, corpus/index hashes, model/config/code fingerprints, and cumulative
+generation plus embedding usage. Index construction is charged to the first
+Case that builds it; subsequent Cases reuse that index. User waiting time is
+excluded. A timeout or failed request may have unreported billed usage; missing
+usage or prices produces a null/N/A total cost, with known usage reported
+separately. Token budgets are enforced against reported usage, so an input-token
+overrun is detected after the response and retained as a budget failure.
+
+These are development trials: holdout Cases are rejected and no labels enter
+model prompts or retrieval. The bundled rules and Cases are unverified demo
+material, and synthetic tests do not confer human signoff. The two external
+baselines cannot by themselves establish the value of Dynamic Agent planning.

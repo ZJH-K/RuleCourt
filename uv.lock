@@ -2151,6 +2151,7 @@ version = "0.1.0"
 source = { editable = "." }
 dependencies = [
     { name = "fastapi" },
+    { name = "httpx" },
     { name = "nanobot-ai" },
     { name = "uvicorn" },
 ]
@@ -2167,6 +2168,7 @@ dev = [
 requires-dist = [
     { name = "basedpyright", marker = "extra == 'dev'", specifier = ">=1.39,<2" },
     { name = "fastapi", specifier = ">=0.115,<1" },
+    { name = "httpx", specifier = ">=0.27,<1" },
     { name = "httpx", marker = "extra == 'dev'", specifier = ">=0.27,<1" },
     { name = "nanobot-ai", git = "https://github.com/HKUDS/nanobot.git?rev=12a9a8a692c7e8fc6d3d293afdddcdaa390436df" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=8,<10" },

@@ -1,0 +1,19 @@
+{
+  "config_version": "t12-development-v1",
+  "ruleset_id": "root-law-2025-10",
+  "ruleset_version": "2025-10",
+  "prompt_version": "t12-prompt-v1",
+  "model": "replace-with-generation-model-version",
+  "embedding_model": "replace-with-embedding-model-version",
+  "embedding_base_url": "https://api.openai.com/v1",
+  "timeout_seconds": 60,
+  "max_clarification_rounds": 8,
+  "max_fact_requests": 8,
+  "max_tokens": 1024,
+  "max_total_tokens": 32768,
+  "temperature": 0,
+  "retrieval_k": 4,
+  "input_cost_per_1k_tokens": null,
+  "output_cost_per_1k_tokens": null,
+  "embedding_cost_per_1k_tokens": null
+}
