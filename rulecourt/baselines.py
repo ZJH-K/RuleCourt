@@ -14,6 +14,7 @@ import json
 import math
 import os
 import re
+import sys
 import time
 from argparse import ArgumentParser
 from collections.abc import Mapping, Sequence
@@ -345,6 +346,7 @@ class BaselineRunReport(BaseModel):
     citation_error_count: int = Field(ge=0)
     timeout_count: int = Field(ge=0)
     evidence: dict[str, Any] = Field(default_factory=dict)
+    results: list[dict[str, Any]] = Field(default_factory=list)
 
 
 class BaselineReport(BaseModel):
@@ -379,8 +381,9 @@ class BaselineReport(BaseModel):
         return cls.model_validate_json(Path(path).read_text(encoding="utf-8"))
 
     def to_markdown(self) -> str:
+        report_version = "T13" if self.schema_version.startswith("t13-") else "T12"
         lines = [
-            f"# RuleCourt T12 baseline report ({self.dataset_version})",
+            f"# RuleCourt {report_version} baseline report ({self.dataset_version})",
             "",
             f"Ruleset: `{self.ruleset_id}` / `{self.ruleset_version}`",
             f"Paired cases: {len(self.paired_case_ids)}",
@@ -411,6 +414,7 @@ class BaselineReport(BaseModel):
                     "```",
                     "",
                     f"Retrieval metadata: `{json.dumps(run.retrieval, ensure_ascii=False, sort_keys=True)}`",
+                    f"Case replay records: {len(run.results)}",
                 ]
             )
             lines.extend(
@@ -1203,7 +1207,7 @@ def _failure_count(results: Sequence[ReplayResult], reason: str) -> int:
     return count
 
 
-def run_baselines(
+def _t12_run_baselines(
     dataset: CaseDataset,
     runners: Mapping[str, _ProviderBaselineRunner],
     *,
@@ -1291,6 +1295,7 @@ def run_baselines(
             ),
             timeout_count=_failure_count(results, "INVESTIGATION_TIMEOUT"),
             evidence=_evidence_scores(dataset, results),
+            results=[result.model_dump(mode="json") for result in results],
         )
     paired_case_ids = sorted(set.intersection(*result_ids)) if result_ids else []
     config = next(iter(normalized.values())).config
@@ -1307,7 +1312,7 @@ def run_baselines(
     )
 
 
-run_t12_baselines = run_baselines
+run_t12_baselines = _t12_run_baselines
 
 
 def _cli_provider(model: str | None) -> Any:
@@ -1321,7 +1326,7 @@ def _cli_provider(model: str | None) -> Any:
     )
 
 
-def main(argv: list[str] | None = None) -> int:
+def _t12_main(argv: list[str] | None = None) -> int:
     """Run both baselines from a dataset and fixed rule corpus."""
 
     parser = ArgumentParser(prog="rulecourt-baselines")
@@ -1378,7 +1383,7 @@ def main(argv: list[str] | None = None) -> int:
         }
         output = json.dumps(payload, ensure_ascii=False, indent=2) + "\n"
     else:
-        report = run_baselines(
+        report = _t12_run_baselines(
             dataset,
             {
                 "llm_only": LLMOnlyRunner(_cli_provider(config.model), config=config),
@@ -1405,5 +1410,33 @@ def main(argv: list[str] | None = None) -> int:
     return 0
 
 
+_T13_EXPORTS = {
+    "HybridBaselineConfig",
+    "HybridRAGRunner",
+    "HybridRagRunner",
+    "HybridRetrievedRule",
+    "HybridRetriever",
+    "HTTPRerankerProvider",
+    "LexicalIndex",
+    "RerankBatch",
+    "RerankerProvider",
+    "main",
+    "run_baselines",
+    "run_t13_baselines",
+}
+
+
+def __getattr__(name: str) -> Any:
+    if name not in _T13_EXPORTS:
+        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+    if __name__ == "__main__":
+        sys.modules.setdefault("rulecourt.baselines", sys.modules[__name__])
+    from . import hybrid_baselines
+
+    value = getattr(hybrid_baselines, name)
+    globals()[name] = value
+    return value
+
+
 if __name__ == "__main__":
-    raise SystemExit(main())
+    raise SystemExit(__getattr__("main")())

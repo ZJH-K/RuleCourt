@@ -161,7 +161,7 @@ semantic support.
 Start with the reproducible development configuration:
 
 ~~~powershell
-uv run rulecourt-baselines examples/m0-candidate-cases.json --rules examples/root-m0-candidate-package.json --config examples/t12-baseline-config.json --dry-run
+uv run rulecourt-baselines examples/m0-candidate-cases.json --rules examples/root-m0-candidate-package.json --config examples/t12-baseline-config.json --no-hybrid --dry-run
 ~~~
 
 Copy the config to a new experiment file, replace its generation/embedding model
@@ -171,7 +171,7 @@ OPENAI_API_KEY from the environment. Set per-1,000-token prices in the config
 if monetary estimates are wanted. Then run:
 
 ~~~powershell
-uv run rulecourt-baselines examples/m0-candidate-cases.json --rules examples/root-m0-candidate-package.json --config my-t12-config.json --output t12-trial-001.json
+uv run rulecourt-baselines examples/m0-candidate-cases.json --rules examples/root-m0-candidate-package.json --config my-t12-config.json --no-hybrid --output t12-trial-001.json
 ~~~
 
 Use --format markdown for a readable report. Existing output files are refused
@@ -193,3 +193,28 @@ These are development trials: holdout Cases are rejected and no labels enter
 model prompts or retrieval. The bundled rules and Cases are unverified demo
 material, and synthetic tests do not confer human signoff. The two external
 baselines cannot by themselves establish the value of Dynamic Agent planning.
+
+## T13 Hybrid RAG + Reranker baseline
+
+The default runner now adds a third external baseline. Hybrid RAG retrieves
+public rule excerpts with deterministic BM25-style lexical search and the T12
+vector index, merges duplicate IDs with reciprocal-rank fusion, and sends only
+the merged candidates to a configured reranker. Reranker scores order evidence;
+they are never treated as authoritative rule meaning, domain calculations, or
+coverage-table decisions. Empty and failed retrievals are returned as normal
+`UNRESOLVED` observations rather than information requests.
+
+Use the checked-in T13 configuration as a reproducible dry run, then replace
+the generation, embedding, and reranker model placeholders with fixed versions:
+
+~~~powershell
+uv run rulecourt-baselines examples/m0-candidate-cases.json --rules examples/root-m0-candidate-package.json --config examples/t13-hybrid-baseline-config.json --dry-run
+uv run rulecourt-baselines examples/m0-candidate-cases.json --rules examples/root-m0-candidate-package.json --config my-t13-config.json --output t13-trial-001.json
+~~~
+
+The same `EvaluationRunner` and deterministic fact responder drive the first
+and complete investigation for all three strategies. T13 reports preserve
+lexical/vector candidate IDs, fusion and reranker scores, index and model
+versions, every retrieval round, reranker calls/tokens, and cumulative cost.
+Set `reranker_cost_per_1k_tokens` (as well as the T12 prices) when monetary
+estimates are required. Use `--no-hybrid` to run the original T12 pair.
