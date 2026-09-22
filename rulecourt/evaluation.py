@@ -178,16 +178,81 @@ VerdictLabel = Literal[
 ReviewStatus = Literal["draft", "verified", "disputed"]
 
 
+REQUIRED_REVIEW_CHECKS = (
+    "labels",
+    "scope",
+    "fact_availability",
+    "evidence",
+    "acceptable_questions",
+    "independent_source",
+)
+
+
+class CaseRevision(BaseModel):
+    """A retained correction or ambiguity record for a Case source."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    revision: int = Field(ge=1)
+    kind: str = "correction"
+    recorded_at: str | None = None
+    reason: str
+    changes: dict[str, Any] = Field(default_factory=dict)
+
+    @field_validator("kind", "reason")
+    @classmethod
+    def nonempty_revision_text(cls, value: str) -> str:
+        value = value.strip()
+        if not value:
+            raise ValueError("Case revision text must not be empty")
+        return value
+
+
 class CaseReview(BaseModel):
-    """Independent review record for a candidate evaluation Case."""
+    """Independent human review record for a candidate evaluation Case."""
 
     model_config = ConfigDict(extra="forbid")
 
     status: ReviewStatus = "draft"
     reviewer_id: str | None = None
+    rule_version: str | None = None
+    reviewed_at: str | None = None
     basis: str = ""
     evidence: list[str] = Field(default_factory=list)
     report: str = ""
+    checks: dict[str, bool] = Field(default_factory=dict)
+    dispute_reasons: list[str] = Field(default_factory=list)
+
+    @field_validator("checks")
+    @classmethod
+    def normalize_checks(cls, value: dict[str, bool]) -> dict[str, bool]:
+        checks: dict[str, bool] = {}
+        for name, checked in value.items():
+            normalized = str(name).strip()
+            if not normalized:
+                continue
+            if not isinstance(checked, bool):
+                raise TypeError(f"review check {normalized!r} must be boolean")
+            checks[normalized] = checked
+        return checks
+
+    @field_validator("dispute_reasons")
+    @classmethod
+    def normalize_dispute_reasons(cls, value: list[str]) -> list[str]:
+        reasons: list[str] = []
+        for reason in value:
+            normalized = reason.strip()
+            if normalized and normalized not in reasons:
+                reasons.append(normalized)
+        return reasons
+
+    @property
+    def missing_checks(self) -> list[str]:
+        return [name for name in REQUIRED_REVIEW_CHECKS if self.checks.get(name) is not True]
+
+    @property
+    def checklist_complete(self) -> bool:
+        return not self.missing_checks
 
 
 class EvaluationCase(BaseModel):
@@ -214,6 +279,7 @@ class EvaluationCase(BaseModel):
     evidence: list[str] = Field(default_factory=list)
     acceptable_questions: list[str] = Field(default_factory=list)
     review: CaseReview = Field(default_factory=CaseReview)
+    history: list[CaseRevision] = Field(default_factory=list)
     split: Literal["development", "holdout"] | None = None
 
     @field_validator(
@@ -235,6 +301,14 @@ class EvaluationCase(BaseModel):
             if field and field not in result:
                 result.append(field)
         return result
+
+    @field_validator("history")
+    @classmethod
+    def validate_history(cls, value: list[CaseRevision]) -> list[CaseRevision]:
+        revisions = [item.revision for item in value]
+        if len(revisions) != len(set(revisions)) or revisions != sorted(revisions):
+            raise ValueError("Case revision history must be ordered and unique")
+        return value
 
     @model_validator(mode="after")
     def validate_sources(self) -> EvaluationCase:
@@ -269,6 +343,30 @@ class EvaluationCase(BaseModel):
             raise ValueError("disputed cases require review basis and report")
         return self
 
+    def scoring_validation_errors(self) -> list[str]:
+        """Return formal-scoring errors without changing the review status."""
+
+        if self.review.status == "draft":
+            return []
+        errors: list[str] = []
+        if not self.review.reviewer_id or not self.review.reviewer_id.strip():
+            errors.append("reviewer_id")
+        if not self.review.rule_version or not self.review.rule_version.strip():
+            errors.append("rule_version")
+        if not self.review.reviewed_at or not self.review.reviewed_at.strip():
+            errors.append("reviewed_at")
+        if self.review.status == "verified":
+            if self.label_source == "candidate:unverified":
+                errors.append("independent_label_source")
+            if not self.evidence:
+                errors.append("case_evidence")
+            errors.extend(f"checks.{name}" for name in self.review.missing_checks)
+            if self.review.dispute_reasons:
+                errors.append("verified_case_has_dispute_reasons")
+        elif not self.review.dispute_reasons:
+            errors.append("dispute_reasons")
+        return errors
+
     def fact_responder(self, *, max_requests: int | None = None) -> FactResponder:
         return FactResponder(self.clarification_facts, max_requests=max_requests)
 
@@ -283,6 +381,55 @@ class EvaluationCase(BaseModel):
             "initial_input": self.initial_input,
         }
 
+    def strategy_payload(self) -> dict[str, Any]:
+        """Return only the input that an evaluated strategy may observe."""
+
+        return {"id": self.id, "initial_input": self.initial_input}
+
+
+class FamilySplitManifest(BaseModel):
+    """Reproducible family-level partition metadata."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    method: Literal["seeded_family_shuffle"] = "seeded_family_shuffle"
+    seed: int = 0
+    holdout_fraction: float = Field(gt=0, lt=1)
+    development_families: list[str] = Field(default_factory=list)
+    holdout_families: list[str] = Field(default_factory=list)
+
+    @field_validator("development_families", "holdout_families")
+    @classmethod
+    def normalize_families(cls, value: list[str]) -> list[str]:
+        families: list[str] = []
+        for family in value:
+            normalized = family.strip()
+            if normalized and normalized not in families:
+                families.append(normalized)
+        return sorted(families)
+
+    @model_validator(mode="after")
+    def validate_disjoint_families(self) -> FamilySplitManifest:
+        if set(self.development_families) & set(self.holdout_families):
+            raise ValueError("development and holdout families must be disjoint")
+        return self
+
+
+class ScoringManifest(BaseModel):
+    """Versioned, label-free list of Cases approved for formal scoring."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    dataset_version: str
+    case_ids: list[str]
+    family_ids: list[str]
+    ruleset_versions: list[str]
+    reviewer_ids: list[str]
+    split: FamilySplitManifest
+    excluded_counts: dict[str, int]
+    disputed_case_ids: list[str] = Field(default_factory=list)
+    disputed_reviews: dict[str, dict[str, Any]] = Field(default_factory=dict)
+
 
 class CaseDataset(BaseModel):
     """Versioned candidate/Golden Case collection and family splitter."""
@@ -291,6 +438,7 @@ class CaseDataset(BaseModel):
 
     dataset_version: str
     cases: list[EvaluationCase] = Field(default_factory=list)
+    split_manifest: FamilySplitManifest | None = None
 
     @field_validator("dataset_version")
     @classmethod
@@ -301,11 +449,36 @@ class CaseDataset(BaseModel):
         return value
 
     @model_validator(mode="after")
-    def unique_case_ids(self) -> CaseDataset:
+    def validate_structure(self) -> CaseDataset:
         ids = [case.id for case in self.cases]
         if len(ids) != len(set(ids)):
             raise ValueError("case ids must be unique")
+        self._validate_family_split()
         return self
+
+    def _validate_family_split(self) -> None:
+        by_family: dict[str, set[str]] = {}
+        for case in self.cases:
+            if case.split is not None:
+                by_family.setdefault(case.family_id, set()).add(case.split)
+        crossing = sorted(family for family, partitions in by_family.items() if len(partitions) > 1)
+        if crossing:
+            raise ValueError(
+                "a family cannot cross development and holdout: " + ", ".join(crossing)
+            )
+        if self.split_manifest is None:
+            return
+        declared = set(self.split_manifest.development_families) | set(
+            self.split_manifest.holdout_families
+        )
+        actual = {case.family_id for case in self.cases}
+        if declared != actual:
+            raise ValueError("family split manifest must cover every dataset family")
+        holdout = set(self.split_manifest.holdout_families)
+        for case in self.cases:
+            expected = "holdout" if case.family_id in holdout else "development"
+            if case.split != expected:
+                raise ValueError(f"case {case.id} does not match its family split")
 
     @classmethod
     def from_json(cls, path: str | Path) -> CaseDataset:
@@ -334,6 +507,59 @@ class CaseDataset(BaseModel):
             "disputed": sum(case.review.status == "disputed" for case in self.cases),
         }
 
+    def validate_for_scoring(self, *, require_split: bool = False) -> list[EvaluationCase]:
+        """Validate the human gate without promoting any Case review status."""
+
+        if require_split and self.split_manifest is None:
+            raise ValueError("formal scoring requires a family split manifest")
+        self._validate_family_split()
+        errors: dict[str, list[str]] = {}
+        for case in self.cases:
+            case_errors = case.scoring_validation_errors()
+            if case_errors:
+                errors[case.id] = case_errors
+        if errors:
+            details = "; ".join(
+                f"{case_id}: {', '.join(items)}" for case_id, items in errors.items()
+            )
+            raise ValueError("dataset is not ready for scoring: " + details)
+        return list(self.verified_cases)
+
+    def scoring_manifest(self) -> ScoringManifest:
+        """Return a versioned, label-free formal-scoring Case list."""
+
+        cases = self.validate_for_scoring(require_split=True)
+        if self.split_manifest is None:
+            raise ValueError("formal scoring requires a family split manifest")
+        return ScoringManifest(
+            dataset_version=self.dataset_version,
+            case_ids=[case.id for case in cases],
+            family_ids=sorted({case.family_id for case in cases}),
+            ruleset_versions=sorted(
+                {case.review.rule_version or case.ruleset_id for case in cases}
+            ),
+            reviewer_ids=sorted(
+                {case.review.reviewer_id for case in cases if case.review.reviewer_id}
+            ),
+            split=self.split_manifest,
+            excluded_counts=self.excluded_counts,
+            disputed_case_ids=sorted(
+                case.id for case in self.cases if case.review.status == "disputed"
+            ),
+            disputed_reviews={
+                case.id: case.review.model_dump(mode="json")
+                for case in self.cases
+                if case.review.status == "disputed"
+            },
+        )
+
+    def save_scoring_manifest(self, path: str | Path) -> None:
+        manifest = self.scoring_manifest()
+        Path(path).write_text(
+            json.dumps(manifest.model_dump(mode="json"), ensure_ascii=False, indent=2) + "\n",
+            encoding="utf-8",
+        )
+
     def split_by_family(
         self, *, holdout_fraction: float = 0.2, seed: int = 0
     ) -> dict[str, list[EvaluationCase]]:
@@ -354,6 +580,13 @@ class CaseDataset(BaseModel):
         for partition, cases in result.items():
             for case in cases:
                 case.split = partition  # type: ignore[assignment]
+        self.split_manifest = FamilySplitManifest(
+            seed=seed,
+            holdout_fraction=holdout_fraction,
+            development_families=[family for family in families if family not in holdout_families],
+            holdout_families=[family for family in families if family in holdout_families],
+        )
+        self._validate_family_split()
         return result
 
 
@@ -588,7 +821,9 @@ class EvaluationRunner:
     def run_dataset(
         self, dataset: CaseDataset, *, verified_only: bool = False
     ) -> list[ReplayResult]:
-        cases = dataset.verified_cases if verified_only else dataset.cases
+        cases = (
+            dataset.validate_for_scoring(require_split=False) if verified_only else dataset.cases
+        )
         return [self.run_case(case) for case in cases]
 
 
@@ -847,7 +1082,7 @@ def _score_view(
 def score_results(dataset: CaseDataset, results: list[ReplayResult]) -> EvaluationReport:
     """Score only verified Cases, retaining excluded counts for auditability."""
 
-    verified = dataset.verified_cases
+    verified = dataset.validate_for_scoring(require_split=False)
     outcomes = {
         result.case_id: result
         for result in results
@@ -894,22 +1129,48 @@ def main(argv: list[str] | None = None) -> int:
 
     validate = subparsers.add_parser("validate", help="validate a candidate Case dataset")
     validate.add_argument("dataset", type=Path)
+    validate.add_argument("--formal", action="store_true")
 
     report = subparsers.add_parser("report", help="view an exported evaluation report")
     report.add_argument("report", type=Path)
     report.add_argument("--format", choices=("markdown", "json"), default="markdown")
     report.add_argument("--output", type=Path)
 
+    manifest = subparsers.add_parser(
+        "manifest",
+        aliases=("release",),
+        help="export the formal scoring manifest",
+    )
+    manifest.add_argument("dataset", type=Path)
+    manifest.add_argument("--output", type=Path)
+
     args = parser.parse_args(argv)
     if args.command == "validate":
         dataset = CaseDataset.from_json(args.dataset)
+        if args.formal:
+            dataset.validate_for_scoring(require_split=True)
         payload = {
             "dataset_version": dataset.dataset_version,
             "case_count": len(dataset.cases),
             "verified_count": len(dataset.verified_cases),
             "excluded_counts": dataset.excluded_counts,
+            "split_manifest": (
+                dataset.split_manifest.model_dump(mode="json")
+                if dataset.split_manifest is not None
+                else None
+            ),
         }
         output = json.dumps(payload, ensure_ascii=False, indent=2) + "\n"
+    elif args.command in {"manifest", "release"}:
+        dataset = CaseDataset.from_json(args.dataset)
+        output = (
+            json.dumps(
+                dataset.scoring_manifest().model_dump(mode="json"),
+                ensure_ascii=False,
+                indent=2,
+            )
+            + "\n"
+        )
     else:
         evaluation_report = EvaluationReport.from_json(args.report)
         output = (
@@ -917,7 +1178,6 @@ def main(argv: list[str] | None = None) -> int:
             if args.format == "markdown"
             else json.dumps(evaluation_report.to_dict(), ensure_ascii=False, indent=2) + "\n"
         )
-
     output_path = getattr(args, "output", None)
     if output_path:
         output_path.write_text(output, encoding="utf-8")

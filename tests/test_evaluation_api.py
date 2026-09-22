@@ -101,6 +101,8 @@ def _case(case_id: str, family_id: str, review_status: str = "verified") -> dict
         "review": {
             "status": review_status,
             "reviewer_id": "reviewer-1" if review_status == "verified" else None,
+            "rule_version": "root-law-2025-10" if review_status == "verified" else None,
+            "reviewed_at": "2026-09-22T00:00:00Z" if review_status == "verified" else None,
             "basis": "Checked against the fixed Root ruleset."
             if review_status == "verified"
             else "",
@@ -108,6 +110,18 @@ def _case(case_id: str, family_id: str, review_status: str = "verified") -> dict
             "report": "Independent reviewer checked labels and evidence."
             if review_status == "verified"
             else "",
+            "checks": (
+                {
+                    "labels": True,
+                    "scope": True,
+                    "fact_availability": True,
+                    "evidence": True,
+                    "acceptable_questions": True,
+                    "independent_source": True,
+                }
+                if review_status == "verified"
+                else {}
+            ),
         },
     }
 
@@ -393,3 +407,148 @@ def test_initial_score_is_not_poisoned_by_a_later_complete_failure():
 
     assert report.initial.correct_ruling_rate.numerator == 1
     assert report.complete.correct_refusal_rate.numerator == 0
+
+
+def _human_review() -> dict:
+    return {
+        "status": "verified",
+        "reviewer_id": "root-reviewer-1",
+        "rule_version": "root-law-2025-10",
+        "reviewed_at": "2026-09-22T00:00:00Z",
+        "basis": "Compared the case against the fixed Root ruleset independently of the engine.",
+        "evidence": ["review-note:golden-1"],
+        "report": "Labels, facts, evidence, and allowed questions were checked.",
+        "checks": {
+            "labels": True,
+            "scope": True,
+            "fact_availability": True,
+            "evidence": True,
+            "acceptable_questions": True,
+            "independent_source": True,
+        },
+    }
+
+
+def test_formal_scoring_requires_a_complete_human_review_and_family_split():
+    data = _case("formal-1", "family-formal")
+    data["review"] = _human_review()
+    dataset = CaseDataset(
+        dataset_version="golden-v1",
+        cases=[EvaluationCase.model_validate(data)],
+    )
+
+    with pytest.raises(ValueError, match="family split"):
+        dataset.scoring_manifest()
+
+    dataset.split_by_family(holdout_fraction=0.2, seed=11)
+    manifest = dataset.scoring_manifest()
+
+    assert manifest.dataset_version == "golden-v1"
+    assert manifest.case_ids == ["formal-1"]
+    assert manifest.disputed_case_ids == []
+    assert "initial_label" not in manifest.model_dump()
+
+
+def test_verified_case_without_review_checklist_cannot_be_published():
+    data = _case("incomplete-review", "family-incomplete")
+    data["review"] = {
+        "status": "verified",
+        "reviewer_id": "root-reviewer-1",
+        "basis": "A note exists.",
+        "evidence": ["review-note:incomplete"],
+        "report": "The checklist was not completed.",
+    }
+    dataset = CaseDataset(
+        dataset_version="golden-v1",
+        cases=[EvaluationCase.model_validate(data)],
+    )
+    dataset.split_by_family(holdout_fraction=0.2, seed=11)
+
+    with pytest.raises(ValueError, match="checks"):
+        dataset.scoring_manifest()
+
+
+def test_case_correction_history_and_dispute_reasons_round_trip(tmp_path):
+    data = _case("disputed-1", "family-disputed", "disputed")
+    data["review"] = {
+        "status": "disputed",
+        "reviewer_id": "root-reviewer-2",
+        "rule_version": "root-law-2025-10",
+        "basis": "The source text is ambiguous.",
+        "evidence": ["review-note:disputed-1"],
+        "report": "The original wording does not identify whether the list is complete.",
+        "dispute_reasons": ["ambiguous_source_text"],
+    }
+    data["history"] = [
+        {
+            "revision": 1,
+            "kind": "correction",
+            "recorded_at": "2026-09-21T00:00:00Z",
+            "reason": "Corrected the original transcription and retained the old wording.",
+            "changes": {"initial_input": {"old": "old wording", "new": "new wording"}},
+        }
+    ]
+    path = tmp_path / "dataset.json"
+    path.write_text(
+        json.dumps({"dataset_version": "golden-v1", "cases": [data]}, ensure_ascii=False),
+        encoding="utf-8",
+    )
+
+    dataset = CaseDataset.from_json(path)
+    case = dataset.cases[0]
+
+    assert case.history[0].reason.startswith("Corrected")
+    assert case.review.dispute_reasons == ["ambiguous_source_text"]
+    assert dataset.excluded_counts == {"draft": 0, "disputed": 1}
+
+
+def test_scoring_manifest_cli_is_versioned_and_contains_no_gold_labels(tmp_path, capsys):
+    first = _case("manifest-1", "family-a")
+    second = _case("manifest-2", "family-b")
+    first["review"] = _human_review()
+    second["review"] = _human_review()
+    dataset = CaseDataset(
+        dataset_version="golden-v2",
+        cases=[
+            EvaluationCase.model_validate(first),
+            EvaluationCase.model_validate(second),
+        ],
+    )
+    dataset.split_by_family(holdout_fraction=0.5, seed=3)
+    dataset_path = tmp_path / "golden.json"
+    dataset.save_json(dataset_path)
+
+    from rulecourt.evaluation import main
+
+    assert main(["validate", str(dataset_path), "--formal"]) == 0
+    capsys.readouterr()
+    assert main(["manifest", str(dataset_path)]) == 0
+
+    payload = json.loads(capsys.readouterr().out)
+    assert payload["dataset_version"] == "golden-v2"
+    assert payload["case_ids"] == ["manifest-1", "manifest-2"]
+    assert payload["split"]["holdout_families"]
+    assert "initial_label" not in payload
+    assert "complete_label" not in payload
+
+
+def test_family_split_rejects_a_family_crossing_partitions():
+    first = EvaluationCase.model_validate(_case("crossing-1", "same-family"))
+    second = EvaluationCase.model_validate(_case("crossing-2", "same-family"))
+    first.split = "development"
+    second.split = "holdout"
+
+    with pytest.raises(ValueError, match="family cannot cross"):
+        CaseDataset(dataset_version="golden-v1", cases=[first, second])
+
+
+def test_strategy_payload_does_not_expose_evaluation_labels_or_review_records():
+    case = EvaluationCase.model_validate(_case("strategy-1", "family-strategy"))
+
+    payload = case.strategy_payload()
+
+    assert payload == {"id": "strategy-1", "initial_input": case.initial_input}
+    assert "initial_label" not in payload
+    assert "complete_label" not in payload
+    assert "review" not in payload
+    assert "clarification_facts" not in payload

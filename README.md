@@ -99,3 +99,30 @@ uv run rulecourt-eval report evaluation-report.json --format markdown
 
 The checked-in candidate fixture is intentionally `draft`; it is a trial
 dataset, not an independently verified Golden Case set.
+
+## T15 human Golden Case signoff
+
+Formal scoring is gated by an independent human review. A verified Case must
+record the reviewer, fixed rule version, review time, evidence, and all required
+checks for labels, scope, fact availability, evidence, allowed questions, and
+an independent label source. Corrections and ambiguity decisions stay in the
+Case history; disputed Cases record their reasons and remain excluded.
+
+Create a deterministic family-level split before publishing the scoring list:
+
+~~~python
+dataset.split_by_family(holdout_fraction=0.2, seed=7)
+dataset.save_json("golden-cases-v1.json")
+~~~
+
+The manifest command fails closed unless every verified Case passes the review
+gate and the dataset contains a split manifest. It exports only Case/family
+IDs and review metadata, never gold labels or hidden facts:
+
+~~~powershell
+uv run rulecourt-eval validate golden-cases-v1.json --formal
+uv run rulecourt-eval manifest golden-cases-v1.json
+~~~
+
+The checked-in candidate fixture remains draft; it cannot be promoted by the
+replay runner or scored as formal truth.
