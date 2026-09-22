@@ -218,3 +218,39 @@ lexical/vector candidate IDs, fusion and reranker scores, index and model
 versions, every retrieval round, reranker calls/tokens, and cumulative cost.
 Set `reranker_cost_per_1k_tokens` (as well as the T12 prices) when monetary
 estimates are required. Use `--no-hybrid` to run the original T12 pair.
+
+## T14 Dynamic Agent versus Fixed Workflow treatment comparison
+
+T14 runs the Dynamic Agent and Fixed Workflow arms through the same replay
+contract, fact responder, ruleset, domain controller, visible projection, and
+budget configuration. The fixed route and template are versioned hand-authored
+configuration; coverage obligations and diagnostic route details are never
+used to generate it. Dynamic planning tokens and calls remain in its cumulative
+resource usage.
+
+Start with the checked-in development-trial plan:
+
+~~~powershell
+uv run rulecourt-compare examples/m0-candidate-cases.json --config examples/t14-treatment-config.json --dry-run
+~~~
+
+A live comparison uses two injected CaseAdapter instances:
+
+~~~python
+from rulecourt.comparison import TreatmentComparisonRunner
+from rulecourt.evaluation import FastAPICaseAdapter
+
+runner = TreatmentComparisonRunner({
+    "dynamic_agent": FastAPICaseAdapter(dynamic_client, strategy="dynamic_agent"),
+    "fixed_workflow": FastAPICaseAdapter(fixed_client, strategy="fixed_workflow"),
+})
+report = runner.run_dataset(dataset)
+report.save_json("t14-trial-001.json")
+~~~
+
+The report pairs initial and complete results, records per-case resource
+deltas, reports correct ruling rate, wrong-allow rate and coverage for each
+arm, and retains the public context/tool/log projection used for the leakage
+audit. Invalid audit pairs are retained but excluded from the main comparison.
+Development runs reject holdout Cases; switch to a frozen configuration and
+the formal signoff gate before claiming a formal experiment.

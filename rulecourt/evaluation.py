@@ -995,27 +995,52 @@ class CaseAdapter(Protocol):
 
 
 class FastAPICaseAdapter:
-    """Adapt a synchronous FastAPI TestClient-like client to ``CaseAdapter``."""
+    """Adapt a synchronous FastAPI TestClient-like client to CaseAdapter."""
 
-    def __init__(self, client: Any):
+    def __init__(
+        self,
+        client: Any,
+        *,
+        strategy: Literal["auto", "fixed_workflow", "dynamic_agent"] = "auto",
+        metadata: Mapping[str, Any] | None = None,
+    ):
         self.client = client
+        self.strategy = strategy
+        self.metadata = dict(metadata or {})
+        self.last_case_id: str | None = None
 
     def create_case(self) -> str:
-        response = self.client.post("/api/cases", json={})
+        response = self.client.post("/api/cases", json={"strategy": self.strategy})
         self._ensure_success(response)
-        return str(response.json()["id"])
+        self.last_case_id = str(response.json()["id"])
+        return self.last_case_id
 
     def submit_message(self, case_id: str, text: str) -> Mapping[str, Any]:
         response = self.client.post(f"/api/cases/{case_id}/messages", json={"text": text})
         self._ensure_success(response)
         return response.json()
 
+    def get_case(self, case_id: str) -> Mapping[str, Any]:
+        response = self.client.get(f"/api/cases/{case_id}")
+        self._ensure_success(response)
+        return response.json()
+
+    def get_events(self, case_id: str) -> list[Mapping[str, Any]]:
+        response = self.client.get(f"/api/cases/{case_id}/events")
+        self._ensure_success(response)
+        payload = response.json()
+        if not isinstance(payload, list):
+            raise TypeError("case events response must be a list")
+        return [item for item in payload if isinstance(item, Mapping)]
+
+    def comparison_metadata(self) -> dict[str, Any]:
+        return {"strategy": self.strategy, **self.metadata}
+
     @staticmethod
     def _ensure_success(response: Any) -> None:
         if not 200 <= int(response.status_code) < 300:
             detail = getattr(response, "text", "")
             raise RuntimeError(f"case adapter request failed ({response.status_code}): {detail}")
-
 
 class EvaluationRunner:
     """Replay labelled Cases through an injected system adapter.

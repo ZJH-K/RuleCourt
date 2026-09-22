@@ -1,0 +1,30 @@
+{
+  "schema_version": "t14-treatment-config-v1",
+  "ruleset_id": "root-law-2025-10",
+  "ruleset_version": "2025-10",
+  "state_extractor_version": "m0-state-extractor-v1",
+  "domain_adapter_version": "root-adapter-v1",
+  "controller_version": "controller-v1",
+  "visible_projection_version": "public-projection-v1",
+  "dynamic_strategy_version": "dynamic-agent-v1",
+  "fixed_workflow_version": "fixed-workflow-v1",
+  "fixed_template_version": "m0-fixed-template-v1",
+  "fixed_route_source": "hand_authored",
+  "fixed_workflow_llm_routing": false,
+  "planning_cost_included": true,
+  "run_kind": "development_trial",
+  "budget": {
+    "max_duration_seconds": 30.0,
+    "max_iterations": 3,
+    "max_tool_calls": 8,
+    "max_total_tokens": 8192,
+    "configuration_status": "development_trial",
+    "source": "t14-example"
+  },
+  "max_clarification_rounds": 8,
+  "max_fact_requests": 8,
+  "model": null,
+  "provider": null,
+  "input_cost_per_1k_tokens": null,
+  "output_cost_per_1k_tokens": null
+}
