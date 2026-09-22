@@ -719,7 +719,20 @@ class RuleCourtController:
         if requested_strategy == "dynamic_agent":
             strategy = "dynamic_agent"
         elif requested_strategy == "fixed_workflow":
-            strategy = "fixed_workflow" if self.workflow is not None else "dynamic_agent"
+            if self.workflow is None:
+                return {
+                    "case_id": case_id,
+                    "status": "UNRESOLVED",
+                    "reason": "FIXED_WORKFLOW_UNAVAILABLE",
+                    "failure_reason": "FIXED_WORKFLOW_UNAVAILABLE",
+                    "stop_reason": "fixed_workflow_unavailable",
+                    "details": {
+                        "public_reason": (
+                            "The requested fixed workflow is not configured for this runtime."
+                        )
+                    },
+                }
+            strategy = "fixed_workflow"
         else:
             strategy = (
                 "fixed_workflow"

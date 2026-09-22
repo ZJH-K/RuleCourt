@@ -7,6 +7,7 @@ from rulecourt.comparison import (
     DeterminismReport,
     TreatmentComparisonRunner,
     TreatmentConfig,
+    VisibilityAuditor,
     check_determinism,
 )
 from rulecourt.evaluation import CaseDataset, EvaluationCase, ReplayResult
@@ -80,6 +81,16 @@ class _Adapter:
         self.metadata = metadata or {}
         self.messages: list[str] = []
         self.case_id = f"runtime-{strategy}"
+        self.configured_budget = None
+
+    def configure_budget(self, budget):
+        self.configured_budget = budget.to_dict()
+        self.metadata.update(
+            {
+                "budget": self.configured_budget,
+                "budget_enforced": True,
+            }
+        )
 
     def create_case(self):
         return self.case_id
@@ -93,16 +104,34 @@ class _Adapter:
         return {"id": case_id, "strategy": self.strategy, "messages": self.messages}
 
     def get_events(self, case_id):
-        return self.events
+        return [
+            {"type": "investigation_started", "strategy": self.strategy},
+            *self.events,
+        ]
 
     def comparison_metadata(self):
         return {"strategy": self.strategy, **self.metadata}
 
 
 def _runner(dynamic, fixed, **config):
+    treatment = TreatmentConfig(**config)
+    for adapter in (dynamic, fixed):
+        adapter.metadata.update(
+            {
+                **treatment.shared_contract,
+                "fixed_route_source": treatment.fixed_route_source,
+                "fixed_template_version": treatment.fixed_template_version,
+                "fixed_workflow_llm_routing": False,
+                "strategy_version": (
+                    treatment.dynamic_strategy_version
+                    if adapter.strategy == "dynamic_agent"
+                    else treatment.fixed_workflow_version
+                ),
+            }
+        )
     return TreatmentComparisonRunner(
         {"dynamic_agent": dynamic, "fixed_workflow": fixed},
-        config=TreatmentConfig(**config),
+        config=treatment,
     )
 
 
@@ -141,6 +170,8 @@ def test_treatment_runner_pairs_same_input_and_reports_first_complete_resource_d
     assert report.runs["fixed_workflow"].usage["total_tokens"] == 0
     assert report.resource_deltas[0].case_id == case.id
     assert report.resource_deltas[0].delta["total_tokens"] == 30
+    assert dynamic.configured_budget == fixed.configured_budget == TreatmentConfig().budget
+    assert report.runs["dynamic_agent"].usage["planning_usage_available"] is False
     assert dynamic.messages[0] == fixed.messages[0] == case.initial_input
     assert dynamic.messages[1] == fixed.messages[1] == "A 只与 B 相邻。"
 
@@ -198,6 +229,21 @@ def test_tool_order_is_audit_data_not_a_quality_success_metric():
     assert report.pairs[0].audit.fixed.tool_call_count == 2
 
 
+def test_missing_audit_projection_is_invalid():
+    audit = VisibilityAuditor.audit(
+        "dynamic_agent",
+        initial_input="input",
+        initial_result={"status": "LEGAL"},
+        complete_result={"status": "LEGAL"},
+    )
+
+    assert audit.valid is False
+    assert audit.observation_available is False
+    assert {finding.code for finding in audit.findings} == {
+        "missing_audit_projection"
+    }
+
+
 def test_treatment_config_rejects_route_generated_from_private_coverage_table():
     with pytest.raises(ValueError, match="coverage table"):
         TreatmentConfig(fixed_route_source="coverage_table")
@@ -241,6 +287,41 @@ def test_determinism_check_ignores_explanation_and_tool_order_but_reports_verdic
     assert same.passed is True
     assert mismatch.passed is False
     assert mismatch.mismatches[0].case_id == "case-1"
+
+
+def test_runner_records_determinism_for_two_provider_model_sets():
+    case = _case()
+    dataset = CaseDataset(dataset_version="trial-v1", cases=[case])
+    base = _runner(
+        _Adapter("dynamic_agent", [_response("LEGAL")]),
+        _Adapter("fixed_workflow", [_response("LEGAL")]),
+    )
+    provider_a = _runner(
+        _Adapter("dynamic_agent", [_response("LEGAL")]),
+        _Adapter("fixed_workflow", [_response("LEGAL")]),
+    ).adapters
+    provider_b = _runner(
+        _Adapter("dynamic_agent", [_response("LEGAL")]),
+        _Adapter("fixed_workflow", [_response("LEGAL")]),
+    ).adapters
+
+    report = base.run_dataset(
+        dataset,
+        determinism_adapters={
+            "provider-a/model-a": provider_a,
+            "provider-b/model-b": provider_b,
+        },
+    )
+
+    assert [item.strategy for item in report.determinism] == [
+        "dynamic_agent",
+        "fixed_workflow",
+    ]
+    assert all(item.passed for item in report.determinism)
+    assert all(
+        item.providers == ["provider-a/model-a", "provider-b/model-b"]
+        for item in report.determinism
+    )
 
 
 def test_treatment_report_round_trips_and_cli_dry_run_is_provider_free(tmp_path, capsys):

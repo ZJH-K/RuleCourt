@@ -234,23 +234,58 @@ Start with the checked-in development-trial plan:
 uv run rulecourt-compare examples/m0-candidate-cases.json --config examples/t14-treatment-config.json --dry-run
 ~~~
 
-A live comparison uses two injected CaseAdapter instances:
+A live comparison uses two injected CaseAdapter instances. Each adapter must
+declare the complete shared contract, expose configure_budget, and provide
+get_case/get_events projections; missing audit observations invalidate the
+pair. FastAPICaseAdapter supports this contract for local FastAPI TestClient
+instances:
 
 ~~~python
-from rulecourt.comparison import TreatmentComparisonRunner
+import json
+
+from rulecourt.comparison import TreatmentComparisonRunner, TreatmentConfig
 from rulecourt.evaluation import FastAPICaseAdapter
 
+config = TreatmentConfig.model_validate(json.load(open("my-t14-config.json")))
+shared = config.shared_contract
 runner = TreatmentComparisonRunner({
-    "dynamic_agent": FastAPICaseAdapter(dynamic_client, strategy="dynamic_agent"),
-    "fixed_workflow": FastAPICaseAdapter(fixed_client, strategy="fixed_workflow"),
-})
-report = runner.run_dataset(dataset)
+    "dynamic_agent": FastAPICaseAdapter(
+        dynamic_client,
+        strategy="dynamic_agent",
+        metadata={
+            **shared,
+            "strategy_version": config.dynamic_strategy_version,
+        },
+    ),
+    "fixed_workflow": FastAPICaseAdapter(
+        fixed_client,
+        strategy="fixed_workflow",
+        metadata={
+            **shared,
+            "strategy_version": config.fixed_workflow_version,
+            "fixed_route_source": config.fixed_route_source,
+            "fixed_template_version": config.fixed_template_version,
+            "fixed_workflow_llm_routing": False,
+        },
+    ),
+}, config=config)
+report = runner.run_dataset(
+    dataset,
+    determinism_adapters={
+        "provider-a/model-a": {...},
+        "provider-b/model-b": {...},
+    },
+)
 report.save_json("t14-trial-001.json")
 ~~~
 
-The report pairs initial and complete results, records per-case resource
-deltas, reports correct ruling rate, wrong-allow rate and coverage for each
-arm, and retains the public context/tool/log projection used for the leakage
-audit. Invalid audit pairs are retained but excluded from the main comparison.
-Development runs reject holdout Cases; switch to a frozen configuration and
-the formal signoff gate before claiming a formal experiment.
+The runner applies the same InvestigationBudget to both arms. The report
+pairs initial and complete results, records per-case resource deltas, reports
+correct ruling rate, wrong-allow rate and coverage for each arm, and retains
+the public context/tool/log projection used for the leakage audit. Explicit
+planning usage is reported only when the provider supplies planning-specific
+counters; cumulative Dynamic Agent usage and cost always remain included.
+Invalid audit pairs are retained but excluded from the main comparison.
+Development runs reject holdout Cases. Formal replay additionally requires a
+frozen budget, split/coverage validation, detached human signoff, and at least
+two model/provider adapter sets.

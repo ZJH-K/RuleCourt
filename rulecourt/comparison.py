@@ -21,6 +21,7 @@ from .evaluation import (
     EvaluationCase,
     EvaluationReport,
     EvaluationRunner,
+    HumanSignoff,
     Metric,
     ReplayResult,
     ScoreView,
@@ -42,6 +43,7 @@ _RESOURCE_FIELDS = (
     "latency_ms",
     "cost_usd",
 )
+_ADAPTER_FAILURES = {"ADAPTER_ERROR", "FIXED_WORKFLOW_UNAVAILABLE"}
 _BUDGET_FAILURES = {
     "BUDGET_EXHAUSTED",
     "FACT_REQUEST_BUDGET_EXHAUSTED",
@@ -132,7 +134,10 @@ class TreatmentConfig(BaseModel):
             raise ValueError("fixed workflow must not use LLM routing")
         if not self.planning_cost_included:
             raise ValueError("dynamic planning cost must be included")
-        object.__setattr__(self, "budget", InvestigationBudget.from_mapping(self.budget).to_dict())
+        budget = InvestigationBudget.from_mapping(self.budget)
+        if self.run_kind == "formal" and budget.configuration_status != "frozen":
+            raise ValueError("formal T14 comparison requires a frozen budget")
+        object.__setattr__(self, "budget", budget.to_dict())
         return self
 
     @property
@@ -168,6 +173,8 @@ class StrategyAudit(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     strategy: StrategyName
+    observed_strategy: str | None = None
+    observation_available: bool = False
     valid: bool = True
     context_hash: str = ""
     context: list[Any] = Field(default_factory=list)
@@ -236,6 +243,7 @@ class StrategyRunReport(BaseModel):
     usage: dict[str, Any] = Field(default_factory=dict)
     audit: dict[str, Any] = Field(default_factory=dict)
     results: list[dict[str, Any]] = Field(default_factory=list)
+    observations: dict[str, dict[str, Any]] = Field(default_factory=dict)
 
 
 class DeterminismMismatch(BaseModel):
@@ -254,6 +262,8 @@ class DeterminismReport(BaseModel):
     passed: bool
     providers: list[str] = Field(default_factory=list)
     compared_case_ids: list[str] = Field(default_factory=list)
+    strategy: StrategyName | None = None
+    reason: str | None = None
     mismatches: list[DeterminismMismatch] = Field(default_factory=list)
     ignored_fields: list[str] = Field(
         default_factory=lambda: [
@@ -363,11 +373,41 @@ class VisibilityAuditor:
         context: Sequence[Any] | None = None,
         tool_results: Sequence[Mapping[str, Any]] | None = None,
         log_projection: Sequence[Mapping[str, Any]] | None = None,
+        observed_strategy: str | None = None,
     ) -> StrategyAudit:
-        context_items = list(context or [])
-        tools = [dict(item) for item in (tool_results or [])]
-        logs = [dict(item) for item in (log_projection or [])]
+        context_items = list(context) if context is not None else []
+        tools = [
+            dict(item)
+            for item in (tool_results or [])
+            if isinstance(item, Mapping)
+        ]
+        logs = [
+            dict(item)
+            for item in (log_projection or [])
+            if isinstance(item, Mapping)
+        ]
         findings: list[AuditFinding] = []
+        for name, value in (
+            ("context", context),
+            ("tool_results", tool_results),
+            ("log_projection", log_projection),
+        ):
+            if value is None:
+                findings.append(
+                    AuditFinding(
+                        code="missing_audit_projection",
+                        location=name,
+                        detail="the replay did not provide the public audit projection",
+                    )
+                )
+        if observed_strategy is not None and observed_strategy != strategy:
+            findings.append(
+                AuditFinding(
+                    code="strategy_mismatch",
+                    location="log_projection",
+                    detail=f"observed strategy {observed_strategy!r} does not match {strategy!r}",
+                )
+            )
         for location, value in (
             ("context", context_items),
             ("initial_result", dict(initial_result)),
@@ -387,6 +427,12 @@ class VisibilityAuditor:
         findings = _unique_findings(findings)
         return StrategyAudit(
             strategy=strategy,
+            observed_strategy=observed_strategy,
+            observation_available=(
+                context is not None
+                and tool_results is not None
+                and log_projection is not None
+            ),
             valid=not findings,
             context_hash=_hash(context_items),
             context=context_items,
@@ -450,10 +496,14 @@ class TreatmentComparisonRunner:
         *,
         config: TreatmentConfig | Mapping[str, Any] | None = None,
         auditor: type[VisibilityAuditor] = VisibilityAuditor,
+        allow_model_provider_override: bool = False,
     ):
         self.config = config if isinstance(config, TreatmentConfig) else TreatmentConfig.model_validate(dict(config or {}))
         self.adapters = self._normalize_adapters(adapters)
         self.auditor = auditor
+        self.allow_model_provider_override = allow_model_provider_override
+        self.budget = InvestigationBudget.from_mapping(self.config.budget)
+        self._configure_adapters()
         self._validate_adapters()
 
     @staticmethod
@@ -473,18 +523,70 @@ class TreatmentComparisonRunner:
         value = method() if callable(method) else getattr(adapter, "metadata", {})
         return dict(value) if isinstance(value, Mapping) else {}
 
+    def _configure_adapters(self) -> None:
+        for strategy, adapter in self.adapters.items():
+            configure = getattr(adapter, "configure_budget", None)
+            if not callable(configure):
+                raise TypeError(
+                    f"{strategy} adapter must expose configure_budget for a shared T14 budget"
+                )
+            try:
+                configure(self.budget)
+            except Exception as exc:
+                raise ValueError(f"{strategy} adapter rejected the shared T14 budget") from exc
+
     def _validate_adapters(self) -> None:
-        metadata = {name: self._metadata(adapter) for name, adapter in self.adapters.items()}
-        for strategy in ("dynamic_agent", "fixed_workflow"):
-            declared = metadata[strategy].get("strategy") or getattr(self.adapters[strategy], "strategy", None)
-            if declared is not None and str(declared) != strategy:
+        expected_contract = self.config.shared_contract
+        for strategy, adapter in self.adapters.items():
+            metadata = self._metadata(adapter)
+            required = set(expected_contract) | {"strategy", "budget_enforced"}
+            if strategy == "fixed_workflow":
+                required |= {
+                    "fixed_route_source",
+                    "fixed_template_version",
+                    "fixed_workflow_llm_routing",
+                }
+            missing = sorted(name for name in required if name not in metadata)
+            if missing:
+                raise ValueError(
+                    f"{strategy} adapter metadata is missing the shared T14 contract: "
+                    + ", ".join(missing)
+                )
+            if metadata["strategy"] != strategy:
                 raise ValueError(f"adapter strategy metadata does not match {strategy}")
-        for name in self.config.shared_contract:
-            known = [metadata[strategy].get(name) for strategy in self.adapters if metadata[strategy].get(name) is not None]
-            if len(known) > 1 and any(item != known[0] for item in known[1:]):
-                raise ValueError(f"treatment adapters must share {name}")
-            if name in {"ruleset_id", "ruleset_version"} and known and known[0] != getattr(self.config, name):
-                raise ValueError("adapter and treatment ruleset versions differ")
+            if metadata["budget_enforced"] is not True:
+                raise ValueError(f"{strategy} adapter must enforce the shared T14 budget")
+            for name, expected in expected_contract.items():
+                if (
+                    self.allow_model_provider_override
+                    and name in {"model", "provider"}
+                ):
+                    continue
+                if _json(metadata[name]) != _json(expected):
+                    raise ValueError(f"{strategy} adapter does not share {name}")
+            if self.allow_model_provider_override:
+                for name in ("model", "provider"):
+                    if (
+                        _json(metadata[name])
+                        != _json(self._metadata(self.adapters["dynamic_agent"])[name])
+                    ):
+                        raise ValueError(
+                            f"determinism adapters must share {name} within a provider"
+                        )
+            expected_version = (
+                self.config.dynamic_strategy_version
+                if strategy == "dynamic_agent"
+                else self.config.fixed_workflow_version
+            )
+            if metadata.get("strategy_version") != expected_version:
+                raise ValueError(f"{strategy} adapter strategy version differs")
+            if strategy == "fixed_workflow":
+                if metadata["fixed_route_source"] != self.config.fixed_route_source:
+                    raise ValueError("fixed workflow route source differs")
+                if metadata["fixed_template_version"] != self.config.fixed_template_version:
+                    raise ValueError("fixed workflow template version differs")
+                if metadata["fixed_workflow_llm_routing"] is not False:
+                    raise ValueError("fixed workflow adapter must not use LLM routing")
 
     def run_case(self, case: EvaluationCase) -> PairedReplayResult:
         if case.ruleset_id != self.config.ruleset_id:
@@ -511,6 +613,7 @@ class TreatmentComparisonRunner:
                 context=snapshot["context"],
                 tool_results=snapshot["tools"],
                 log_projection=snapshot["logs"],
+                observed_strategy=snapshot["strategy"],
             )
         pair_audit = _pair_audit(case.initial_input, audits["dynamic_agent"], audits["fixed_workflow"])
         difference, reason = _classify_difference(results["dynamic_agent"], results["fixed_workflow"])
@@ -534,35 +637,134 @@ class TreatmentComparisonRunner:
         formal: bool = False,
         signoff: Any | None = None,
         signing_key: str | None = None,
+        determinism_adapters: Mapping[str, Mapping[str, CaseAdapter]] | None = None,
     ) -> TreatmentComparisonReport:
-        if self.config.run_kind == "development_trial" and any(case.split == "holdout" for case in dataset.cases):
+        formal_run = formal or self.config.run_kind == "formal"
+        if self.config.run_kind == "development_trial" and any(
+            case.split == "holdout" for case in dataset.cases
+        ):
             raise ValueError("T14 development trials do not permit holdout cases")
-        if formal or self.config.run_kind == "formal":
+        if formal_run:
             cases = dataset.validate_for_scoring(
                 require_split=True,
                 require_coverage=True,
                 signoff=signoff,
                 signing_key=signing_key,
             )
+            if determinism_adapters is None or len(determinism_adapters) < 2:
+                raise ValueError(
+                    "formal T14 comparison requires at least two model/provider adapter sets"
+                )
         else:
             dataset.validate_for_scoring(require_split=False)
             cases = dataset.verified_cases if verified_only else dataset.cases
-        return self._report(dataset, cases, [self.run_case(case) for case in cases])
+        pairs = [self.run_case(case) for case in cases]
+        determinism = self._run_determinism(cases, determinism_adapters)
+        return self._report(
+            dataset,
+            cases,
+            pairs,
+            formal=formal_run,
+            signoff=signoff,
+            signing_key=signing_key,
+            determinism=determinism,
+        )
+
+    def _run_determinism(
+        self,
+        cases: Sequence[EvaluationCase],
+        provider_adapters: Mapping[str, Mapping[str, CaseAdapter]] | None,
+    ) -> list[DeterminismReport]:
+        if not provider_adapters:
+            return [
+                DeterminismReport(
+                    strategy=strategy,
+                    passed=False,
+                    reason="not_run",
+                )
+                for strategy in ("dynamic_agent", "fixed_workflow")
+            ]
+        if len(provider_adapters) < 2:
+            return [
+                DeterminismReport(
+                    strategy=strategy,
+                    passed=False,
+                    providers=[str(name) for name in provider_adapters],
+                    reason="at_least_two_provider_models_required",
+                )
+                for strategy in ("dynamic_agent", "fixed_workflow")
+            ]
+        results: dict[StrategyName, dict[str, list[ReplayResult]]] = {
+            "dynamic_agent": {},
+            "fixed_workflow": {},
+        }
+        for provider_name, adapters in provider_adapters.items():
+            provider_runner = TreatmentComparisonRunner(
+                adapters,
+                config=self.config,
+                auditor=self.auditor,
+                allow_model_provider_override=True,
+            )
+            pair_results = [provider_runner.run_case(case) for case in cases]
+            results["dynamic_agent"][str(provider_name)] = [
+                pair.dynamic for pair in pair_results
+            ]
+            results["fixed_workflow"][str(provider_name)] = [
+                pair.fixed for pair in pair_results
+            ]
+        return [
+            check_determinism(results[strategy], strategy=strategy)
+            for strategy in ("dynamic_agent", "fixed_workflow")
+        ]
 
     def _report(
         self,
         dataset: CaseDataset,
         cases: Sequence[EvaluationCase],
         pairs: Sequence[PairedReplayResult],
+        *,
+        formal: bool = False,
+        signoff: HumanSignoff | None = None,
+        signing_key: str | None = None,
+        determinism: Sequence[DeterminismReport] | None = None,
     ) -> TreatmentComparisonReport:
         valid = [pair for pair in pairs if pair.valid_for_comparison]
+        if formal and len(valid) != len(pairs):
+            raise ValueError("formal T14 comparison cannot score invalid audit pairs")
+        if formal and (
+            not determinism
+            or any(len(item.providers) < 2 for item in determinism)
+        ):
+            raise ValueError(
+                "formal T14 comparison requires two-provider determinism evidence"
+            )
         valid_ids = {pair.case_id for pair in valid}
-        score_dataset = CaseDataset(
-            dataset_version=dataset.dataset_version,
-            cases=[case.model_copy(deep=True) for case in cases if case.id in valid_ids],
+        score_dataset = (
+            dataset
+            if formal
+            else CaseDataset(
+                dataset_version=dataset.dataset_version,
+                cases=[
+                    case.model_copy(deep=True)
+                    for case in cases
+                    if case.id in valid_ids
+                ],
+            )
         )
-        dynamic_eval = score_results(score_dataset, [pair.dynamic for pair in valid])
-        fixed_eval = score_results(score_dataset, [pair.fixed for pair in valid])
+        dynamic_eval = score_results(
+            score_dataset,
+            [pair.dynamic for pair in valid],
+            formal=formal,
+            signoff=signoff,
+            signing_key=signing_key,
+        )
+        fixed_eval = score_results(
+            score_dataset,
+            [pair.fixed for pair in valid],
+            formal=formal,
+            signoff=signoff,
+            signing_key=signing_key,
+        )
         configs = {
             "dynamic_agent": {
                 **self.config.model_dump(mode="json"),
@@ -584,8 +786,27 @@ class TreatmentComparisonRunner:
                 config=configs[name],
                 evaluation=evaluation,
                 usage=_usage([cast(ReplayResult, getattr(pair, name.split("_")[0] if name == "dynamic_agent" else "fixed")) for pair in pairs], self.config, cast(StrategyName, name)),
-                audit=_audit([pair.audit.dynamic if name == "dynamic_agent" else pair.audit.fixed for pair in pairs]),
-                results=[(pair.dynamic if name == "dynamic_agent" else pair.fixed).model_dump(mode="json") for pair in pairs],
+                audit=_audit(
+                    [
+                        pair.audit.dynamic if name == "dynamic_agent" else pair.audit.fixed
+                        for pair in pairs
+                    ]
+                ),
+                results=[
+                    (pair.dynamic if name == "dynamic_agent" else pair.fixed).model_dump(
+                        mode="json"
+                    )
+                    for pair in pairs
+                ],
+                observations={
+                    pair.case_id: (
+                        pair.audit.dynamic if name == "dynamic_agent" else pair.audit.fixed
+                    ).model_dump(
+                        mode="json",
+                        include={"context", "tool_results", "log_projection", "observed_strategy"},
+                    )
+                    for pair in pairs
+                },
             )
             for name, evaluation in (("dynamic_agent", dynamic_eval), ("fixed_workflow", fixed_eval))
         }
@@ -613,34 +834,60 @@ class TreatmentComparisonRunner:
             complete=_paired_view(dynamic_eval.complete, fixed_eval.complete),
             resource_deltas=[_delta(pair) for pair in pairs],
             difference_counts=counts,
+            determinism=list(determinism or []),
         )
 
 
-def _snapshot(adapter: CaseAdapter, result: ReplayResult) -> dict[str, list[Any]]:
-    runtime_id = getattr(adapter, "last_case_id", None) or getattr(adapter, "case_id", None) or result.case_id
-    case_view: Mapping[str, Any] = {}
-    events: list[Mapping[str, Any]] = []
-    getter = getattr(adapter, "get_case", None)
-    if callable(getter):
+def _snapshot(adapter: CaseAdapter, result: ReplayResult) -> dict[str, Any]:
+    runtime_id = (
+        getattr(adapter, "last_case_id", None)
+        or getattr(adapter, "case_id", None)
+        or result.case_id
+    )
+    case_view: Mapping[str, Any] | None = None
+    events: list[Mapping[str, Any]] | None = None
+    case_getter = getattr(adapter, "get_case", None)
+    if callable(case_getter):
         try:
-            value = getter(str(runtime_id))
+            value = case_getter(str(runtime_id))
             if isinstance(value, Mapping):
                 case_view = value
-        except Exception:  # noqa: BLE001 - optional audit observation
-            case_view = {}
-    getter = getattr(adapter, "get_events", None)
-    if callable(getter):
+        except Exception:  # noqa: BLE001 - retain missing audit evidence
+            case_view = None
+    event_getter = getattr(adapter, "get_events", None)
+    if callable(event_getter):
         try:
-            value = getter(str(runtime_id))
-            if isinstance(value, Sequence):
+            value = event_getter(str(runtime_id))
+            if isinstance(value, Sequence) and not isinstance(
+                value, (str, bytes, bytearray)
+            ):
                 events = [item for item in value if isinstance(item, Mapping)]
-        except Exception:  # noqa: BLE001 - optional audit observation
-            events = []
-    context = case_view.get("messages", [])
-    if not isinstance(context, Sequence) or isinstance(context, (str, bytes, bytearray)):
-        context = []
-    tools = [dict(item) for item in events if item.get("type") == "tool_call"]
-    return {"context": list(context), "tools": tools, "logs": [dict(item) for item in events]}
+        except Exception:  # noqa: BLE001 - retain missing audit evidence
+            events = None
+
+    context: list[Any] | None = None
+    if case_view is not None:
+        value = case_view.get("messages")
+        if isinstance(value, Sequence) and not isinstance(
+            value, (str, bytes, bytearray)
+        ):
+            context = list(value)
+    tools: list[dict[str, Any]] | None = None
+    logs: list[dict[str, Any]] | None = None
+    observed_strategy: str | None = None
+    if events is not None:
+        logs = [dict(item) for item in events]
+        tools = [item for item in logs if item.get("type") == "tool_call"]
+        for event in reversed(logs):
+            if event.get("type") == "investigation_started" and event.get("strategy"):
+                observed_strategy = str(event["strategy"])
+                break
+    return {
+        "context": context,
+        "tools": tools,
+        "logs": logs,
+        "strategy": observed_strategy,
+    }
 
 
 def _message_text(value: Any) -> str:
@@ -701,12 +948,17 @@ def _projection(result: Mapping[str, Any]) -> dict[str, Any]:
 def _classify_difference(dynamic: ReplayResult, fixed: ReplayResult) -> tuple[DifferenceClass, str | None]:
     same = all(_projection(getattr(dynamic, view)) == _projection(getattr(fixed, view)) for view in ("initial_result", "complete_result"))
     if same:
-        if dynamic.failure_reason == "ADAPTER_ERROR" or fixed.failure_reason == "ADAPTER_ERROR":
-            return "adapter_failure", "one strategy adapter failed"
+        if (
+            dynamic.failure_reason in _ADAPTER_FAILURES
+            or fixed.failure_reason in _ADAPTER_FAILURES
+        ):
+            return "adapter_failure", "one strategy adapter reported an unavailable route"
         return "none", None
     responses = [dynamic.initial_result, dynamic.complete_result, fixed.initial_result, fixed.complete_result]
     reasons = {str(item.get("failure_reason")) for item in responses if item.get("failure_reason")}
     reasons.update(str(item.get("reason")) for item in responses if item.get("reason"))
+    if reasons & _ADAPTER_FAILURES:
+        return "adapter_failure", "one strategy adapter reported an unavailable or failed route"
     if reasons & _BUDGET_FAILURES:
         return "budget", "strategies ended with different budget outcomes"
     if reasons & _GATE_FAILURES:
@@ -770,13 +1022,26 @@ def _usage(results: Sequence[ReplayResult], config: TreatmentConfig, strategy: S
                     _number(usage.get("input_tokens", 0)) * config.input_cost_per_1k_tokens
                     + _number(usage.get("output_tokens", 0)) * config.output_cost_per_1k_tokens
                 ) / 1000
-    totals["planning_tokens"] = totals["total_tokens"] if strategy == "dynamic_agent" else 0
-    totals["planning_calls"] = totals["provider_calls"] if strategy == "dynamic_agent" else 0
+    planning_available = strategy != "dynamic_agent" or bool(results) and all(
+        "planning_tokens" in result.usage and "planning_calls" in result.usage
+        for result in results
+    )
+    totals["planning_tokens"] = (
+        sum(_number(result.usage.get("planning_tokens", 0)) for result in results)
+        if planning_available and strategy == "dynamic_agent"
+        else 0
+    )
+    totals["planning_calls"] = (
+        sum(_number(result.usage.get("planning_calls", 0)) for result in results)
+        if planning_available and strategy == "dynamic_agent"
+        else 0
+    )
     summary: dict[str, Any] = dict(totals)
     summary.update(
         cost_usd=round(cost, 8) if known else None,
         known_cost_usd=round(cost, 8),
         usage_available=bool(results and any(item.usage for item in results)),
+        planning_usage_available=planning_available,
         latency_p50_ms=_percentile(latencies, 0.5),
         latency_p95_ms=_percentile(latencies, 0.95),
         case_count=len(results),
@@ -818,22 +1083,61 @@ def _deterministic(result: ReplayResult | None, view: Literal["initial", "comple
     return None if result is None else _projection(getattr(result, f"{view}_result"))
 
 
-def check_determinism(results_by_provider: Mapping[str, Sequence[ReplayResult]]) -> DeterminismReport:
+def check_determinism(
+    results_by_provider: Mapping[str, Sequence[ReplayResult]],
+    *,
+    strategy: StrategyName | None = None,
+) -> DeterminismReport:
     providers = sorted(str(name) for name in results_by_provider)
     if len(providers) < 2:
-        return DeterminismReport(passed=False, providers=providers)
-    indexed = {name: {item.case_id: item for item in results_by_provider[name]} for name in providers}
+        return DeterminismReport(
+            strategy=strategy,
+            passed=False,
+            providers=providers,
+            reason="at_least_two_provider_models_required",
+        )
+    indexed = {
+        name: {item.case_id: item for item in results_by_provider[name]}
+        for name in providers
+    }
     case_ids = sorted(set().union(*(set(items) for items in indexed.values())))
+    if not case_ids:
+        return DeterminismReport(
+            strategy=strategy,
+            passed=False,
+            providers=providers,
+            reason="no_cases_compared",
+        )
     mismatches: list[DeterminismMismatch] = []
     baseline = providers[0]
     for case_id in case_ids:
         reference = indexed[baseline].get(case_id)
+        missing = [
+            name for name in providers if case_id not in indexed[name]
+        ]
         for view in ("initial", "complete"):
             expected = _deterministic(reference, view)
-            actual = {name: _deterministic(indexed[name].get(case_id), view) for name in providers}
-            if any(value != expected for value in actual.values()):
-                mismatches.append(DeterminismMismatch(case_id=case_id, view=view, providers=providers, expected=expected, actual=actual))
-    return DeterminismReport(passed=not mismatches, providers=providers, compared_case_ids=case_ids, mismatches=mismatches)
+            actual = {
+                name: _deterministic(indexed[name].get(case_id), view)
+                for name in providers
+            }
+            if missing or any(value != expected for value in actual.values()):
+                mismatches.append(
+                    DeterminismMismatch(
+                        case_id=case_id,
+                        view=view,
+                        providers=providers,
+                        expected=expected,
+                        actual=actual,
+                    )
+                )
+    return DeterminismReport(
+        strategy=strategy,
+        passed=not mismatches,
+        providers=providers,
+        compared_case_ids=case_ids,
+        mismatches=mismatches,
+    )
 
 
 verify_determinism = check_determinism
@@ -848,19 +1152,91 @@ def compare_treatments(
     formal: bool = False,
     signoff: Any | None = None,
     signing_key: str | None = None,
+    determinism_adapters: Mapping[str, Mapping[str, CaseAdapter]] | None = None,
 ) -> TreatmentComparisonReport:
     return TreatmentComparisonRunner(adapters, config=config).run_dataset(
-        dataset, verified_only=verified_only, formal=formal, signoff=signoff, signing_key=signing_key
+        dataset,
+        verified_only=verified_only,
+        formal=formal,
+        signoff=signoff,
+        signing_key=signing_key,
+        determinism_adapters=determinism_adapters,
+    )
+
+
+def _load_artifact(
+    path: Path,
+) -> tuple[list[ReplayResult], dict[str, dict[str, Any]]]:
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    observations: dict[str, dict[str, Any]] = {}
+    if isinstance(payload, Mapping):
+        raw_observations = payload.get("observations", {})
+        if isinstance(raw_observations, Mapping):
+            observations = {
+                str(case_id): dict(value)
+                for case_id, value in raw_observations.items()
+                if isinstance(value, Mapping)
+            }
+        payload = payload.get("results")
+    if not isinstance(payload, list):
+        raise TypeError(f"result artifact {path} must contain a JSON list")
+    return (
+        [ReplayResult.model_validate(item) for item in payload],
+        observations,
     )
 
 
 def _load_results(path: Path) -> list[ReplayResult]:
+    return _load_artifact(path)[0]
+
+
+def _observation_value(
+    observations: Mapping[str, Mapping[str, Any]],
+    case_id: str,
+    key: str,
+) -> Any:
+    value = observations.get(case_id)
+    return value.get(key) if isinstance(value, Mapping) and key in value else None
+
+
+def _load_determinism_manifest(path: Path) -> list[DeterminismReport]:
     payload = json.loads(path.read_text(encoding="utf-8"))
-    if isinstance(payload, Mapping) and "results" in payload:
-        payload = payload["results"]
-    if not isinstance(payload, list):
-        raise TypeError(f"result artifact {path} must contain a JSON list")
-    return [ReplayResult.model_validate(item) for item in payload]
+    if isinstance(payload, Mapping) and "providers" in payload:
+        payload = payload["providers"]
+    if not isinstance(payload, Mapping):
+        raise TypeError("determinism manifest must map provider/model names to artifacts")
+    results: dict[StrategyName, dict[str, list[ReplayResult]]] = {
+        "dynamic_agent": {},
+        "fixed_workflow": {},
+    }
+    for provider_name, entry in payload.items():
+        if not isinstance(entry, Mapping):
+            raise TypeError(f"determinism entry {provider_name!r} must be an object")
+        dynamic_raw = entry.get("dynamic_results")
+        fixed_raw = entry.get("fixed_results")
+        if not isinstance(dynamic_raw, str) or not dynamic_raw.strip():
+            raise ValueError(
+                f"determinism entry {provider_name!r} needs dynamic_results and fixed_results"
+            )
+        if not isinstance(fixed_raw, str) or not fixed_raw.strip():
+            raise ValueError(
+                f"determinism entry {provider_name!r} needs dynamic_results and fixed_results"
+            )
+        dynamic_path = Path(dynamic_raw)
+        fixed_path = Path(fixed_raw)
+
+        if not dynamic_path.is_absolute():
+            dynamic_path = path.parent / dynamic_path
+        if not fixed_path.is_absolute():
+            fixed_path = path.parent / fixed_path
+        dynamic_items, _ = _load_artifact(dynamic_path)
+        fixed_items, _ = _load_artifact(fixed_path)
+        results["dynamic_agent"][str(provider_name)] = dynamic_items
+        results["fixed_workflow"][str(provider_name)] = fixed_items
+    return [
+        check_determinism(results[strategy], strategy=strategy)
+        for strategy in ("dynamic_agent", "fixed_workflow")
+    ]
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -869,7 +1245,17 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--config", type=Path)
     parser.add_argument("--dynamic-results", type=Path)
     parser.add_argument("--fixed-results", type=Path)
+    parser.add_argument(
+        "--determinism-manifest",
+        type=Path,
+        help="JSON map of provider/model names to dynamic/fixed result artifacts",
+    )
     parser.add_argument("--run-kind", choices=("development_trial", "formal"))
+    parser.add_argument(
+        "--signoff",
+        type=Path,
+        help="detached HumanSignoff JSON required for formal exported replay",
+    )
     parser.add_argument("--dry-run", action="store_true")
     parser.add_argument("--format", choices=("json", "markdown"), default="json")
     parser.add_argument("--output", type=Path)
@@ -899,22 +1285,101 @@ def main(argv: list[str] | None = None) -> int:
             indent=2,
         ) + "\n"
     elif args.dynamic_results and args.fixed_results:
-        dynamic = {item.case_id: item for item in _load_results(args.dynamic_results)}
-        fixed = {item.case_id: item for item in _load_results(args.fixed_results)}
+        formal_run = config.run_kind == "formal"
+        signoff = HumanSignoff.from_json(args.signoff) if args.signoff else None
+        determinism = (
+            _load_determinism_manifest(args.determinism_manifest)
+            if args.determinism_manifest
+            else None
+        )
+        if formal_run:
+            if signoff is None:
+                parser.error("--signoff is required for formal exported replay")
+            if determinism is None or any(
+                len(item.providers) < 2 for item in determinism
+            ):
+                parser.error(
+                    "--determinism-manifest with two provider/model entries is required "
+                    "for formal exported replay"
+                )
+            cases = dataset.validate_for_scoring(
+                require_split=True,
+                require_coverage=True,
+                signoff=signoff,
+            )
+        else:
+            dataset.validate_for_scoring(require_split=False)
+            cases = dataset.cases
+        dynamic_items, dynamic_observations = _load_artifact(args.dynamic_results)
+        fixed_items, fixed_observations = _load_artifact(args.fixed_results)
+        dynamic = {item.case_id: item for item in dynamic_items}
+        fixed = {item.case_id: item for item in fixed_items}
         runner = TreatmentComparisonRunner.__new__(TreatmentComparisonRunner)
         runner.config = config
         runner.adapters = {}
         runner.auditor = VisibilityAuditor
         pairs: list[PairedReplayResult] = []
-        for case in dataset.cases:
+        for case in cases:
             if case.id not in dynamic or case.id not in fixed:
                 continue
-            da = VisibilityAuditor.audit("dynamic_agent", initial_input=case.initial_input, initial_result=dynamic[case.id].initial_result, complete_result=dynamic[case.id].complete_result)
-            fa = VisibilityAuditor.audit("fixed_workflow", initial_input=case.initial_input, initial_result=fixed[case.id].initial_result, complete_result=fixed[case.id].complete_result)
+            da = VisibilityAuditor.audit(
+                "dynamic_agent",
+                initial_input=case.initial_input,
+                initial_result=dynamic[case.id].initial_result,
+                complete_result=dynamic[case.id].complete_result,
+                context=_observation_value(dynamic_observations, case.id, "context"),
+                tool_results=_observation_value(
+                    dynamic_observations, case.id, "tool_results"
+                ),
+                log_projection=_observation_value(
+                    dynamic_observations, case.id, "log_projection"
+                ),
+                observed_strategy=_observation_value(
+                    dynamic_observations, case.id, "observed_strategy"
+                ),
+            )
+            fa = VisibilityAuditor.audit(
+                "fixed_workflow",
+                initial_input=case.initial_input,
+                initial_result=fixed[case.id].initial_result,
+                complete_result=fixed[case.id].complete_result,
+                context=_observation_value(fixed_observations, case.id, "context"),
+                tool_results=_observation_value(
+                    fixed_observations, case.id, "tool_results"
+                ),
+                log_projection=_observation_value(
+                    fixed_observations, case.id, "log_projection"
+                ),
+                observed_strategy=_observation_value(
+                    fixed_observations, case.id, "observed_strategy"
+                ),
+            )
             difference, reason = _classify_difference(dynamic[case.id], fixed[case.id])
-            pairs.append(PairedReplayResult(case_id=case.id, family_id=case.family_id, category=case.category, dynamic=dynamic[case.id], fixed=fixed[case.id], audit=_pair_audit(case.initial_input, da, fa), difference_class=difference, difference_reason=reason))
-        report = runner._report(dataset, dataset.cases, pairs)
-        output = report.to_markdown() if args.format == "markdown" else json.dumps(report.to_dict(), ensure_ascii=False, indent=2) + "\n"
+            pairs.append(
+                PairedReplayResult(
+                    case_id=case.id,
+                    family_id=case.family_id,
+                    category=case.category,
+                    dynamic=dynamic[case.id],
+                    fixed=fixed[case.id],
+                    audit=_pair_audit(case.initial_input, da, fa),
+                    difference_class=difference,
+                    difference_reason=reason,
+                )
+            )
+        report = runner._report(
+            dataset,
+            cases,
+            pairs,
+            formal=formal_run,
+            signoff=signoff,
+            determinism=determinism,
+        )
+        output = (
+            report.to_markdown()
+            if args.format == "markdown"
+            else json.dumps(report.to_dict(), ensure_ascii=False, indent=2) + "\n"
+        )
     else:
         parser.error("live comparison requires adapters; use dry-run or exported result artifacts")
     if args.output:

@@ -68,6 +68,7 @@ def create_app(
     state_store = StateStore(Path(db_path))
     controller = RuleCourtController(store, provider, model, state_store, rule_store, budget)
     app = FastAPI(title="RuleCourt")
+    app.state.rulecourt_controller = controller
     maintenance_token = maintenance_token or os.getenv("RULECOURT_MAINTENANCE_TOKEN")
 
     def require_maintainer(

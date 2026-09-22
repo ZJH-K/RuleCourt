@@ -22,6 +22,8 @@ from typing import Any, Literal, Protocol
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
+from .budget import InvestigationBudget
+
 
 class FactRequest(BaseModel):
     """A deterministic request for one or more explicitly named facts."""
@@ -1033,8 +1035,37 @@ class FastAPICaseAdapter:
             raise TypeError("case events response must be a list")
         return [item for item in payload if isinstance(item, Mapping)]
 
+    def configure_budget(self, budget: InvestigationBudget | Mapping[str, Any]) -> None:
+        configured = InvestigationBudget.from_value(
+            dict(budget) if isinstance(budget, Mapping) else budget
+        )
+        app = getattr(self.client, "app", None)
+        state = getattr(app, "state", None)
+        controller = getattr(state, "rulecourt_controller", None)
+        if controller is None:
+            raise RuntimeError(
+                "FastAPICaseAdapter needs a local app controller to enforce the T14 budget"
+            )
+        controller.budget = configured
+        self.metadata.update(
+            {
+                "budget": configured.to_dict(),
+                "budget_enforced": True,
+            }
+        )
+
     def comparison_metadata(self) -> dict[str, Any]:
-        return {"strategy": self.strategy, **self.metadata}
+        payload = {**self.metadata, "strategy": self.strategy}
+        app = getattr(self.client, "app", None)
+        controller = getattr(getattr(app, "state", None), "rulecourt_controller", None)
+        if controller is not None:
+            payload.setdefault("model", controller.model)
+            provider_name = getattr(controller.provider, "provider_name", None)
+            payload.setdefault(
+                "provider",
+                str(provider_name or type(controller.provider).__name__),
+            )
+        return payload
 
     @staticmethod
     def _ensure_success(response: Any) -> None:
@@ -1325,6 +1356,7 @@ class EvaluationReport(BaseModel):
 
 _DECISION_LABELS = {"LEGAL", "ILLEGAL"}
 _SYSTEM_FAILURE_REASONS = {
+    "FIXED_WORKFLOW_UNAVAILABLE",
     "INVESTIGATION_FAILED",
     "INVESTIGATION_TIMEOUT",
     "BUDGET_EXHAUSTED",
