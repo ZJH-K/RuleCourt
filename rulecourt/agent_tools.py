@@ -47,6 +47,7 @@ class DynamicAgentSession:
         rule_store: Any,
         workflow: FixedWorkflow | None,
         adapter: RootAdapter,
+        controller_gate: Callable[[dict[str, Any]], bool],
         on_submit: Callable[[dict[str, Any], dict[str, Any] | None, int], dict[str, Any] | None],
     ) -> None:
         self.case_id = case_id
@@ -56,6 +57,7 @@ class DynamicAgentSession:
         self.rule_store = rule_store
         self.workflow = workflow
         self.adapter = adapter
+        self.controller_gate = controller_gate
         self.on_submit = on_submit
         self.inspected_rule_ids: set[str] = set()
         self.conflict_rule_ids: set[str] = set()
@@ -152,6 +154,7 @@ class DynamicAgentSession:
             and self.conflict_resolution is not None
             and self.conflict_resolution.get("status") == "resolved"
             and not self.challenge_unresolved_rule_ids
+            and self.controller_gate(result)
         )
 
     def evaluate_counter_evidence(self, result: dict[str, Any]) -> dict[str, Any] | None:
@@ -178,6 +181,7 @@ class DynamicAgentSession:
             "candidate_rule_ids": sorted(self.challenge_rule_ids),
             "applicability": applicability,
             "applicable_rule_ids": applicable_rule_ids,
+            "precedence": self.conflict_resolution.get("precedence", []),
             "unresolved_rule_ids": sorted(self.challenge_unresolved_rule_ids),
         }
 

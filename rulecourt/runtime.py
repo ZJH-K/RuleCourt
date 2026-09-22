@@ -337,9 +337,31 @@ class RuleCourtController:
     @staticmethod
     def _strategy_version(strategy: str) -> str:
         return (
-            DYNAMIC_AGENT_STRATEGY_VERSION
-            if strategy == "dynamic_agent"
-            else "fixed-workflow-v1"
+            DYNAMIC_AGENT_STRATEGY_VERSION if strategy == "dynamic_agent" else "fixed-workflow-v1"
+        )
+
+    @staticmethod
+    def _controller_finalization_gate(result: dict[str, Any]) -> bool:
+        """Enforce the shared deterministic contract before recording a ruling."""
+
+        status = result.get("status")
+        if status not in {"LEGAL", "ILLEGAL"}:
+            return True
+        decision = result.get("decision") or {}
+        verification = result.get("verification") or {}
+        checks = result.get("checks") or {}
+        expected_decision_status = "allow" if status == "LEGAL" else "deny"
+        decision_rule_ids = set(decision.get("rule_ids", []))
+        verification_rule_ids = set(verification.get("rule_ids", []))
+        evidence = set(result.get("evidence", []))
+        return (
+            decision.get("status") == expected_decision_status
+            and verification.get("status") == "passed"
+            and bool(decision_rule_ids)
+            and decision_rule_ids <= verification_rule_ids
+            and decision_rule_ids <= evidence
+            and checks.get("state_sufficient") is True
+            and checks.get("evidence_verified") is True
         )
 
     def _select_investigation(
@@ -823,13 +845,35 @@ class RuleCourtController:
                     "fixed_workflow_started",
                     workflow="m0-root-move",
                 )
-                recorded_response = self._record_workflow_result(
-                    case_id,
-                    run_id,
-                    result,
-                    state_update,
-                    expected_revision=expected_revision,
-                )
+                controller_gate_passed = self._controller_finalization_gate(result)
+                if controller_gate_passed:
+                    recorded_response = self._record_workflow_result(
+                        case_id,
+                        run_id,
+                        result,
+                        state_update,
+                        expected_revision=expected_revision,
+                    )
+                else:
+                    self.store.add_event(
+                        case_id,
+                        run_id,
+                        "finalization_rejected",
+                        code="VERIFICATION_NOT_SATISFIED",
+                        state_revision=expected_revision,
+                    )
+                    recorded_response = self.store.add_verdict_if_current(
+                        case_id,
+                        run_id,
+                        "UNRESOLVED",
+                        "VERIFICATION_NOT_SATISFIED",
+                        expected_revision=expected_revision,
+                        details={
+                            "public_reason": (
+                                "The deterministic result did not satisfy the Controller gate."
+                            )
+                        },
+                    )
                 if recorded_response is None:
                     stale_response = self._discard_stale_adjudication(
                         case_id,
@@ -865,7 +909,9 @@ class RuleCourtController:
                         status=result["verification"]["status"],
                         rule_ids=result["verification"]["rule_ids"],
                     )
-                    evidence_unavailable = result["verification"]["status"] != "passed"
+                    evidence_unavailable = (
+                        not controller_gate_passed or result["verification"]["status"] != "passed"
+                    )
                     response = self._record_run(
                         case_id,
                         investigation,
@@ -901,6 +947,7 @@ class RuleCourtController:
             rule_store=self.workflow.rule_store if self.workflow is not None else None,
             workflow=self.workflow,
             adapter=self.workflow.adapter if self.workflow is not None else RootAdapter(),
+            controller_gate=self._controller_finalization_gate,
             on_submit=record_dynamic_result,
         )
         tools = session.registry()
