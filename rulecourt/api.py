@@ -3,7 +3,7 @@
 import os
 import secrets
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
 from fastapi import Depends, FastAPI, Header, HTTPException
 from fastapi.responses import FileResponse
@@ -26,6 +26,8 @@ from .store import CaseStore
 
 class CreateCase(BaseModel):
     model_config = ConfigDict(extra="forbid")
+
+    strategy: Literal["auto", "fixed_workflow", "dynamic_agent"] = "auto"
 
 
 class UserMessage(BaseModel):
@@ -95,8 +97,8 @@ def create_app(
         return FileResponse(Path(__file__).with_name("rules.html"))
 
     @app.post("/api/cases", status_code=201)
-    def create_case(_request: CreateCase):
-        return store.create()
+    def create_case(request: CreateCase):
+        return store.create(request.strategy)
 
     @app.post("/api/cases/{case_id}/state")
     def update_case_state(case_id: str, request: ProposedStatePatch):

@@ -18,6 +18,12 @@
 <body>
   <h1>RuleCourt</h1>
   <p class="muted">Create a Case and inspect a source-backed state and local move adjudication. Full-turn legality is not checked.</p>
+  <label for="strategy">Investigation strategy</label>
+  <select id="strategy">
+    <option value="auto">Automatic</option>
+    <option value="fixed_workflow">Fixed Workflow</option>
+    <option value="dynamic_agent">Dynamic Agent</option>
+  </select>
   <button id="create">Create Case</button>
   <p><a href="/rules">Rule package review</a></p>
   <section id="case" hidden>
@@ -177,7 +183,7 @@
     }
     el('create').onclick = async () => {
       try {
-        const data = await request('/api/cases', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: '{}'});
+        const data = await request('/api/cases', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({strategy: el('strategy').value})});
         caseId = data.id;
         latestStateUpdate = null;
         history.pushState({}, '', `?case=${encodeURIComponent(caseId)}`);

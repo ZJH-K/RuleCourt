@@ -10,49 +10,15 @@ from uuid import uuid4
 
 from nanobot.agent.hook import AgentHook
 from nanobot.agent.runner import AgentRunner, AgentRunSpec
-from nanobot.agent.tools.base import Tool
-from nanobot.agent.tools.registry import ToolRegistry
 from nanobot.utils.llm_runtime import LLMRuntime
 
+from .agent_tools import DYNAMIC_AGENT_STRATEGY_VERSION, DynamicAgentSession
 from .budget import BudgetLimitReached, BudgetUsage, InvestigationBudget
+from .root_adapter import RootAdapter
 from .state import NaturalLanguageStateExtractor
 from .state_store import StateStore
 from .store import CaseStore
 from .workflow import FixedWorkflow
-
-
-class InspectCase(Tool):
-    def __init__(self, case_id: str, store: CaseStore):
-        self.case_id = case_id
-        self.store = store
-
-    @property
-    def name(self) -> str:
-        return "inspect_case"
-
-    @property
-    def description(self) -> str:
-        return "Read the current Case's accepted state and message count. This does not adjudicate."
-
-    @property
-    def parameters(self) -> dict[str, Any]:
-        return {"type": "object", "properties": {}, "additionalProperties": False}
-
-    @property
-    def read_only(self) -> bool:
-        return True
-
-    async def execute(self, **kwargs):
-        case = self.store.get(self.case_id)
-        assert case is not None
-        return json.dumps(
-            {
-                "case_id": self.case_id,
-                "revision": case["revision"],
-                "confirmed_state": case["confirmed_state"],
-                "message_count": len(case["messages"]),
-            }
-        )
 
 
 async def _no_compaction(*args, **kwargs):
@@ -170,12 +136,25 @@ class _BudgetTracker:
         self.current.latency_ms = max(0, round((time.perf_counter() - self.started_at) * 1000))
 
 
+class _VerdictSubmitted(Exception):
+    """Stop the agent loop after the Controller accepts a submitted verdict."""
+
+
 class _BudgetHook(AgentHook):
-    def __init__(self, tracker: _BudgetTracker, budget: InvestigationBudget):
+    def __init__(
+        self,
+        tracker: _BudgetTracker,
+        budget: InvestigationBudget,
+        *,
+        stop_when: Any | None = None,
+    ):
         self.tracker = tracker
         self.budget = budget
+        self.stop_when = stop_when
 
     async def before_iteration(self, context: Any) -> None:
+        if self.stop_when is not None and self.stop_when():
+            raise _VerdictSubmitted
         self.tracker.start_iteration(context.iteration, self.budget)
 
     async def before_execute_tools(self, context: Any) -> None:
@@ -355,6 +334,14 @@ class RuleCourtController:
     def _provider_name(self) -> str:
         return str(getattr(self.provider, "provider_name", type(self.provider).__name__))
 
+    @staticmethod
+    def _strategy_version(strategy: str) -> str:
+        return (
+            DYNAMIC_AGENT_STRATEGY_VERSION
+            if strategy == "dynamic_agent"
+            else "fixed-workflow-v1"
+        )
+
     def _select_investigation(
         self, case_id: str, strategy: str
     ) -> tuple[dict[str, Any], bool, InvestigationBudget]:
@@ -404,6 +391,7 @@ class RuleCourtController:
             "run_id": run_id,
             "run_count": len(runs),
             "strategy": investigation["strategy"],
+            "strategy_version": self._strategy_version(investigation["strategy"]),
             "resumed": resumed,
             "model": self.model,
             "provider": self._provider_name(),
@@ -498,6 +486,7 @@ class RuleCourtController:
             "finished_at": datetime.now(UTC).isoformat(),
             "metadata": {
                 **(metadata or {}),
+                "strategy_version": self._strategy_version(strategy),
                 "tool_calls": [
                     {key: value for key, value in detail.items() if not key.startswith("_")}
                     for detail in tracker.tool_details
@@ -517,6 +506,7 @@ class RuleCourtController:
             run_id,
             "investigation_finished",
             strategy=strategy,
+            strategy_version=self._strategy_version(strategy),
             model=self.model,
             provider=self._provider_name(),
             stop_reason=stop_reason,
@@ -703,19 +693,27 @@ class RuleCourtController:
                 return {**verdict, "state_update": state_update}
         case = self._case_view(case_id)
         expected_revision = case["revision"]
-        strategy = (
-            "fixed_workflow"
-            if self.workflow is not None
-            and self._has_deterministic_move_query(case["confirmed_state"])
-            else "dynamic_agent"
-        )
+        requested_strategy = case.get("strategy", "auto")
+        if requested_strategy == "dynamic_agent":
+            strategy = "dynamic_agent"
+        elif requested_strategy == "fixed_workflow":
+            strategy = "fixed_workflow" if self.workflow is not None else "dynamic_agent"
+        else:
+            strategy = (
+                "fixed_workflow"
+                if self.workflow is not None
+                and self._has_deterministic_move_query(case["confirmed_state"])
+                else "dynamic_agent"
+            )
         investigation, resumed, budget = self._select_investigation(case_id, strategy)
+        strategy = investigation["strategy"]
         prior_usage = BudgetUsage.from_mapping(investigation["usage"])
         self.store.add_event(
             case_id,
             run_id,
             "investigation_started",
             strategy=strategy,
+            strategy_version=self._strategy_version(strategy),
             resumed=resumed,
             model=self.model,
             provider=self._provider_name(),
@@ -882,15 +880,40 @@ class RuleCourtController:
                     )
             return response
 
-        tools = ToolRegistry()
-        tools.register(InspectCase(case_id, self.store))
+        def record_dynamic_result(
+            workflow_result: dict[str, Any],
+            dynamic_state_update: dict[str, Any] | None,
+            expected_revision: int,
+        ) -> dict[str, Any] | None:
+            return self._record_workflow_result(
+                case_id,
+                run_id,
+                workflow_result,
+                dynamic_state_update,
+                expected_revision=expected_revision,
+            )
+
+        session = DynamicAgentSession(
+            case_id=case_id,
+            run_id=run_id,
+            store=self.store,
+            state_store=self.state_store,
+            rule_store=self.workflow.rule_store if self.workflow is not None else None,
+            workflow=self.workflow,
+            adapter=self.workflow.adapter if self.workflow is not None else RootAdapter(),
+            on_submit=record_dynamic_result,
+        )
+        tools = session.registry()
         messages = [
             {
                 "role": "system",
                 "content": (
-                    "You are investigating a RuleCourt Case. Call inspect_case once. "
-                    "Domain rules and verified evidence are not installed. You cannot issue a legal "
-                    "or illegal ruling. Your response is advisory and cannot set a verdict."
+                    "You are the RuleCourt Dynamic Agent. Use only the provided public Case and Root "
+                    "tools to investigate the user's request. You may inspect public rules, update "
+                    "accepted state with source-backed facts, resolve public rule relations, simulate "
+                    "the action, and ask the Controller to submit a verdict. Do not treat your natural "
+                    "language as a verdict, invent rules or facts, or claim LEGAL/ILLEGAL without "
+                    "submit_verdict accepting the current deterministic result."
                 ),
             },
             *({"role": "user", "content": item["text"]} for item in case["messages"]),
@@ -908,13 +931,17 @@ class RuleCourtController:
                         initial_messages=messages,
                         tools=tools,
                         runtime=LLMRuntime.capture(
-                            self.provider, self.model, context_window_tokens=8192
+                            self.provider, self.model, context_window_tokens=32768
                         ),
                         max_iterations=max_iterations,
-                        max_tool_result_chars=2000,
+                        max_tool_result_chars=20000,
                         consolidate_history=_no_compaction,
                         session_key=f"rulecourt:{case_id}",
-                        hook=_BudgetHook(tracker, budget),
+                        hook=_BudgetHook(
+                            tracker,
+                            budget,
+                            stop_when=lambda: session.finalized_response is not None,
+                        ),
                         finalize_on_max_iterations=False,
                     )
                 ),
@@ -927,6 +954,8 @@ class RuleCourtController:
             failure_reason = "BUDGET_EXHAUSTED"
             stop_reason = "budget_exhausted"
             budget_dimension = exc.dimension
+        except _VerdictSubmitted:
+            stop_reason = "verdict_submitted"
         except TimeoutError:
             failure_reason = "TIME_LIMIT_EXCEEDED"
             stop_reason = "time_limit"
@@ -989,6 +1018,52 @@ class RuleCourtController:
             failure_reason = "BUDGET_EXHAUSTED"
             stop_reason = "budget_exhausted"
             budget_dimension = "total_tokens"
+        if (
+            session.finalized_response is not None
+            and failure_reason is None
+            and tracker.current.tool_failures == 0
+        ):
+            finalized = session.finalized_response
+            current = self.store.get(case_id)
+            assert current is not None
+            finalized_revision = finalized.get("state_revision")
+            if not isinstance(finalized_revision, int):
+                finalized_revision = -1
+            if current["revision"] != finalized_revision:
+                stale_response = self._discard_stale_adjudication(
+                    case_id,
+                    run_id,
+                    expected_revision=finalized_revision,
+                    state_update=state_update,
+                )
+                return self._record_run(
+                    case_id,
+                    investigation,
+                    budget,
+                    run_id=run_id,
+                    strategy=strategy,
+                    resumed=resumed,
+                    response=stale_response,
+                    tracker=tracker,
+                    stop_reason="state_revision_conflict",
+                    failure_reason="STATE_REVISION_CONFLICT",
+                    metadata={"verdict_submitted": False},
+                )
+            if state_update is not None and "state_update" not in finalized:
+                finalized["state_update"] = state_update
+            return self._record_run(
+                case_id,
+                investigation,
+                budget,
+                run_id=run_id,
+                strategy=strategy,
+                resumed=resumed,
+                response=finalized,
+                tracker=tracker,
+                stop_reason="verdict_submitted",
+                failure_reason=None,
+                metadata={"verdict_submitted": True},
+            )
         if failure_reason == "BUDGET_EXHAUSTED":
             reason = "BUDGET_EXHAUSTED"
         elif failure_reason == "TIME_LIMIT_EXCEEDED":

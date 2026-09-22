@@ -18,8 +18,8 @@ uv run uvicorn rulecourt.api:app --reload --env-file .env
 
 Open <http://127.0.0.1:8000/>. The default database is `rulecourt.sqlite3`.
 Set `RULECOURT_DB` to choose another path and `OPENAI_BASE_URL` for a compatible
-provider endpoint. Case URLs can be reloaded. The provider is asked to use the
-only registered tool, `inspect_case`; its text cannot authorize a ruling.
+provider endpoint. Case URLs can be reloaded. The provider receives only the
+constrained public investigation tools; its text cannot authorize a ruling.
 
 ## Checks
 
@@ -67,6 +67,16 @@ INSUFFICIENT_INFORMATION with missing_fields and deterministic
 clarification_questions. Submit the requested facts to the same Case to
 re-run the workflow. Messages, state evidence, revisions, verdict history, and
 clarification_requested/clarification_resumed events remain queryable.
+
+## T09 Dynamic Agent strategy
+
+Choose `Automatic`, `Fixed Workflow`, or `Dynamic Agent` when creating a Case.
+The API accepts the same choice as `{"strategy":"dynamic_agent"}` (the other
+values are `auto` and `fixed_workflow`). Dynamic Agent may search and inspect
+verified public rules, propose source-backed state updates, resolve public rule
+relations, simulate the action, and submit the deterministic result. Coverage
+obligations and planning hints stay private, and the Controller remains the
+only component that can record a `LEGAL` or `ILLEGAL` verdict.
 
 ## T10 investigation budgets
 

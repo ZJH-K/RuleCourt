@@ -8,6 +8,65 @@ from .adjudication import Decision, validate_eyrie_decree_move, validate_move
 from .state import M0_RULESET_VERSION
 
 
+class RootPrecedencePolicy:
+    """Resolve the public Root relation graph deterministically."""
+
+    @staticmethod
+    def resolve(package: dict[str, Any], rule_ids: list[str]) -> dict[str, Any]:
+        requested = list(dict.fromkeys(rule_ids))
+        nodes = set(requested)
+        relations = [
+            {
+                "source_rule_id": relation["source_rule_id"],
+                "target_rule_id": relation["target_rule_id"],
+                "relation": relation["relation"],
+            }
+            for relation in package.get("relations", [])
+            if relation.get("source_rule_id") in nodes and relation.get("target_rule_id") in nodes
+        ]
+        relations.sort(
+            key=lambda relation: (
+                relation["source_rule_id"],
+                relation["target_rule_id"],
+                relation["relation"],
+            )
+        )
+
+        outgoing = {rule_id: set[str]() for rule_id in nodes}
+        incoming = {rule_id: 0 for rule_id in nodes}
+        for relation in relations:
+            if relation["relation"] == "depends_on":
+                before = relation["target_rule_id"]
+                after = relation["source_rule_id"]
+            else:
+                before = relation["source_rule_id"]
+                after = relation["target_rule_id"]
+            if after in outgoing[before]:
+                continue
+            outgoing[before].add(after)
+            incoming[after] += 1
+
+        ready = sorted(rule_id for rule_id, count in incoming.items() if count == 0)
+        precedence: list[str] = []
+        while ready:
+            current = ready.pop(0)
+            precedence.append(current)
+            for target in sorted(outgoing[current]):
+                incoming[target] -= 1
+                if incoming[target] == 0:
+                    ready.append(target)
+            ready.sort()
+
+        unresolved_rule_ids = sorted(nodes - set(precedence))
+        return {
+            "status": "resolved" if not unresolved_rule_ids else "unresolved",
+            "rule_ids": requested,
+            "relations": relations,
+            "precedence": precedence,
+            "unresolved_rule_ids": unresolved_rule_ids,
+        }
+
+
 class RootAdapter:
     """Register Root's rule coverage and dispatch supported move predicates."""
 
@@ -67,6 +126,12 @@ class RootAdapter:
         return result
 
     @staticmethod
+    def resolve_rule_conflicts(package: dict[str, Any], rule_ids: list[str]) -> dict[str, Any]:
+        """Resolve public Root relations without exposing coverage obligations."""
+
+        return RootPrecedencePolicy.resolve(package, rule_ids)
+
+    @staticmethod
     def _is_decree_move(state: dict[str, Any]) -> bool:
         action = state.get("action")
         return (
@@ -111,7 +176,9 @@ class RootAdapter:
                 )
             if actor == "eyrie":
                 return "The Eyrie rules at least one endpoint and the checked local move conditions hold."
-            return "Marquise rules at least one endpoint and the checked local move conditions hold."
+            return (
+                "Marquise rules at least one endpoint and the checked local move conditions hold."
+            )
         if status == "ILLEGAL":
             return "The proposed move violates a checked local move or Decree condition."
         if status == "INSUFFICIENT_INFORMATION":

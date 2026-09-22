@@ -22,7 +22,8 @@ class CaseStore:
             db.executescript("""
                 CREATE TABLE IF NOT EXISTS cases (
                     id TEXT PRIMARY KEY, created_at TEXT NOT NULL,
-                    revision INTEGER NOT NULL DEFAULT 0, confirmed_state TEXT NOT NULL DEFAULT '{}'
+                    revision INTEGER NOT NULL DEFAULT 0, confirmed_state TEXT NOT NULL DEFAULT '{}',
+                    strategy TEXT NOT NULL DEFAULT 'auto'
                 );
                 CREATE TABLE IF NOT EXISTS messages (
                     id TEXT PRIMARY KEY, case_id TEXT NOT NULL REFERENCES cases(id),
@@ -88,6 +89,9 @@ class CaseStore:
                 db.execute("ALTER TABLE verdicts ADD COLUMN evidence TEXT NOT NULL DEFAULT '[]'")
             if "details" not in verdict_columns:
                 db.execute("ALTER TABLE verdicts ADD COLUMN details TEXT NOT NULL DEFAULT '{}'")
+            case_columns = {row["name"] for row in db.execute("PRAGMA table_info(cases)")}
+            if "strategy" not in case_columns:
+                db.execute("ALTER TABLE cases ADD COLUMN strategy TEXT NOT NULL DEFAULT 'auto'")
 
     @contextmanager
     def _connect(self) -> Iterator[sqlite3.Connection]:
@@ -100,10 +104,15 @@ class CaseStore:
         finally:
             db.close()
 
-    def create(self) -> dict[str, Any]:
+    def create(self, strategy: str = "auto") -> dict[str, Any]:
+        if strategy not in {"auto", "fixed_workflow", "dynamic_agent"}:
+            raise ValueError("unsupported investigation strategy")
         case_id = str(uuid4())
         with self._connect() as db:
-            db.execute("INSERT INTO cases(id, created_at) VALUES (?, ?)", (case_id, _now()))
+            db.execute(
+                "INSERT INTO cases(id, created_at, strategy) VALUES (?, ?, ?)",
+                (case_id, _now(), strategy),
+            )
         case = self.get(case_id)
         assert case is not None
         return case
@@ -121,11 +130,17 @@ class CaseStore:
             )
         return message_id
 
-    def add_event(self, case_id: str, run_id: str, event_type: str, **payload):
+    def add_event(self, event_case_id: str, event_run_id: str, event_type: str, **payload):
         with self._connect() as db:
             db.execute(
                 "INSERT INTO events(case_id, run_id, type, payload, created_at) VALUES (?, ?, ?, ?, ?)",
-                (case_id, run_id, event_type, json.dumps(payload, ensure_ascii=False), _now()),
+                (
+                    event_case_id,
+                    event_run_id,
+                    event_type,
+                    json.dumps(payload, ensure_ascii=False),
+                    _now(),
+                ),
             )
 
     def add_decision(
@@ -658,6 +673,7 @@ class CaseStore:
             return {
                 "id": row["id"],
                 "created_at": row["created_at"],
+                "strategy": row["strategy"],
                 "revision": row["revision"],
                 "current_verdict": current_verdict,
                 "current_decision": current_decision,

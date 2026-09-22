@@ -52,7 +52,15 @@ def test_case_round_trip_persists_after_app_reload(tmp_path):
         )
         assert any(e["type"] == "verdict" for e in events)
         assert all(e.get("name") not in {"exec", "write_file", "web_search"} for e in events)
-    assert [t["function"]["name"] for t in provider.calls[0]["tools"]] == ["inspect_case"]
+        assert {t["function"]["name"] for t in provider.calls[0]["tools"]} == {
+            "inspect_case",
+            "search_rules",
+            "inspect_rule",
+            "update_case_state",
+            "resolve_rule_conflicts",
+            "simulate_action",
+            "submit_verdict",
+        }
 
 
 def test_public_api_rejects_control_fields_and_invalid_messages(tmp_path):
