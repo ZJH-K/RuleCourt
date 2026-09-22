@@ -22,6 +22,7 @@ from pathlib import Path
 from typing import Any
 from uuid import uuid4
 
+from httpx import TimeoutException
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from .embeddings import EmbeddingProvider, HTTPEmbeddingProvider
@@ -618,7 +619,7 @@ class _ProviderBaselineRunner(CaseAdapter):
         else:
             try:
                 retrieval = self._retrieve(query, conversation)
-            except TimeoutError:
+            except (TimeoutError, TimeoutException):
                 retrieval["failure_reason"] = "INVESTIGATION_TIMEOUT"
             except Exception:  # noqa: BLE001 - retrieval failures are evaluation observations
                 retrieval["failure_reason"] = "RETRIEVAL_ERROR"
@@ -784,7 +785,7 @@ class _ProviderBaselineRunner(CaseAdapter):
         conversation.ledger.provider_calls += 1
         try:
             raw = self._call_provider(messages, conversation)
-        except TimeoutError:
+        except (TimeoutError, TimeoutException):
             conversation.ledger.unknown_usage_calls += 1
             return self._failure_response(
                 conversation,

@@ -2,6 +2,7 @@ import asyncio
 import json
 from types import SimpleNamespace
 
+import httpx
 import pytest
 
 from rulecourt.baselines import (
@@ -15,6 +16,7 @@ from rulecourt.baselines import (
     run_baselines,
 )
 from rulecourt.embeddings import EmbeddingBatch
+from rulecourt.evaluation import CaseDataset, EvaluationCase
 
 
 class TestEmbeddings:
@@ -29,9 +31,6 @@ def _rag(provider, corpus, **kwargs):
     return VanillaVectorRAGRunner(
         provider, index=VanillaVectorIndex(corpus, embedder=TestEmbeddings()), **kwargs
     )
-
-
-from rulecourt.evaluation import CaseDataset, EvaluationCase
 
 
 def _case(case_id: str = "case-1") -> EvaluationCase:
@@ -314,19 +313,26 @@ def test_shared_report_preserves_rulings_and_scores_citations_separately(
     assert "not by themselves evidence" in report.to_markdown()
 
 
-def test_embedding_failure_is_bounded_and_counted():
+@pytest.mark.parametrize(
+    ("error", "reason"),
+    [
+        (RuntimeError("embedding service failed"), "RETRIEVAL_ERROR"),
+        (httpx.ReadTimeout("embedding service timed out"), "INVESTIGATION_TIMEOUT"),
+    ],
+)
+def test_embedding_failure_is_bounded_and_counted(error, reason):
     class BrokenEmbeddings:
         model = "broken"
 
         async def embed(self, texts):
-            raise RuntimeError("embedding service failed")
+            raise error
 
     corpus = RuleCorpus(documents=[RuleDocument(id="root-4.2", text="Move.")])
     provider = ScriptedProvider([])
     runner = VanillaVectorRAGRunner(provider, corpus=corpus, embedder=BrokenEmbeddings())
     result = runner.run_case(_case())
     runner.close()
-    assert result.complete_result["failure_reason"] == "RETRIEVAL_ERROR"
+    assert result.complete_result["failure_reason"] == reason
     assert result.usage["embedding_calls"] == 1
     assert result.usage["unknown_usage_calls"] == 1
     assert result.usage["cost_usd"] is None
@@ -387,3 +393,38 @@ def test_cli_dry_run_is_reproducible_and_never_calls_a_provider(tmp_path, capsys
     assert main(args) == 0
     assert capsys.readouterr().out == first
     assert json.loads(first)["config"]["embedding_model"] == "test-embedding"
+
+
+def test_embedding_http_boundary_orders_vectors_and_records_usage(monkeypatch):
+    import httpx
+
+    from rulecourt.embeddings import HTTPEmbeddingProvider
+
+    captured = []
+
+    def serve(request):
+        captured.append(json.loads(request.content))
+        return httpx.Response(
+            200,
+            json={
+                "data": [{"index": 1, "embedding": [0, 1]}, {"index": 0, "embedding": [1, 0]}],
+                "usage": {"prompt_tokens": 9},
+            },
+        )
+
+    original_client = httpx.AsyncClient
+    monkeypatch.setenv("T12_TEST_KEY", "synthetic-test-key")
+    monkeypatch.setattr(
+        httpx,
+        "AsyncClient",
+        lambda **kwargs: original_client(transport=httpx.MockTransport(serve), **kwargs),
+    )
+    provider = HTTPEmbeddingProvider(
+        model="fixed-embedding-v1",
+        base_url="https://fixture.invalid/v1",
+        api_key_env="T12_TEST_KEY",
+    )
+    result = asyncio.run(provider.embed(["first", "second"]))
+    assert result.vectors == [[1, 0], [0, 1]]
+    assert result.input_tokens == 9
+    assert captured == [{"model": "fixed-embedding-v1", "input": ["first", "second"]}]
