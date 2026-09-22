@@ -68,3 +68,34 @@ clarification_questions. Submit the requested facts to the same Case to
 re-run the workflow. Messages, state evidence, revisions, verdict history, and
 clarification_requested/clarification_resumed events remain queryable.
 
+## T10 investigation budgets
+
+The Controller applies one shared trial budget to dynamic and fixed
+investigations. Configure it with create_app(..., budget=...) or the
+RULECOURT_MAX_DURATION_SECONDS, RULECOURT_MAX_ITERATIONS,
+RULECOURT_MAX_TOOL_CALLS, and RULECOURT_MAX_TOTAL_TOKENS environment
+variables. Defaults are marked development_trial; they are not frozen
+evaluation thresholds.
+
+Case responses expose the cumulative usage, remaining budget, provider/model,
+tool failures, latency, and stop reason. Clarification and recoverable provider
+failure runs reuse the same investigation ledger, so a new submission cannot
+reset the budget.
+
+## T11 evaluation replay
+
+`rulecourt.evaluation` keeps candidate Case labels and facts outside the
+application under evaluation. `EvaluationRunner` sends only the initial input
+and explicitly requested facts through an injected adapter; `score_results`
+reports first-result and complete-investigation metrics separately. Draft and
+disputed Cases are retained in the report but excluded from formal scoring.
+
+Validate the candidate fixture or view an exported report with:
+
+```powershell
+uv run rulecourt-eval validate examples/m0-candidate-cases.json
+uv run rulecourt-eval report evaluation-report.json --format markdown
+```
+
+The checked-in candidate fixture is intentionally `draft`; it is a trial
+dataset, not an independently verified Golden Case set.

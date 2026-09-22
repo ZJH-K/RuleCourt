@@ -8,6 +8,9 @@ dependencies = [
     "nanobot-ai @ git+https://github.com/HKUDS/nanobot.git@12a9a8a692c7e8fc6d3d293afdddcdaa390436df",
 ]
 
+[project.scripts]
+rulecourt-eval = "rulecourt.evaluation:main"
+
 [project.optional-dependencies]
 dev = ["basedpyright>=1.39,<2", "httpx>=0.27,<1", "pytest>=8,<10", "ruff>=0.9,<1"]
 
