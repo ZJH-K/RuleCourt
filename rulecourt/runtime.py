@@ -110,6 +110,7 @@ class RuleCourtController:
                 "checks",
                 "explanation",
                 "missing_fields",
+                "clarification_questions",
             )
             if key in result
         }
@@ -128,10 +129,25 @@ class RuleCourtController:
 
     async def investigate(self, case_id: str, text: str) -> dict[str, Any]:
         run_id = str(uuid4())
-        message_id = self.store.add_message(case_id, text)
-        self.store.add_event(case_id, run_id, "message_received")
         before = self.store.get(case_id)
         assert before is not None
+        previous_verdict = before["verdicts"][-1] if before["verdicts"] else None
+        was_clarification_pending = (
+            previous_verdict is not None
+            and previous_verdict["status"] == "INSUFFICIENT_INFORMATION"
+        )
+        message_id = self.store.add_message(case_id, text)
+        self.store.add_event(case_id, run_id, "message_received")
+        if was_clarification_pending:
+            assert previous_verdict is not None
+            self.store.add_event(
+                case_id,
+                run_id,
+                "clarification_resumed",
+                previous_verdict_id=previous_verdict["id"],
+                state_revision=before["revision"],
+                source_message_id=message_id,
+            )
         proposal = self.extractor.extract(
             text,
             message_id=message_id,
@@ -187,7 +203,18 @@ class RuleCourtController:
                 status=result["verification"]["status"],
                 rule_ids=result["verification"]["rule_ids"],
             )
-            return self._record_workflow_result(case_id, run_id, result, state_update)
+            response = self._record_workflow_result(case_id, run_id, result, state_update)
+            if response["status"] == "INSUFFICIENT_INFORMATION":
+                self.store.add_event(
+                    case_id,
+                    run_id,
+                    "clarification_requested",
+                    verdict_id=response["id"],
+                    state_revision=response["revision"],
+                    missing_fields=response["missing_fields"],
+                    questions=response["clarification_questions"],
+                )
+            return response
         tools = ToolRegistry()
         tools.register(InspectCase(case_id, self.store))
         messages = [

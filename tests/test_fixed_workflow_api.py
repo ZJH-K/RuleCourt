@@ -323,3 +323,218 @@ def test_missing_verified_rule_package_fails_closed_at_verification_gate(tmp_pat
         assert result["reason"] == "VERIFICATION_NOT_SATISFIED"
         assert result["verification"]["status"] == "failed"
         assert result["evidence"] == []
+
+
+def test_insufficient_information_requests_only_relevant_fields_and_resumes_same_case(tmp_path):
+    with TestClient(
+        create_app(
+            tmp_path / "cases.sqlite3",
+            provider=PassiveProvider(),
+            maintenance_token="test-secret",
+        )
+    ) as client:
+        install_verified_package(client)
+        case_id = client.post("/api/cases", json={}).json()["id"]
+
+        first = client.post(
+            f"/api/cases/{case_id}/messages",
+            json={
+                "text": (
+                    "确认本次只裁决 Marquise 普通移动范围。Marquise 从 A 移动 1 个 warriors 到 B。"
+                )
+            },
+        ).json()
+
+        assert first["status"] == "INSUFFICIENT_INFORMATION"
+        assert first["reason"] == "INSUFFICIENT_INFORMATION"
+        assert first["clarification_questions"]
+        question_fields = {question["field"] for question in first["clarification_questions"]}
+        assert "clearings.A.adjacent_to" in question_fields
+        assert "clearings.A.presence.marquise.warriors" in question_fields
+        assert all(question["question"] for question in first["clarification_questions"])
+
+        second = client.post(
+            f"/api/cases/{case_id}/messages",
+            json={
+                "text": (
+                    "Marquise 在 A 有 3 个 warriors。"
+                    "Marquise 在 A 有 0 个 buildings。"
+                    "Eyrie 在 A 有 0 个 warriors。"
+                    "Eyrie 在 A 有 0 个 buildings。"
+                    "A 只与 B 相邻。"
+                )
+            },
+        ).json()
+
+        assert second["status"] == "LEGAL"
+        assert second["clarification_questions"] == []
+        case = client.get(f"/api/cases/{case_id}").json()
+        assert len(case["messages"]) == 2
+        assert [verdict["status"] for verdict in case["verdicts"]] == [
+            "INSUFFICIENT_INFORMATION",
+            "LEGAL",
+        ]
+        assert case["verdicts"][0]["details"]["clarification_questions"]
+        warrior_fact = next(
+            fact
+            for fact in case["state_facts"]
+            if fact["field_path"] == "clearings.A.presence.marquise.warriors"
+            and fact["status"] == "active"
+        )
+        assert warrior_fact["evidence_refs"][0]["source_message_id"] == case["messages"][1]["id"]
+        events = client.get(f"/api/cases/{case_id}/events").json()
+        assert any(event["type"] == "clarification_requested" for event in events)
+        assert any(event["type"] == "clarification_resumed" for event in events)
+
+
+def test_known_origin_ruler_does_not_request_unknown_destination_presence(tmp_path):
+    with TestClient(
+        create_app(
+            tmp_path / "cases.sqlite3",
+            provider=PassiveProvider(),
+            maintenance_token="test-secret",
+        )
+    ) as client:
+        install_verified_package(client)
+        case_id = client.post("/api/cases", json={}).json()["id"]
+        result = client.post(
+            f"/api/cases/{case_id}/messages",
+            json={
+                "text": (
+                    "确认本次只裁决 Marquise 普通移动范围。"
+                    "Marquise 在 A 有 3 个 warriors。"
+                    "Marquise 在 A 有 0 个 buildings。"
+                    "Eyrie 在 A 有 0 个 warriors。"
+                    "Eyrie 在 A 有 0 个 buildings。"
+                    "A 只与 B 相邻。"
+                    "Marquise 从 A 移动 1 个 warriors 到 B。"
+                )
+            },
+        ).json()
+
+        assert result["status"] == "LEGAL"
+        assert result["missing_fields"] == []
+        assert result["clarification_questions"] == []
+        assert "destination_ruler" not in result["decision"]["derived_facts"]
+        case = client.get(f"/api/cases/{case_id}").json()
+        assert "B" not in case["confirmed_state"].get("clearings", {})
+        assert "clearings.B.presence" in case["unknown_fields"]
+
+
+def test_known_insufficient_warriors_denies_without_unrelated_adjacency_facts(tmp_path):
+    with TestClient(
+        create_app(
+            tmp_path / "cases.sqlite3",
+            provider=PassiveProvider(),
+            maintenance_token="test-secret",
+        )
+    ) as client:
+        install_verified_package(client)
+        case_id = client.post("/api/cases", json={}).json()["id"]
+        result = client.post(
+            f"/api/cases/{case_id}/messages",
+            json={
+                "text": (
+                    "确认本次只裁决 Marquise 普通移动范围。"
+                    "Marquise 在 A 有 1 个 warriors。"
+                    "Marquise 从 A 移动 2 个 warriors 到 B。"
+                )
+            },
+        ).json()
+
+        assert result["status"] == "ILLEGAL"
+        assert result["reason"] == "MOVE_INSUFFICIENT_WARRIORS"
+        assert result["missing_fields"] == []
+        assert result["clarification_questions"] == []
+
+
+def test_partial_and_complete_adjacency_change_the_move_result(tmp_path):
+    with TestClient(
+        create_app(
+            tmp_path / "cases.sqlite3",
+            provider=PassiveProvider(),
+            maintenance_token="test-secret",
+        )
+    ) as client:
+        install_verified_package(client)
+        partial_case = client.post("/api/cases", json={}).json()["id"]
+        partial = client.post(
+            f"/api/cases/{partial_case}/messages",
+            json={
+                "text": (
+                    "确认本次只裁决 Marquise 普通移动范围。"
+                    "Marquise 在 A 有 3 个 warriors。"
+                    "Marquise 在 A 有 0 个 buildings。"
+                    "Eyrie 在 A 有 0 个 warriors。"
+                    "Eyrie 在 A 有 0 个 buildings。"
+                    "A 与 C 相邻。"
+                    "Marquise 从 A 移动 1 个 warriors 到 B。"
+                )
+            },
+        ).json()
+        assert partial["status"] == "INSUFFICIENT_INFORMATION"
+        assert partial["reason"] == "INSUFFICIENT_INFORMATION"
+        assert "clearings.A.adjacent_to" in partial["missing_fields"]
+        assert partial["reason"] != "MOVE_NOT_ADJACENT"
+
+        complete_case = client.post("/api/cases", json={}).json()["id"]
+        complete = client.post(
+            f"/api/cases/{complete_case}/messages",
+            json={
+                "text": (
+                    "确认本次只裁决 Marquise 普通移动范围。"
+                    "Marquise 在 A 有 3 个 warriors。"
+                    "Marquise 在 A 有 0 个 buildings。"
+                    "Eyrie 在 A 有 0 个 warriors。"
+                    "Eyrie 在 A 有 0 个 buildings。"
+                    "A 只与 C 相邻。"
+                    "Marquise 从 A 移动 1 个 warriors 到 B。"
+                )
+            },
+        ).json()
+        assert complete["status"] == "ILLEGAL"
+        assert complete["reason"] == "MOVE_NOT_ADJACENT"
+
+
+def test_scope_unknown_is_a_clarification_before_using_complete_move_facts(tmp_path):
+    with TestClient(
+        create_app(
+            tmp_path / "cases.sqlite3",
+            provider=PassiveProvider(),
+            maintenance_token="test-secret",
+        )
+    ) as client:
+        install_verified_package(client)
+        case_id = client.post("/api/cases", json={}).json()["id"]
+        result = client.post(
+            f"/api/cases/{case_id}/messages",
+            json={
+                "text": complete_marquise_move().replace(
+                    "确认本次只裁决 Marquise 普通移动范围。",
+                    "",
+                )
+            },
+        ).json()
+
+        assert result["status"] == "INSUFFICIENT_INFORMATION"
+        assert result["reason"] == "SCOPE_NOT_CONFIRMED"
+        assert result["missing_fields"] == ["scope.root-local-move"]
+        assert result["clarification_questions"][0]["field"] == "scope.root-local-move"
+
+
+class FailingProvider(PassiveProvider):
+    async def chat(self, messages, tools=None, model=None, **kwargs):
+        raise RuntimeError("provider unavailable")
+
+
+def test_provider_failure_is_unresolved_not_information_insufficient(tmp_path):
+    with TestClient(create_app(tmp_path / "cases.sqlite3", provider=FailingProvider())) as client:
+        case_id = client.post("/api/cases", json={}).json()["id"]
+        result = client.post(
+            f"/api/cases/{case_id}/messages",
+            json={"text": "Can my warrior move?"},
+        ).json()
+
+        assert result["status"] == "UNRESOLVED"
+        assert result["reason"] == "INVESTIGATION_FAILED"
+        assert result.get("clarification_questions", []) == []

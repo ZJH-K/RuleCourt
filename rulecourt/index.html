@@ -36,6 +36,7 @@
     <h3>Messages</h3><div id="messages"></div>
     <h3>Verdicts</h3><div id="verdicts"></div>
     <h3>Adjudication result</h3><pre id="adjudication"></pre>
+    <h3>Clarification requested</h3><pre id="clarification"></pre>
     <h3>Public events</h3><div id="events"></div>
   </section>
   <script>
@@ -97,6 +98,7 @@
       const verification = (data.verifications || []).at(-1);
       if (!verdict) {
         el('adjudication').textContent = 'No adjudication has been finalized yet.';
+        el('clarification').textContent = 'No clarification requested.';
         return;
       }
       const details = verdict.details || {};
@@ -112,7 +114,13 @@
         decision,
         verification,
         checks: details.checks || {},
+        missing_fields: details.missing_fields || [],
+        clarification_questions: details.clarification_questions || [],
         explanation: details.explanation || ''
+      }, null, 2);
+      el('clarification').textContent = JSON.stringify({
+        missing_fields: details.missing_fields || [],
+        questions: details.clarification_questions || []
       }, null, 2);
     }
     async function refresh() {
@@ -152,6 +160,8 @@
         await refresh();
         el('notice').textContent = result.state_update && !result.state_update.accepted
           ? 'The state proposal needs clarification; no pseudo-verdict was recorded.'
+          : result.status === 'INSUFFICIENT_INFORMATION'
+            ? 'Please answer the clarification questions and submit the additional facts.'
           : 'Investigation saved.';
       } catch (error) { el('notice').textContent = error.message; }
       finally { el('submit').disabled = false; }

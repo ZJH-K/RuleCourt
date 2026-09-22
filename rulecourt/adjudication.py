@@ -281,30 +281,33 @@ def validate_move(state: dict[str, Any], *, rule_ids: dict[str, str] | None = No
     if count == 0:
         return _decision("deny", ["MOVE_ZERO_PIECES"], [ids["move"]])
 
+    available = _known_count(state, origin, actor, "warriors")
     adjacent = _adjacency(state, origin, destination, ids)
     if adjacent.status == "resolved" and adjacent.value is False:
         return _decision("deny", adjacent.reason_codes, adjacent.rule_ids)
-    if adjacent.status == "unknown":
-        return _decision(
-            "unknown",
-            adjacent.reason_codes,
-            adjacent.rule_ids,
-            missing_fields=adjacent.missing_fields,
-        )
-
-    available = _known_count(state, origin, actor, "warriors")
-    if available is None:
-        return _decision(
-            "unknown",
-            ["MOVE_ORIGIN_STATE_MISSING"],
-            [ids["move"]],
-            missing_fields=[f"clearings.{origin}.presence.{actor}.warriors"],
-        )
-    if available < count:
+    if available is not None and available < count:
         return _decision("deny", ["MOVE_INSUFFICIENT_WARRIORS"], [ids["move"]])
+    if adjacent.status == "unknown" or available is None:
+        missing_fields = list(adjacent.missing_fields)
+        if available is None:
+            missing_fields.append(f"clearings.{origin}.presence.{actor}.warriors")
+        if adjacent.status == "unknown" and available is None:
+            reason_codes = ["MOVE_STATE_MISSING"]
+            decision_rule_ids = [ids["path"], ids["move"]]
+        elif adjacent.status == "unknown":
+            reason_codes = adjacent.reason_codes
+            decision_rule_ids = adjacent.rule_ids
+        else:
+            reason_codes = ["MOVE_ORIGIN_STATE_MISSING"]
+            decision_rule_ids = [ids["move"]]
+        return _decision(
+            "unknown",
+            reason_codes,
+            decision_rule_ids,
+            missing_fields=missing_fields,
+        )
 
     origin_data = _clearing(state, origin)
-    destination_data = _clearing(state, destination)
     origin_ruler = (
         compute_ruler(
             origin_data or {},
@@ -320,6 +323,19 @@ def validate_move(state: dict[str, Any], *, rule_ids: dict[str, str] | None = No
             missing_fields=[f"clearings.{origin}.presence"],
         )
     )
+    derived = {
+        "origin_ruler": origin_ruler.model_dump(),
+        "origin_warriors_available": available,
+    }
+    if origin_ruler.status == "resolved" and origin_ruler.value == actor:
+        return _decision(
+            "allow",
+            ["MOVE_RULES_ORIGIN"],
+            [ids["path"], ids["move"], ids["move_restriction"], *origin_ruler.rule_ids],
+            derived_facts=derived,
+        )
+
+    destination_data = _clearing(state, destination)
     destination_ruler = (
         compute_ruler(
             destination_data or {},
@@ -335,19 +351,8 @@ def validate_move(state: dict[str, Any], *, rule_ids: dict[str, str] | None = No
             missing_fields=[f"clearings.{destination}.presence"],
         )
     )
-    derived = {
-        "origin_ruler": origin_ruler.model_dump(),
-        "destination_ruler": destination_ruler.model_dump(),
-        "origin_warriors_available": available,
-    }
+    derived["destination_ruler"] = destination_ruler.model_dump()
     ruler_rule_ids = origin_ruler.rule_ids + destination_ruler.rule_ids
-    if origin_ruler.status == "resolved" and origin_ruler.value == actor:
-        return _decision(
-            "allow",
-            ["MOVE_RULES_ORIGIN"],
-            [ids["path"], ids["move"], ids["move_restriction"], *ruler_rule_ids],
-            derived_facts=derived,
-        )
     if destination_ruler.status == "resolved" and destination_ruler.value == actor:
         return _decision(
             "allow",

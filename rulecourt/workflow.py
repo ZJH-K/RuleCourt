@@ -77,6 +77,40 @@ class FixedWorkflow:
             {"id": rule_id, "title": titles[rule_id]} for rule_id in rule_ids if rule_id in titles
         ]
 
+    @staticmethod
+    def _clarification_questions(missing_fields: list[str]) -> list[dict[str, str]]:
+        questions: list[dict[str, str]] = []
+        seen: set[str] = set()
+        for raw_field in missing_fields:
+            field = (
+                raw_field.removesuffix(".complete")
+                if raw_field.endswith(".adjacent_to.complete")
+                else raw_field
+            )
+            if field in seen:
+                continue
+            seen.add(field)
+            parts = field.split(".")
+            if field == "scope.root-local-move":
+                question = (
+                    "Please confirm that this Case is limited to Marquise ordinary "
+                    "local-move conditions."
+                )
+            elif len(parts) == 3 and parts[0] == "clearings" and parts[2] == "adjacent_to":
+                question = (
+                    f"Which clearings are adjacent to {parts[1]}? "
+                    "State whether the list is complete if you know it."
+                )
+            elif len(parts) == 5 and parts[0] == "clearings" and parts[2] == "presence":
+                question = (
+                    f"How many {parts[3]} {parts[4]} are in clearing {parts[1]}? "
+                    "State whether this is a complete list if relevant."
+                )
+            else:
+                question = f"Please provide the confirmed value for {field}."
+            questions.append({"field": field, "question": question})
+        return questions
+
     def _base(
         self,
         case: dict[str, Any],
@@ -91,6 +125,9 @@ class FixedWorkflow:
     ) -> dict[str, Any]:
         evidence = sorted(set(decision.rule_ids if verification.status == "passed" else []))
         ruleset_ref = package["id"] if package is not None else None
+        resolved_missing_fields = list(
+            decision.missing_fields if missing_fields is None else missing_fields
+        )
         return {
             "case_id": case["id"],
             "state_revision": case["revision"],
@@ -121,7 +158,8 @@ class FixedWorkflow:
                 "state_sufficient": decision.status in {"allow", "deny"},
                 "evidence_verified": verification.status == "passed",
             },
-            "missing_fields": list(missing_fields or decision.missing_fields),
+            "missing_fields": resolved_missing_fields,
+            "clarification_questions": self._clarification_questions(resolved_missing_fields),
             "explanation": self._explanation(status, reason),
         }
 

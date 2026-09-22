@@ -60,3 +60,11 @@ The result records the deterministic Decision, Verification, rule evidence,
 scope, and conditions that were not checked. Eyrie moves and full-turn
 legality remain outside this ticket's scope.
 
+## T06 clarification and resumption
+
+When current facts cannot determine the local move result, the Case returns
+INSUFFICIENT_INFORMATION with missing_fields and deterministic
+clarification_questions. Submit the requested facts to the same Case to
+re-run the workflow. Messages, state evidence, revisions, verdict history, and
+clarification_requested/clarification_resumed events remain queryable.
+
