@@ -106,6 +106,13 @@ def _case(
             }
         },
         "fact_sources": {"clearings.A.adjacent_to": "golden:case-1"},
+        "source_provenance": [
+            {"source_id": "reviewed:root-m0-v1", "kind": "human_review"},
+            {"source_id": "golden:case-1", "kind": "primary_fact"},
+            {"source_id": "root-4.2", "kind": "official_rule"},
+            {"source_id": "root-4.2.1", "kind": "official_rule"},
+            {"source_id": "review-note:1", "kind": "human_review"},
+        ],
         "evidence": ["root-4.2", "root-4.2.1"],
         "acceptable_questions": ["clearings.A.adjacent_to"],
         "review": {
@@ -490,15 +497,50 @@ def test_formal_scoring_requires_a_complete_human_review_and_family_split():
     assert "initial_label" not in manifest.model_dump()
 
 
+def test_formal_release_rejects_an_empty_holdout_partition():
+    data = _case(
+        "single-family",
+        "family-single",
+        coverage_tags=list(REQUIRED_COVERAGE_TAGS),
+    )
+    dataset = CaseDataset(
+        dataset_version="golden-v1",
+        cases=[EvaluationCase.model_validate(data)],
+    )
+    dataset.split_by_family(holdout_fraction=0.2, seed=11)
+
+    with pytest.raises(ValueError, match="holdout_families"):
+        dataset.scoring_manifest(_signoff(dataset), signing_key=TEST_SIGNOFF_KEY)
+
+
+def test_unverified_cases_do_not_satisfy_formal_coverage():
+    verified = _case("verified-no-tags", "family-verified-no-tags")
+    draft = _case(
+        "draft-coverage",
+        "family-draft-coverage",
+        review_status="draft",
+        coverage_tags=list(REQUIRED_COVERAGE_TAGS),
+    )
+    dataset = CaseDataset(
+        dataset_version="golden-v1",
+        cases=[EvaluationCase.model_validate(verified), EvaluationCase.model_validate(draft)],
+    )
+    dataset.split_by_family(holdout_fraction=0.2, seed=11)
+
+    with pytest.raises(ValueError, match="coverage_cases"):
+        dataset.scoring_manifest(_signoff(dataset), signing_key=TEST_SIGNOFF_KEY)
+
+
 def test_formal_gate_rejects_missing_or_wrong_signoff_key():
     data = _case(
         "signed-case",
         "family-signed-case",
         coverage_tags=list(REQUIRED_COVERAGE_TAGS),
     )
+    companion = _case("signed-companion", "family-signed-companion")
     dataset = CaseDataset(
         dataset_version="golden-v1",
-        cases=[EvaluationCase.model_validate(data)],
+        cases=[EvaluationCase.model_validate(data), EvaluationCase.model_validate(companion)],
     )
     dataset.split_by_family(holdout_fraction=0.2, seed=11)
     signoff = _signoff(dataset)
@@ -516,24 +558,30 @@ def test_formal_score_requires_split_and_detached_signoff():
         coverage_tags=list(REQUIRED_COVERAGE_TAGS),
     )
     case = EvaluationCase.model_validate(data)
-    dataset = CaseDataset(dataset_version="golden-v1", cases=[case])
-    outcome = _outcome("formal-score", "INSUFFICIENT_INFORMATION", "LEGAL")
+    companion = EvaluationCase.model_validate(
+        _case("formal-score-companion", "family-formal-score-companion")
+    )
+    dataset = CaseDataset(dataset_version="golden-v1", cases=[case, companion])
+    outcomes = [
+        _outcome("formal-score", "INSUFFICIENT_INFORMATION", "LEGAL"),
+        _outcome("formal-score-companion", "INSUFFICIENT_INFORMATION", "LEGAL"),
+    ]
 
     with pytest.raises(ValueError, match="family split"):
-        score_results(dataset, [outcome], formal=True)
+        score_results(dataset, outcomes, formal=True)
 
     dataset.split_by_family(holdout_fraction=0.2, seed=11)
     with pytest.raises(ValueError, match="detached human signoff"):
-        score_results(dataset, [outcome], formal=True)
+        score_results(dataset, outcomes, formal=True)
 
     report = score_results(
         dataset,
-        [outcome],
+        outcomes,
         formal=True,
         signoff=_signoff(dataset),
         signing_key=TEST_SIGNOFF_KEY,
     )
-    assert report.scored_case_count == 1
+    assert report.scored_case_count == 2
 
 
 def test_verified_case_without_review_checklist_cannot_be_published():
@@ -549,9 +597,10 @@ def test_verified_case_without_review_checklist_cannot_be_published():
         "evidence": ["review-note:incomplete"],
         "report": "The checklist was not completed.",
     }
+    companion = _case("complete-review", "family-complete-review")
     dataset = CaseDataset(
         dataset_version="golden-v1",
-        cases=[EvaluationCase.model_validate(data)],
+        cases=[EvaluationCase.model_validate(data), EvaluationCase.model_validate(companion)],
     )
     dataset.split_by_family(holdout_fraction=0.2, seed=11)
 
@@ -566,9 +615,10 @@ def test_engine_output_cannot_be_the_only_verified_source():
         coverage_tags=list(REQUIRED_COVERAGE_TAGS),
     )
     data["label_source"] = "engine-output"
+    companion = _case("engine-companion", "family-engine-companion")
     dataset = CaseDataset(
         dataset_version="golden-v1",
-        cases=[EvaluationCase.model_validate(data)],
+        cases=[EvaluationCase.model_validate(data), EvaluationCase.model_validate(companion)],
     )
     dataset.split_by_family(holdout_fraction=0.2, seed=11)
 

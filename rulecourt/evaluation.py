@@ -83,6 +83,26 @@ class FactFixture(BaseModel):
         return list(value)
 
 
+SourceKind = Literal["official_rule", "primary_fact", "human_review"]
+
+
+class SourceProvenance(BaseModel):
+    """Allowlisted provenance for a source used by a verified Case."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    source_id: str
+    kind: SourceKind
+
+    @field_validator("source_id")
+    @classmethod
+    def nonempty_source_id(cls, value: str) -> str:
+        value = value.strip()
+        if not value:
+            raise ValueError("source_id must not be empty")
+        return value
+
+
 class FactResponder:
     """Return pre-labelled facts without generating or inferring new facts.
 
@@ -305,6 +325,7 @@ class EvaluationCase(BaseModel):
     completeness_assertions: list[dict[str, Any]] = Field(default_factory=list)
     clarification_facts: dict[str, FactFixture] = Field(default_factory=dict)
     fact_sources: dict[str, str] = Field(default_factory=dict)
+    source_provenance: list[SourceProvenance] = Field(default_factory=list)
     evidence: list[str] = Field(default_factory=list)
     acceptable_questions: list[str] = Field(default_factory=list)
     review: CaseReview = Field(default_factory=CaseReview)
@@ -331,6 +352,14 @@ class EvaluationCase(BaseModel):
                 tags.append(normalized)
         return tags
 
+    @field_validator("source_provenance")
+    @classmethod
+    def unique_source_provenance(cls, value: list[SourceProvenance]) -> list[SourceProvenance]:
+        source_ids = [item.source_id for item in value]
+        if len(source_ids) != len(set(source_ids)):
+            raise ValueError("source provenance IDs must be unique")
+        return value
+
     @field_validator("acceptable_questions")
     @classmethod
     def unique_question_targets(cls, value: list[str]) -> list[str]:
@@ -349,16 +378,9 @@ class EvaluationCase(BaseModel):
             raise ValueError("Case revision history must be ordered and unique")
         return value
 
-    @model_validator(mode="after")
-    def validate_sources(self) -> EvaluationCase:
-        missing_sources = set(self.clarification_facts) - set(self.fact_sources)
-        if missing_sources:
-            raise ValueError(
-                "every clarification fact needs an independent source: "
-                + ", ".join(sorted(missing_sources))
-            )
+    def _review_invariant_errors(self) -> list[str]:
         if self.review.status == "verified":
-            missing_review = [
+            errors = [
                 name
                 for name, value in (
                     ("reviewer_id", self.review.reviewer_id),
@@ -367,44 +389,76 @@ class EvaluationCase(BaseModel):
                 )
                 if not value or not str(value).strip()
             ]
-            if missing_review or not self.review.evidence:
-                required = ", ".join(
-                    [*missing_review, "evidence"] if not self.review.evidence else missing_review
-                )
-                raise ValueError(f"verified cases require review {required}")
+            if not self.review.evidence:
+                errors.append("evidence")
             if self.label_source == "candidate:unverified":
-                raise ValueError("verified cases require an independent label_source")
+                errors.append("independent_label_source")
             if not self.evidence:
-                raise ValueError("verified cases require evidence")
-        elif self.review.status == "disputed" and (
-            not self.review.basis.strip() or not self.review.report.strip()
-        ):
+                errors.append("case_evidence")
+            return errors
+        if self.review.status == "disputed":
+            return [
+                name
+                for name, value in (
+                    ("basis", self.review.basis),
+                    ("report", self.review.report),
+                )
+                if not value or not value.strip()
+            ]
+        return []
+
+    @model_validator(mode="after")
+    def validate_sources(self) -> EvaluationCase:
+        missing_sources = set(self.clarification_facts) - set(self.fact_sources)
+        if missing_sources:
+            raise ValueError(
+                "every clarification fact needs an independent source: "
+                + ", ".join(sorted(missing_sources))
+            )
+        review_errors = self._review_invariant_errors()
+        if review_errors:
+            if self.review.status == "verified":
+                raise ValueError("verified cases require review " + ", ".join(review_errors))
             raise ValueError("disputed cases require review basis and report")
         return self
 
-    def scoring_validation_errors(self) -> list[str]:
-        """Return formal-scoring errors without changing the review status."""
+    def _required_source_ids(self) -> set[str]:
+        source_ids = {
+            self.label_source,
+            *self.fact_sources.values(),
+            *self.evidence,
+            *self.review.evidence,
+        }
+        source_ids.update(
+            source for fixture in self.clarification_facts.values() for source in fixture.source
+        )
+        return source_ids
+
+    def scoring_validation_errors(self, *, formal: bool = False) -> list[str]:
+        """Return scoring errors without changing the review status."""
 
         if self.review.status == "draft":
             return []
-        errors: list[str] = []
-        if not self.review.reviewer_id or not self.review.reviewer_id.strip():
-            errors.append("reviewer_id")
+        errors: list[str] = self._review_invariant_errors()
         if not self.review.rule_version or not self.review.rule_version.strip():
             errors.append("rule_version")
         if not self.review.reviewed_at or not self.review.reviewed_at.strip():
             errors.append("reviewed_at")
         if self.review.status == "verified":
-            if self.label_source == "candidate:unverified" or _is_engine_only_source(
-                self.label_source
+            if (
+                _is_engine_only_source(self.label_source)
+                and "independent_label_source" not in errors
             ):
                 errors.append("independent_label_source")
-            if any(_is_engine_only_source(source) for source in self.fact_sources.values()):
-                errors.append("engine_only_fact_source")
-            if not any(not _is_engine_only_source(source) for source in self.review.evidence):
-                errors.append("independent_review_evidence")
-            if not self.evidence:
-                errors.append("case_evidence")
+            if formal:
+                provenance = {item.source_id: item.kind for item in self.source_provenance}
+                missing_sources = self._required_source_ids() - set(provenance)
+                if missing_sources:
+                    errors.append("source_provenance")
+                if any(_is_engine_only_source(source) for source in self._required_source_ids()):
+                    errors.append("engine_only_source")
+                if any(not fixture.source for fixture in self.clarification_facts.values()):
+                    errors.append("fact_source_provenance")
             errors.extend(f"checks.{name}" for name in self.review.missing_checks)
             if self.review.dispute_reasons:
                 errors.append("verified_case_has_dispute_reasons")
@@ -653,6 +707,8 @@ class CaseDataset(BaseModel):
         for tag, aliases in _COVERAGE_ALIASES.items():
             ids: list[str] = []
             for case in self.cases:
+                if case.review.status != "verified":
+                    continue
                 values = {case.category.casefold()}
                 values.update(item.casefold() for item in case.coverage_tags)
                 if values & aliases:
@@ -690,6 +746,10 @@ class CaseDataset(BaseModel):
         if not reviewer_ids <= set(signoff.reviewer_ids):
             errors.append("reviewer_ids")
         if require_coverage:
+            if self.split_manifest is None or not self.split_manifest.development_families:
+                errors.append("development_families")
+            if self.split_manifest is None or not self.split_manifest.holdout_families:
+                errors.append("holdout_families")
             reviewed = set(signoff.coverage_reviewed)
             waived = set(signoff.coverage_waivers)
             unattested = set(REQUIRED_COVERAGE_TAGS) - reviewed - waived
@@ -735,7 +795,7 @@ class CaseDataset(BaseModel):
             )
         errors: dict[str, list[str]] = {}
         for case in self.cases:
-            case_errors = case.scoring_validation_errors()
+            case_errors = case.scoring_validation_errors(formal=require_coverage)
             if case_errors:
                 errors[case.id] = case_errors
         if errors:
