@@ -28,11 +28,13 @@ class Decision(BaseModel):
 
 
 DEFAULT_RULE_IDS = {
+    "suit": "root-2.1",
     "path": "root-2.2",
     "rule": "root-2.5",
     "move": "root-4.2",
     "move_restriction": "root-4.2.1",
     "eyrie_rule": "root-7.2.2",
+    "decree": "root-7.5.2",
 }
 
 
@@ -53,6 +55,31 @@ def _clearing(state: dict[str, Any], clearing_id: str) -> dict[str, Any] | None:
         return None
     value = clearings.get(clearing_id)
     return value if isinstance(value, dict) else None
+
+
+def _missing_eyrie_decree_fields(
+    state: dict[str, Any], action: dict[str, Any], *, include_phase: bool = True
+) -> list[str]:
+    missing: list[str] = []
+    if include_phase and state.get("phase") is None:
+        missing.append("phase")
+
+    decree = state.get("decree")
+    if not isinstance(decree, dict):
+        missing.append("decree")
+    else:
+        column = decree.get("column")
+        if column is None:
+            missing.append("decree.column")
+        elif column == "move" and decree.get("card_suit") is None:
+            missing.append("decree.card_suit")
+
+    origin = action.get("origin")
+    if not isinstance(origin, str):
+        missing.append("action.origin")
+    elif (_clearing(state, origin) or {}).get("suit") is None:
+        missing.append(f"clearings.{origin}.suit")
+    return _unique(missing)
 
 
 def _assertions(state: dict[str, Any]) -> list[dict[str, Any]]:
@@ -374,4 +401,147 @@ def validate_move(state: dict[str, Any], *, rule_ids: dict[str, str] | None = No
         [ids["path"], ids["move"], ids["move_restriction"], *ruler_rule_ids],
         derived_facts=derived,
         missing_fields=missing,
+    )
+
+
+def validate_eyrie_decree_move(
+    state: dict[str, Any], *, rule_ids: dict[str, str] | None = None
+) -> Decision:
+    """Validate the Eyrie's local Decree Move constraints around validate_move."""
+
+    ids = _rule_ids(rule_ids)
+    action = state.get("action")
+    if not isinstance(action, dict):
+        return _decision(
+            "unknown",
+            ["MOVE_ACTION_MISSING"],
+            [ids["move"], ids["decree"]],
+            missing_fields=["action"],
+        )
+    if action.get("type") != "move":
+        return _decision("unsupported", ["UNSUPPORTED_ACTION"], [ids["move"], ids["decree"]])
+    if action.get("actor") != "eyrie":
+        return _decision("unsupported", ["UNSUPPORTED_FACTION"], [ids["move"], ids["decree"]])
+
+    def missing_context_decision(missing_fields: list[str]) -> Decision:
+        reason_by_field = {
+            "phase": "DECREE_PHASE_MISSING",
+            "decree": "DECREE_CONTEXT_MISSING",
+            "decree.column": "DECREE_COLUMN_MISSING",
+            "decree.card_suit": "DECREE_CARD_SUIT_MISSING",
+            "action.origin": "DECREE_ORIGIN_MISSING",
+        }
+        reason = reason_by_field.get(
+            missing_fields[0] if missing_fields else "decree",
+            "DECREE_ORIGIN_SUIT_MISSING",
+        )
+        rule_ids_for_context = [ids["decree"]]
+        if any(field.startswith("clearings.") for field in missing_fields):
+            rule_ids_for_context.append(ids["suit"])
+        if "action.origin" in missing_fields:
+            rule_ids_for_context.append(ids["move"])
+        return _decision(
+            "unknown",
+            [reason, "DECREE_CONTEXT_INCOMPLETE"],
+            _unique(rule_ids_for_context),
+            missing_fields=missing_fields,
+        )
+
+    phase = state.get("phase")
+    if phase is None:
+        return missing_context_decision(_missing_eyrie_decree_fields(state, action))
+    if phase != "daylight":
+        return _decision("deny", ["DECREE_PHASE_NOT_DAYLIGHT"], [ids["decree"]])
+
+    missing_context = _missing_eyrie_decree_fields(
+        state, action, include_phase=False
+    )
+    if missing_context:
+        return missing_context_decision(missing_context)
+
+    decree = state["decree"]
+    column = decree["column"]
+    if column != "move":
+        return _decision("deny", ["DECREE_COLUMN_NOT_MOVE"], [ids["decree"]])
+
+    card_suit = decree["card_suit"]
+    if card_suit not in {"fox", "rabbit", "mouse", "bird"}:
+        return _decision("deny", ["DECREE_CARD_SUIT_INVALID"], [ids["decree"]])
+
+    origin = action["origin"]
+    origin_data = _clearing(state, origin)
+    origin_suit = origin_data["suit"] if origin_data is not None else None
+    if origin_suit not in {"fox", "rabbit", "mouse"}:
+        return _decision(
+            "deny",
+            ["DECREE_ORIGIN_SUIT_INVALID"],
+            [ids["suit"], ids["decree"]],
+        )
+
+    derived_context = {
+        "origin_suit": {
+            "status": "resolved",
+            "value": origin_suit,
+            "reason_codes": ["CLEARING_SUIT_RESOLVED"],
+            "rule_ids": [ids["suit"]],
+            "missing_fields": [],
+        },
+        "decree_suit": {
+            "status": "resolved",
+            "value": card_suit,
+            "reason_codes": [
+                "DECREE_BIRD_WILDCARD"
+                if card_suit == "bird"
+                else "DECREE_CARD_SUIT_RESOLVED"
+            ],
+            "rule_ids": [ids["decree"]],
+            "missing_fields": [],
+        },
+        "decree_phase": {
+            "status": "resolved",
+            "value": phase,
+            "reason_codes": ["DECREE_PHASE_DAYLIGHT"],
+            "rule_ids": [ids["decree"]],
+            "missing_fields": [],
+        },
+    }
+    if card_suit != "bird" and origin_suit != card_suit:
+        return _decision(
+            "deny",
+            ["DECREE_SUIT_MISMATCH"],
+            [ids["suit"], ids["decree"]],
+            derived_facts=derived_context,
+        )
+
+    move = validate_move(state, rule_ids=ids)
+    derived = dict(move.derived_facts)
+    derived.update(derived_context)
+    result_rule_ids = move.rule_ids + [ids["suit"], ids["decree"]]
+    if move.status == "allow":
+        return _decision(
+            "allow",
+            [*move.reason_codes, "DECREE_MOVE_VALID"],
+            result_rule_ids,
+            derived_facts=derived,
+        )
+    if move.status == "deny":
+        return _decision(
+            "deny",
+            move.reason_codes,
+            result_rule_ids,
+            derived_facts=derived,
+        )
+    if move.status == "unknown":
+        return _decision(
+            "unknown",
+            [*move.reason_codes, "DECREE_MOVE_STATE_MISSING"],
+            result_rule_ids,
+            derived_facts=derived,
+            missing_fields=move.missing_fields,
+        )
+    return _decision(
+        "unsupported",
+        move.reason_codes,
+        result_rule_ids,
+        derived_facts=derived,
     )

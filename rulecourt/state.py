@@ -19,6 +19,9 @@ M0_SCOPE_POLICY_VERSION = "root-local-move-v1"
 SUPPORTED_FACTIONS = {"eyrie", "marquise"}
 SUPPORTED_PIECES = {"warriors", "buildings"}
 SUPPORTED_CLEARING_RE = re.compile(r"^[A-Za-z][A-Za-z0-9_-]{0,63}$")
+SUPPORTED_PHASES = {"birdsong", "daylight", "evening"}
+SUPPORTED_CLEARING_SUITS = {"fox", "rabbit", "mouse"}
+SUPPORTED_CARD_SUITS = SUPPORTED_CLEARING_SUITS | {"bird"}
 
 
 class StateEvidence(BaseModel):
@@ -35,6 +38,7 @@ class ProposedFactChange(BaseModel):
     operation: Literal["assert", "correct", "retract"]
     field_path: str = Field(min_length=1, max_length=300)
     value: Any | None = None
+    supersedes_id: str | None = Field(default=None, max_length=100)
     evidence: list[StateEvidence] = Field(min_length=1)
 
     @model_validator(mode="after")
@@ -186,10 +190,60 @@ _FACTION = r"(?:Eyrie(?:\s+Dynasties)?|Marquise(?:\s+de\s+Cat)?|老鹰|鹰|鸟�
 _PIECE = r"(?:warriors?|units?|buildings?|roost|兵|战士|建筑(?:物)?|巢穴)"
 _COUNT = r"(?:-?\d+|零|〇|一(?:个|只)?|二(?:个)?|两(?:个|只)?|三(?:个)?|四(?:个)?|五(?:个)?|六(?:个)?|七(?:个)?|八(?:个)?|九(?:个)?|十|one|two|three|four|five)"
 _CLEARING = r"[A-Za-z][A-Za-z0-9_-]{0,63}"
+_SUIT = r"(?:fox|rabbit|mouse|bird|狐|兔|鼠|鸟)"
 
 
 def _unique(values: Iterable[str]) -> list[str]:
     return list(dict.fromkeys(values))
+
+
+def _suit(value: str | None) -> str | None:
+    if value is None:
+        return None
+    normalized = value.strip().lower()
+    return {
+        "fox": "fox",
+        "狐": "fox",
+        "rabbit": "rabbit",
+        "兔": "rabbit",
+        "mouse": "mouse",
+        "鼠": "mouse",
+        "bird": "bird",
+        "鸟": "bird",
+    }.get(normalized)
+
+
+def _phase(value: str | None) -> str | None:
+    if value is None:
+        return None
+    normalized = value.strip().lower()
+    return {
+        "birdsong": "birdsong",
+        "鸟鸣": "birdsong",
+        "daylight": "daylight",
+        "白昼": "daylight",
+        "白天": "daylight",
+        "evening": "evening",
+        "黄昏": "evening",
+        "夜晚": "evening",
+        "晚上": "evening",
+    }.get(normalized)
+
+
+def _decree_column(value: str | None) -> str | None:
+    if value is None:
+        return None
+    normalized = value.strip().lower()
+    return {
+        "recruit": "recruit",
+        "招募": "recruit",
+        "move": "move",
+        "移动": "move",
+        "battle": "battle",
+        "战斗": "battle",
+        "build": "build",
+        "建造": "build",
+    }.get(normalized)
 
 
 def _targets(value: str) -> list[str]:
@@ -249,8 +303,25 @@ class NaturalLanguageStateExtractor:
         seen_changes: set[tuple[str, str]] = set()
         seen_assertions: set[tuple[str, str]] = set()
 
+        def add_change(field_path: str, value: Any, source_span: str) -> None:
+            key = (field_path, repr(value))
+            if key in seen_changes:
+                return
+            changes.append(
+                ProposedFactChange(
+                    operation=fact_operation,
+                    field_path=field_path,
+                    value=value,
+                    evidence=[_evidence(field_path, message_id, source_span)],
+                )
+            )
+            seen_changes.add(key)
+
         unsupported = re.search(
-            r"\b(?:vagabond|riverfolk|lizard|lizard cult|hirelings)\b|侠客|河民|蜥蜴|雇佣兵",
+            r"\b(?:vagabond|riverfolk|lizard|lizard cult|hirelings|"
+            r"woodland alliance|underground duchy|corvid conspiracy|"
+            r"lord of the hundreds|keepers in iron)\b|"
+            r"侠客|河民|蜥蜴|雇佣兵",
             text,
             re.IGNORECASE,
         )
@@ -289,6 +360,135 @@ class NaturalLanguageStateExtractor:
                 _scope_assumption(text, message_id, asserted_value=asserted_value)
             )
 
+        phase_match = re.search(
+            r"(?:(?:当前|现在|本回合)\s*(?:是|为|在)?|"
+            r"phase\s*(?:is|=|:)?|阶段\s*(?:是|为|:)?\s*)"
+            r"(?P<phase>birdsong|daylight|evening|鸟鸣|白昼|白天|黄昏|夜晚|晚上)",
+            text,
+            re.IGNORECASE,
+        )
+        if phase_match:
+            phase = _phase(phase_match.group("phase"))
+            if phase is not None:
+                add_change("phase", phase, phase_match.group(0))
+                recognized = True
+
+        if not any(change.field_path == "phase" for change in changes):
+            phase_match = re.search(
+                r"(?:phase|current[ \t]+phase)[ \t]*(?:is|=|:)?[ \t]*"
+                r"(?P<phase>birdsong|daylight|evening)",
+                text,
+                re.IGNORECASE,
+            )
+            if phase_match is None:
+                phase_match = re.search(
+                    r"\b(?P<phase>birdsong|daylight|evening)\b",
+                    text,
+                    re.IGNORECASE,
+                )
+            if phase_match:
+                phase = _phase(phase_match.group("phase"))
+                if phase is not None:
+                    add_change("phase", phase, phase_match.group(0))
+                    recognized = True
+
+        decree_column_match = re.search(
+            r"(?:decree|法令)\s*(?:column|列\s*)?(?:is|为|是|=|:|：)?\s*"
+            r"(?P<column>recruit|move|battle|build|招募|移动|战斗|建造)",
+            text,
+            re.IGNORECASE,
+        )
+        if decree_column_match:
+            column = _decree_column(decree_column_match.group("column"))
+            if column is not None:
+                add_change("decree.column", column, decree_column_match.group(0))
+                recognized = True
+
+        if not any(change.field_path == "decree.column" for change in changes):
+            decree_column_match = re.search(
+                r"decree[ \t]*(?:column)?[ \t]*(?:is|=|:)?[ \t]*"
+                r"(?P<column>recruit|move|battle|build)",
+                text,
+                re.IGNORECASE,
+            )
+            if decree_column_match:
+                column = _decree_column(decree_column_match.group("column"))
+                if column is not None:
+                    add_change("decree.column", column, decree_column_match.group(0))
+                    recognized = True
+
+        decree_suit_match = re.search(
+            rf"(?P<suit>{_SUIT})\s*(?:decree|法令|card|牌)"
+            rf"|(?:decree|法令)\s*(?:card|牌|suit|花色)?\s*"
+            rf"(?:is|为|是|=|:|：)?\s*(?P<decree_suit>{_SUIT})",
+            text,
+            re.IGNORECASE,
+        )
+        if decree_suit_match:
+            card_suit = _suit(
+                decree_suit_match.group("suit") or decree_suit_match.group("decree_suit")
+            )
+            if card_suit is not None:
+                add_change("decree.card_suit", card_suit, decree_suit_match.group(0))
+                recognized = True
+
+        if not any(change.field_path == "decree.card_suit" for change in changes):
+            decree_suit_match = re.search(
+                rf"(?P<suit>{_SUIT})[ \t]+(?:decree|card)"
+                rf"|decree[ \t]*(?:card|suit)?[ \t]*(?:is|=|:)?[ \t]*"
+                rf"(?P<decree_suit>{_SUIT})",
+                text,
+                re.IGNORECASE,
+            )
+            if decree_suit_match:
+                card_suit = _suit(
+                    decree_suit_match.group("suit") or decree_suit_match.group("decree_suit")
+                )
+                if card_suit is not None:
+                    add_change("decree.card_suit", card_suit, decree_suit_match.group(0))
+                    recognized = True
+
+        clearing_suit_patterns = [
+            re.compile(
+                rf"(?P<clearing>{_CLEARING})\s*(?:是|为)\s*(?P<suit>{_SUIT})"
+                rf"(?:\s*(?:clearing|地点))?",
+                re.IGNORECASE,
+            ),
+            re.compile(
+                rf"(?P<clearing>{_CLEARING})\s*(?:的)?\s*(?:suit|花色)\s*"
+                rf"(?:is|为|是|=|:|：)?\s*(?P<suit>{_SUIT})",
+                re.IGNORECASE,
+            ),
+            re.compile(
+                rf"(?P<suit>{_SUIT})\s+(?:clearing|地点)\s+(?P<clearing>{_CLEARING})",
+                re.IGNORECASE,
+            ),
+        ]
+        clearing_suit_patterns.extend(
+            [
+                re.compile(
+                    rf"(?P<clearing>{_CLEARING})[ \t]*(?:is|has[ \t]+(?:a[ \t]+)?suit)"
+                    rf"[ \t]*(?P<suit>{_SUIT})",
+                    re.IGNORECASE,
+                ),
+            ]
+        )
+        for pattern in clearing_suit_patterns:
+            for suit_match in pattern.finditer(text):
+                clearing = _clearing(suit_match.group("clearing"))
+                suit = _suit(suit_match.group("suit"))
+                if suit is None or suit == "bird":
+                    issues.append(
+                        _issue(
+                            "INVALID_CLEARING_SUIT",
+                            "A clearing suit must be fox, rabbit, or mouse.",
+                            f"clearings.{clearing}.suit",
+                        )
+                    )
+                    continue
+                add_change(f"clearings.{clearing}.suit", suit, suit_match.group(0))
+                recognized = True
+
         retract_match = re.search(
             rf"(?:撤回|取消|不确定)\s*(?P<clearing>{_CLEARING})\s*(?:的)?\s*"
             rf"(?P<faction>{_FACTION})\s*(?P<piece>{_PIECE})(?:数量)?",
@@ -323,6 +523,14 @@ class NaturalLanguageStateExtractor:
                 text,
                 re.IGNORECASE,
             )
+        if (
+            move_match is None
+            and actor is not None
+            and re.search(r"\b(?:decree\s+)?move\b|移动|法令", text, re.IGNORECASE)
+        ):
+            source_span = actor_match.group(0) if actor_match else text[:80]
+            add_change("action.type", "move", source_span)
+            add_change("action.actor", actor, source_span)
         if move_match or re.search(r"移动|\bmove\b", text, re.IGNORECASE):
             recognized = True
         if move_match:
@@ -358,6 +566,26 @@ class NaturalLanguageStateExtractor:
                 unknown_fields.append(f"clearings.{origin}.presence")
             if not _has_path(state, f"clearings.{destination}.presence"):
                 unknown_fields.append(f"clearings.{destination}.presence")
+
+        if re.search(r"(?:decree|法令)", text, re.IGNORECASE):
+            recognized = True
+            action_origin = move_match.group("origin") if move_match is not None else None
+            if not _has_path(state, "phase") and not any(
+                change.field_path == "phase" for change in changes
+            ):
+                unknown_fields.append("phase")
+            if not _has_path(state, "decree.card_suit") and not any(
+                change.field_path == "decree.card_suit" for change in changes
+            ):
+                unknown_fields.append("decree.card_suit")
+            if not _has_path(state, "decree.column") and not any(
+                change.field_path == "decree.column" for change in changes
+            ):
+                unknown_fields.append("decree.column")
+            if action_origin and not _has_path(state, f"clearings.{action_origin}.suit") and not any(
+                change.field_path == f"clearings.{action_origin}.suit" for change in changes
+            ):
+                unknown_fields.append(f"clearings.{action_origin}.suit")
 
         move_count_pattern = re.compile(
             rf"(?:移动|move)\s*(?P<count>{_COUNT})\s*(?:个|只)?\s*(?:warriors?|units?|兵|战士)",
@@ -484,6 +712,32 @@ class NaturalLanguageStateExtractor:
             re.IGNORECASE,
         )
         for match in empty_pattern.finditer(text):
+            recognized = True
+            clearing = _clearing(match.group("clearing"))
+            collection_target = f"clearings.{clearing}.presence"
+            assertion_key = (clearing, "presence:all:all")
+            if assertion_key not in seen_assertions:
+                completeness_assertions.append(
+                    ProposedCompletenessAssertion(
+                        collection_target=collection_target,
+                        covered_scope={
+                            "kind": "presence",
+                            "clearing_id": clearing,
+                            "faction": None,
+                            "piece_type": None,
+                        },
+                        completeness="complete",
+                        member_snapshot={"members": []},
+                        evidence_refs=[_evidence(collection_target, message_id, match.group(0))],
+                    )
+                )
+                seen_assertions.add(assertion_key)
+
+        for match in re.finditer(
+            rf"(?P<clearing>{_CLEARING})[ \t]+is[ \t]+empty",
+            text,
+            re.IGNORECASE,
+        ):
             recognized = True
             clearing = _clearing(match.group("clearing"))
             collection_target = f"clearings.{clearing}.presence"
@@ -693,13 +947,56 @@ def validate_fact_change(change: ProposedFactChange) -> dict[str, str] | None:
         return _issue(
             "UNSUPPORTED_ACTION", "M0 only accepts the warrior Move action.", change.field_path
         )
-    if parts[-1] == "actor" and change.value not in SUPPORTED_FACTIONS:
+    if parts[-1] == "actor" and (
+        not isinstance(change.value, str) or change.value not in SUPPORTED_FACTIONS
+    ):
         return _issue(
             "UNSUPPORTED_FACTION", "M0 supports only Eyrie and Marquise.", change.field_path
         )
-    if parts[-1] == "phase" and change.value not in {"birdsong", "daylight", "evening"}:
+    if parts[-1] == "phase" and (
+        not isinstance(change.value, str) or change.value not in SUPPORTED_PHASES
+    ):
         return _issue(
             "INVALID_PHASE", "The phase is not a supported Root phase.", change.field_path
+        )
+    if parts == ["decree", "column"] and (
+        not isinstance(change.value, str)
+        or change.value not in {"recruit", "move", "battle", "build"}
+    ):
+        return _issue(
+            "INVALID_DECREE_COLUMN",
+            "The Decree column is not supported by the Root state schema.",
+            change.field_path,
+        )
+    if parts == ["decree", "card_suit"] and (
+        not isinstance(change.value, str) or change.value not in SUPPORTED_CARD_SUITS
+    ):
+        return _issue(
+            "INVALID_DECREE_SUIT",
+            "The Decree card suit is not supported by the Root state schema.",
+            change.field_path,
+        )
+    if (
+        len(parts) == 3
+        and parts[0] == "clearings"
+        and parts[2] == "suit"
+        and not isinstance(change.value, str)
+    ):
+        return _issue(
+            "INVALID_CLEARING_SUIT",
+            "A clearing suit must be fox, rabbit, or mouse.",
+            change.field_path,
+        )
+    if (
+        len(parts) == 3
+        and parts[0] == "clearings"
+        and parts[2] == "suit"
+        and change.value not in SUPPORTED_CLEARING_SUITS
+    ):
+        return _issue(
+            "INVALID_CLEARING_SUIT",
+            "A clearing suit must be fox, rabbit, or mouse.",
+            change.field_path,
         )
     return None
 

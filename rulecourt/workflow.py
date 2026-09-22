@@ -7,7 +7,8 @@ from uuid import uuid4
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from .adjudication import Decision, validate_move
+from .adjudication import Decision
+from .root_adapter import RootAdapter
 from .rules import AmbiguousPublicRuleError, RuleStore
 from .state import M0_RULESET_VERSION
 
@@ -34,8 +35,9 @@ class FixedWorkflow:
     ]
     required_sections: ClassVar[tuple[str, ...]] = ("2.2", "2.5", "4.2", "4.2.1")
 
-    def __init__(self, rule_store: RuleStore):
+    def __init__(self, rule_store: RuleStore, adapter: RootAdapter | None = None):
         self.rule_store = rule_store
+        self.adapter = adapter or RootAdapter()
 
     @staticmethod
     def _scope_confirmation(case: dict[str, Any]) -> dict[str, Any] | None:
@@ -52,23 +54,7 @@ class FixedWorkflow:
 
     @classmethod
     def _rule_index(cls, package: dict[str, Any]) -> dict[str, str] | None:
-        by_section = {rule["section"]: rule["id"] for rule in package["rules"]}
-        if any(section not in by_section for section in cls.required_sections):
-            return None
-        rule_ids = {by_section[section] for section in cls.required_sections}
-        covered = {
-            rule_id
-            for obligation in package.get("coverage_obligations", [])
-            for rule_id in obligation.get("rule_ids", [])
-        }
-        if not rule_ids.issubset(covered):
-            return None
-        return {
-            "path": by_section["2.2"],
-            "rule": by_section["2.5"],
-            "move": by_section["4.2"],
-            "move_restriction": by_section["4.2.1"],
-        }
+        return RootAdapter().rule_index(package, {})
 
     @staticmethod
     def _public_rules(package: dict[str, Any], rule_ids: list[str]) -> list[dict[str, str]]:
@@ -93,8 +79,7 @@ class FixedWorkflow:
             parts = field.split(".")
             if field == "scope.root-local-move":
                 question = (
-                    "Please confirm that this Case is limited to Marquise ordinary "
-                    "local-move conditions."
+                    "Please confirm that this Case is limited to Root local-move conditions."
                 )
             elif len(parts) == 3 and parts[0] == "clearings" and parts[2] == "adjacent_to":
                 question = (
@@ -160,24 +145,19 @@ class FixedWorkflow:
             },
             "missing_fields": resolved_missing_fields,
             "clarification_questions": self._clarification_questions(resolved_missing_fields),
-            "explanation": self._explanation(status, reason),
+            "explanation": self._explanation(
+                status, reason, case.get("confirmed_state", {})
+            ),
         }
 
-    @staticmethod
-    def _explanation(status: str, reason: str) -> str:
-        if status == "LEGAL":
-            return (
-                "Marquise rules at least one endpoint and the checked local move conditions hold."
-            )
-        if status == "ILLEGAL":
-            return "The proposed move violates a checked local move condition."
-        if status == "INSUFFICIENT_INFORMATION":
-            return "More confirmed facts are needed before this local move can be decided."
-        if reason == "VERIFICATION_NOT_SATISFIED":
-            return "The reviewed rule evidence is not available for this adjudication."
-        return "This action is outside the supported M0 ordinary-move workflow."
+    def _explanation(self, status: str, reason: str, state: dict[str, Any]) -> str:
+        return self.adapter.explanation(status, reason, state)
 
     def run(self, case: dict[str, Any]) -> dict[str, Any]:
+        state = dict(case["confirmed_state"])
+        state["completeness_assertions"] = case.get(
+            "active_completeness_assertions", case.get("completeness_assertions", [])
+        )
         try:
             package = self.rule_store.get_enabled_package(
                 "root", M0_RULESET_VERSION.removeprefix("root-law-")
@@ -186,7 +166,9 @@ class FixedWorkflow:
                 package = self.rule_store.get_enabled_package("root", M0_RULESET_VERSION)
         except AmbiguousPublicRuleError:
             package = None
-        rule_ids = self._rule_index(package) if package is not None else None
+        rule_ids = (
+            self.adapter.rule_index(package, state) if package is not None else None
+        )
         if package is None or rule_ids is None:
             decision = Decision(status="unsupported", reason_codes=["VERIFICATION_NOT_SATISFIED"])
             verification = VerificationRecord(
@@ -229,36 +211,7 @@ class FixedWorkflow:
                 missing_fields=decision.missing_fields,
             )
 
-        state = dict(case["confirmed_state"])
-        state["completeness_assertions"] = case.get(
-            "active_completeness_assertions", case.get("completeness_assertions", [])
-        )
-        action = state.get("action")
-        if isinstance(action, dict) and action.get("actor") != "marquise":
-            decision = Decision(
-                status="unsupported",
-                reason_codes=["UNSUPPORTED_FACTION"],
-                rule_ids=list(rule_ids.values()),
-            )
-            verification = VerificationRecord(
-                status="passed",
-                ruleset_id=M0_RULESET_VERSION,
-                ruleset_version_ref=package["id"],
-                rule_ids=sorted(set(rule_ids.values())),
-                evidence=sorted(set(rule_ids.values())),
-                checks={"state_sufficient": False, "evidence_verified": True},
-            )
-            return self._base(
-                case,
-                package,
-                decision,
-                verification,
-                status="UNRESOLVED",
-                reason="UNSUPPORTED_FACTION",
-                scope_confirmation=scope_confirmation,
-            )
-
-        decision = validate_move(state, rule_ids=rule_ids)
+        decision = self.adapter.validate_action(state, rule_ids)
         verification = VerificationRecord(
             status="passed",
             ruleset_id=M0_RULESET_VERSION,
