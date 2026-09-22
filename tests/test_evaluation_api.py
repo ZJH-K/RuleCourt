@@ -3,15 +3,19 @@ import json
 import pytest
 
 from rulecourt.evaluation import (
+    REQUIRED_COVERAGE_TAGS,
     CaseDataset,
     EvaluationCase,
     EvaluationReport,
     EvaluationRunner,
     FactRequest,
     FactResponder,
+    HumanSignoff,
     ReplayResult,
     score_results,
 )
+
+TEST_SIGNOFF_KEY = "t15-test-signing-key"
 
 
 def test_fact_responder_only_returns_requested_facts_and_repeats_deterministically():
@@ -75,11 +79,17 @@ def test_fact_responder_counts_repeated_requests_against_its_budget():
     assert responder.request_count == 2
 
 
-def _case(case_id: str, family_id: str, review_status: str = "verified") -> dict:
+def _case(
+    case_id: str,
+    family_id: str,
+    review_status: str = "verified",
+    coverage_tags: list[str] | None = None,
+) -> dict:
     return {
         "id": case_id,
         "family_id": family_id,
         "category": "ordinary",
+        "coverage_tags": list(coverage_tags or []),
         "scope": "local_move_conditions",
         "initial_input": "确认本次只裁决 Marquise 普通移动范围。Marquise 从 A 移动 1 个 warriors 到 B。",
         "initial_label": "INSUFFICIENT_INFORMATION",
@@ -429,28 +439,109 @@ def _human_review() -> dict:
     }
 
 
+def _signoff(
+    dataset: CaseDataset,
+    *,
+    coverage_reviewed: list[str] | None = None,
+    coverage_waivers: dict[str, str] | None = None,
+) -> HumanSignoff:
+    return HumanSignoff(
+        dataset_version=dataset.dataset_version,
+        dataset_digest=dataset.approval_digest(),
+        approved_case_ids=[case.id for case in dataset.verified_cases],
+        reviewer_ids=[
+            case.review.reviewer_id for case in dataset.verified_cases if case.review.reviewer_id
+        ],
+        coverage_reviewed=coverage_reviewed or list(REQUIRED_COVERAGE_TAGS),
+        coverage_waivers=coverage_waivers or {},
+        signed_by="human-reviewer-1",
+        signed_at="2026-09-22T01:00:00Z",
+        approval_reference="t15-manual-signoff-1",
+        signature="pending",
+    ).seal(TEST_SIGNOFF_KEY)
+
+
 def test_formal_scoring_requires_a_complete_human_review_and_family_split():
-    data = _case("formal-1", "family-formal")
-    data["review"] = _human_review()
-    dataset = CaseDataset(
-        dataset_version="golden-v1",
-        cases=[EvaluationCase.model_validate(data)],
-    )
+    cases = [
+        EvaluationCase.model_validate(
+            _case(
+                f"formal-{tag}",
+                f"family-formal-{tag}",
+                coverage_tags=[tag],
+            )
+        )
+        for tag in REQUIRED_COVERAGE_TAGS
+    ]
+    dataset = CaseDataset(dataset_version="golden-v1", cases=cases)
 
     with pytest.raises(ValueError, match="family split"):
         dataset.scoring_manifest()
 
     dataset.split_by_family(holdout_fraction=0.2, seed=11)
-    manifest = dataset.scoring_manifest()
+    with pytest.raises(ValueError, match="detached human signoff"):
+        dataset.scoring_manifest()
+
+    manifest = dataset.scoring_manifest(_signoff(dataset), signing_key=TEST_SIGNOFF_KEY)
 
     assert manifest.dataset_version == "golden-v1"
-    assert manifest.case_ids == ["formal-1"]
+    assert manifest.case_ids == [case.id for case in cases]
     assert manifest.disputed_case_ids == []
+    assert manifest.human_signoff.approval_reference == "t15-manual-signoff-1"
     assert "initial_label" not in manifest.model_dump()
 
 
+def test_formal_gate_rejects_missing_or_wrong_signoff_key():
+    data = _case(
+        "signed-case",
+        "family-signed-case",
+        coverage_tags=list(REQUIRED_COVERAGE_TAGS),
+    )
+    dataset = CaseDataset(
+        dataset_version="golden-v1",
+        cases=[EvaluationCase.model_validate(data)],
+    )
+    dataset.split_by_family(holdout_fraction=0.2, seed=11)
+    signoff = _signoff(dataset)
+
+    with pytest.raises(ValueError, match="signature"):
+        dataset.scoring_manifest(signoff)
+    with pytest.raises(ValueError, match="signature"):
+        dataset.scoring_manifest(signoff, signing_key="wrong-key")
+
+
+def test_formal_score_requires_split_and_detached_signoff():
+    data = _case(
+        "formal-score",
+        "family-formal-score",
+        coverage_tags=list(REQUIRED_COVERAGE_TAGS),
+    )
+    case = EvaluationCase.model_validate(data)
+    dataset = CaseDataset(dataset_version="golden-v1", cases=[case])
+    outcome = _outcome("formal-score", "INSUFFICIENT_INFORMATION", "LEGAL")
+
+    with pytest.raises(ValueError, match="family split"):
+        score_results(dataset, [outcome], formal=True)
+
+    dataset.split_by_family(holdout_fraction=0.2, seed=11)
+    with pytest.raises(ValueError, match="detached human signoff"):
+        score_results(dataset, [outcome], formal=True)
+
+    report = score_results(
+        dataset,
+        [outcome],
+        formal=True,
+        signoff=_signoff(dataset),
+        signing_key=TEST_SIGNOFF_KEY,
+    )
+    assert report.scored_case_count == 1
+
+
 def test_verified_case_without_review_checklist_cannot_be_published():
-    data = _case("incomplete-review", "family-incomplete")
+    data = _case(
+        "incomplete-review",
+        "family-incomplete",
+        coverage_tags=list(REQUIRED_COVERAGE_TAGS),
+    )
     data["review"] = {
         "status": "verified",
         "reviewer_id": "root-reviewer-1",
@@ -465,7 +556,24 @@ def test_verified_case_without_review_checklist_cannot_be_published():
     dataset.split_by_family(holdout_fraction=0.2, seed=11)
 
     with pytest.raises(ValueError, match="checks"):
-        dataset.scoring_manifest()
+        dataset.scoring_manifest(_signoff(dataset), signing_key=TEST_SIGNOFF_KEY)
+
+
+def test_engine_output_cannot_be_the_only_verified_source():
+    data = _case(
+        "engine-only",
+        "family-engine-only",
+        coverage_tags=list(REQUIRED_COVERAGE_TAGS),
+    )
+    data["label_source"] = "engine-output"
+    dataset = CaseDataset(
+        dataset_version="golden-v1",
+        cases=[EvaluationCase.model_validate(data)],
+    )
+    dataset.split_by_family(holdout_fraction=0.2, seed=11)
+
+    with pytest.raises(ValueError, match="independent_label_source"):
+        dataset.scoring_manifest(_signoff(dataset), signing_key=TEST_SIGNOFF_KEY)
 
 
 def test_case_correction_history_and_dispute_reasons_round_trip(tmp_path):
@@ -502,32 +610,52 @@ def test_case_correction_history_and_dispute_reasons_round_trip(tmp_path):
     assert dataset.excluded_counts == {"draft": 0, "disputed": 1}
 
 
-def test_scoring_manifest_cli_is_versioned_and_contains_no_gold_labels(tmp_path, capsys):
-    first = _case("manifest-1", "family-a")
-    second = _case("manifest-2", "family-b")
-    first["review"] = _human_review()
-    second["review"] = _human_review()
-    dataset = CaseDataset(
-        dataset_version="golden-v2",
-        cases=[
-            EvaluationCase.model_validate(first),
-            EvaluationCase.model_validate(second),
-        ],
-    )
+def test_scoring_manifest_cli_is_versioned_and_contains_no_gold_labels(
+    tmp_path, capsys, monkeypatch
+):
+    monkeypatch.setenv("RULECOURT_GOLDEN_SIGNOFF_KEY", TEST_SIGNOFF_KEY)
+    cases = [
+        EvaluationCase.model_validate(
+            _case(
+                f"manifest-{tag}",
+                f"family-manifest-{tag}",
+                coverage_tags=[tag],
+            )
+        )
+        for tag in REQUIRED_COVERAGE_TAGS
+    ]
+    dataset = CaseDataset(dataset_version="golden-v2", cases=cases)
     dataset.split_by_family(holdout_fraction=0.5, seed=3)
     dataset_path = tmp_path / "golden.json"
     dataset.save_json(dataset_path)
+    signoff_path = tmp_path / "golden-signoff.json"
+    signoff_path.write_text(
+        json.dumps(_signoff(dataset).model_dump(mode="json"), ensure_ascii=False),
+        encoding="utf-8",
+    )
 
     from rulecourt.evaluation import main
 
-    assert main(["validate", str(dataset_path), "--formal"]) == 0
+    assert (
+        main(
+            [
+                "validate",
+                str(dataset_path),
+                "--formal",
+                "--signoff",
+                str(signoff_path),
+            ]
+        )
+        == 0
+    )
     capsys.readouterr()
-    assert main(["manifest", str(dataset_path)]) == 0
+    assert main(["manifest", str(dataset_path), "--signoff", str(signoff_path)]) == 0
 
     payload = json.loads(capsys.readouterr().out)
     assert payload["dataset_version"] == "golden-v2"
-    assert payload["case_ids"] == ["manifest-1", "manifest-2"]
+    assert payload["case_ids"] == [case.id for case in cases]
     assert payload["split"]["holdout_families"]
+    assert payload["human_signoff"]["signed_by"] == "human-reviewer-1"
     assert "initial_label" not in payload
     assert "complete_label" not in payload
 

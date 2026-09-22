@@ -108,6 +108,12 @@ checks for labels, scope, fact availability, evidence, allowed questions, and
 an independent label source. Corrections and ambiguity decisions stay in the
 Case history; disputed Cases record their reasons and remain excluded.
 
+The formal gate also requires coverage of partial, unknown, withdrawal, Eyrie,
+Bird, and unsupported-interaction Cases. A human may record an explicit waiver
+with a reason, but the waiver belongs in a detached signoff artifact rather than
+the candidate dataset. That artifact binds the exact dataset digest and is
+HMAC-sealed with the protected `RULECOURT_GOLDEN_SIGNOFF_KEY`.
+
 Create a deterministic family-level split before publishing the scoring list:
 
 ~~~python
@@ -115,13 +121,16 @@ dataset.split_by_family(holdout_fraction=0.2, seed=7)
 dataset.save_json("golden-cases-v1.json")
 ~~~
 
-The manifest command fails closed unless every verified Case passes the review
-gate and the dataset contains a split manifest. It exports only Case/family
-IDs and review metadata, never gold labels or hidden facts:
+After human review, write a detached `HumanSignoff` JSON with the approved Case
+IDs, reviewer IDs, coverage attestations/waivers, and signature. The manifest
+commands fail closed without that artifact, its matching digest/signature, or
+the family split. They export only Case/family IDs and review metadata, never
+gold labels or hidden facts:
 
 ~~~powershell
-uv run rulecourt-eval validate golden-cases-v1.json --formal
-uv run rulecourt-eval manifest golden-cases-v1.json
+$env:RULECOURT_GOLDEN_SIGNOFF_KEY = "<protected key>"
+uv run rulecourt-eval validate golden-cases-v1.json --formal --signoff golden-signoff.json
+uv run rulecourt-eval manifest golden-cases-v1.json --signoff golden-signoff.json
 ~~~
 
 The checked-in candidate fixture remains draft; it cannot be promoted by the

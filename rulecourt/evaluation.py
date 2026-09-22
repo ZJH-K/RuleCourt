@@ -8,8 +8,12 @@ investigation.
 
 from __future__ import annotations
 
+import hashlib
+import hmac
 import json
+import os
 import random
+import re
 import sys
 from argparse import ArgumentParser
 from collections.abc import Mapping
@@ -186,6 +190,30 @@ REQUIRED_REVIEW_CHECKS = (
     "acceptable_questions",
     "independent_source",
 )
+REQUIRED_COVERAGE_TAGS = (
+    "partial",
+    "unknown",
+    "withdrawal",
+    "eyrie",
+    "bird",
+    "unsupported_interaction",
+)
+
+_COVERAGE_ALIASES = {
+    "partial": {"partial", "partial_information", "ordinary_partial"},
+    "unknown": {"unknown", "missing_information"},
+    "withdrawal": {"withdrawal", "withdrawn"},
+    "eyrie": {"eyrie", "eyrie_move", "eyrie_decree"},
+    "bird": {"bird", "eyrie_bird"},
+    "unsupported_interaction": {"unsupported", "unsupported_interaction"},
+}
+_ENGINE_SOURCE_MARKERS = {"agent", "candidate", "engine", "llm", "model"}
+SIGNOFF_KEY_ENV = "RULECOURT_GOLDEN_SIGNOFF_KEY"
+
+
+def _is_engine_only_source(source: str) -> bool:
+    tokens = set(re.findall(r"[a-z0-9]+", source.strip().casefold()))
+    return bool(tokens & _ENGINE_SOURCE_MARKERS)
 
 
 class CaseRevision(BaseModel):
@@ -263,6 +291,7 @@ class EvaluationCase(BaseModel):
     id: str
     family_id: str
     category: str
+    coverage_tags: list[str] = Field(default_factory=list)
     scope: str
     ruleset_id: str = "root-law-2025-10"
     initial_input: str
@@ -291,6 +320,16 @@ class EvaluationCase(BaseModel):
         if not value:
             raise ValueError("case identity and initial_input must not be empty")
         return value
+
+    @field_validator("coverage_tags")
+    @classmethod
+    def normalize_coverage_tags(cls, value: list[str]) -> list[str]:
+        tags: list[str] = []
+        for tag in value:
+            normalized = tag.strip().casefold()
+            if normalized and normalized not in tags:
+                tags.append(normalized)
+        return tags
 
     @field_validator("acceptable_questions")
     @classmethod
@@ -356,8 +395,14 @@ class EvaluationCase(BaseModel):
         if not self.review.reviewed_at or not self.review.reviewed_at.strip():
             errors.append("reviewed_at")
         if self.review.status == "verified":
-            if self.label_source == "candidate:unverified":
+            if self.label_source == "candidate:unverified" or _is_engine_only_source(
+                self.label_source
+            ):
                 errors.append("independent_label_source")
+            if any(_is_engine_only_source(source) for source in self.fact_sources.values()):
+                errors.append("engine_only_fact_source")
+            if not any(not _is_engine_only_source(source) for source in self.review.evidence):
+                errors.append("independent_review_evidence")
             if not self.evidence:
                 errors.append("case_evidence")
             errors.extend(f"checks.{name}" for name in self.review.missing_checks)
@@ -415,6 +460,101 @@ class FamilySplitManifest(BaseModel):
         return self
 
 
+class HumanSignoff(BaseModel):
+    """Detached human approval artifact for one exact dataset revision."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    dataset_version: str
+    dataset_digest: str = Field(pattern=r"^[0-9a-f]{64}$")
+    approved_case_ids: list[str] = Field(default_factory=list)
+    reviewer_ids: list[str] = Field(default_factory=list)
+    coverage_reviewed: list[str] = Field(default_factory=list)
+    coverage_waivers: dict[str, str] = Field(default_factory=dict)
+    signed_by: str
+    signed_at: str
+    approval_reference: str
+    signature: str
+
+    @field_validator(
+        "dataset_version",
+        "dataset_digest",
+        "signed_by",
+        "signed_at",
+        "approval_reference",
+        "signature",
+    )
+    @classmethod
+    def nonempty_signoff_text(cls, value: str) -> str:
+        value = value.strip()
+        if not value:
+            raise ValueError("human signoff fields must not be empty")
+        return value
+
+    @field_validator("approved_case_ids", "reviewer_ids", "coverage_reviewed")
+    @classmethod
+    def normalize_signoff_lists(cls, value: list[str]) -> list[str]:
+        normalized: list[str] = []
+        for item in value:
+            item = item.strip()
+            if item and item not in normalized:
+                normalized.append(item)
+        return sorted(normalized)
+
+    @field_validator("coverage_reviewed")
+    @classmethod
+    def validate_coverage_names(cls, value: list[str]) -> list[str]:
+        unknown = set(value) - set(REQUIRED_COVERAGE_TAGS)
+        if unknown:
+            raise ValueError("unknown coverage signoff: " + ", ".join(sorted(unknown)))
+        return value
+
+    @field_validator("coverage_waivers")
+    @classmethod
+    def validate_coverage_waivers(cls, value: dict[str, str]) -> dict[str, str]:
+        waivers: dict[str, str] = {}
+        for tag, reason in value.items():
+            tag = tag.strip().casefold()
+            reason = reason.strip()
+            if tag not in REQUIRED_COVERAGE_TAGS:
+                raise ValueError(f"unknown coverage waiver: {tag}")
+            if not reason:
+                raise ValueError(f"coverage waiver {tag} needs a reason")
+            waivers[tag] = reason
+        return waivers
+
+    def signing_payload(self) -> bytes:
+        payload = self.model_dump(
+            mode="json",
+            exclude={"signature"},
+            exclude_none=True,
+        )
+        return json.dumps(
+            payload,
+            ensure_ascii=False,
+            sort_keys=True,
+            separators=(",", ":"),
+        ).encode("utf-8")
+
+    def seal(self, signing_key: str) -> HumanSignoff:
+        if not signing_key:
+            raise ValueError("a signoff signing key is required")
+        signature = hmac.new(
+            signing_key.encode("utf-8"), self.signing_payload(), hashlib.sha256
+        ).hexdigest()
+        return self.model_copy(update={"signature": f"hmac-sha256:{signature}"})
+
+    def has_valid_signature(self, signing_key: str | None) -> bool:
+        if not signing_key or not self.signature.startswith("hmac-sha256:"):
+            return False
+        expected = self.seal(signing_key).signature
+        return hmac.compare_digest(self.signature, expected)
+
+    @classmethod
+    def from_json(cls, path: str | Path) -> HumanSignoff:
+        return cls.model_validate_json(Path(path).read_text(encoding="utf-8"))
+
+
 class ScoringManifest(BaseModel):
     """Versioned, label-free list of Cases approved for formal scoring."""
 
@@ -429,6 +569,7 @@ class ScoringManifest(BaseModel):
     excluded_counts: dict[str, int]
     disputed_case_ids: list[str] = Field(default_factory=list)
     disputed_reviews: dict[str, dict[str, Any]] = Field(default_factory=dict)
+    human_signoff: HumanSignoff
 
 
 class CaseDataset(BaseModel):
@@ -496,6 +637,70 @@ class CaseDataset(BaseModel):
             encoding="utf-8",
         )
 
+    def approval_digest(self) -> str:
+        """Return the digest a human approval artifact must bind to."""
+
+        canonical = json.dumps(
+            self.model_dump(mode="json", exclude_none=True),
+            ensure_ascii=False,
+            sort_keys=True,
+            separators=(",", ":"),
+        )
+        return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+
+    def coverage_case_ids(self) -> dict[str, list[str]]:
+        covered: dict[str, list[str]] = {}
+        for tag, aliases in _COVERAGE_ALIASES.items():
+            ids: list[str] = []
+            for case in self.cases:
+                values = {case.category.casefold()}
+                values.update(item.casefold() for item in case.coverage_tags)
+                if values & aliases:
+                    ids.append(case.id)
+            covered[tag] = sorted(ids)
+        return covered
+
+    @property
+    def coverage_gaps(self) -> list[str]:
+        covered = self.coverage_case_ids()
+        return [tag for tag in REQUIRED_COVERAGE_TAGS if not covered[tag]]
+
+    def _validate_human_signoff(
+        self,
+        signoff: HumanSignoff,
+        *,
+        require_coverage: bool,
+        signing_key: str | None,
+    ) -> None:
+        errors: list[str] = []
+        if not signoff.has_valid_signature(signing_key):
+            errors.append("signature")
+        if signoff.dataset_version != self.dataset_version:
+            errors.append("dataset_version")
+        if signoff.dataset_digest != self.approval_digest():
+            errors.append("dataset_digest")
+        verified_ids = {case.id for case in self.verified_cases}
+        if set(signoff.approved_case_ids) != verified_ids:
+            errors.append("approved_case_ids")
+        reviewer_ids = {
+            case.review.reviewer_id
+            for case in self.cases
+            if case.review.status == "verified" and case.review.reviewer_id
+        }
+        if not reviewer_ids <= set(signoff.reviewer_ids):
+            errors.append("reviewer_ids")
+        if require_coverage:
+            reviewed = set(signoff.coverage_reviewed)
+            waived = set(signoff.coverage_waivers)
+            unattested = set(REQUIRED_COVERAGE_TAGS) - reviewed - waived
+            if unattested:
+                errors.append("coverage_attestation:" + ",".join(sorted(unattested)))
+            unwaived = set(self.coverage_gaps) - waived
+            if unwaived:
+                errors.append("coverage_cases:" + ",".join(sorted(unwaived)))
+        if errors:
+            raise ValueError("human signoff is not valid: " + ", ".join(errors))
+
     @property
     def verified_cases(self) -> list[EvaluationCase]:
         return [case for case in self.cases if case.review.status == "verified"]
@@ -507,12 +712,27 @@ class CaseDataset(BaseModel):
             "disputed": sum(case.review.status == "disputed" for case in self.cases),
         }
 
-    def validate_for_scoring(self, *, require_split: bool = False) -> list[EvaluationCase]:
+    def validate_for_scoring(
+        self,
+        *,
+        require_split: bool = False,
+        require_coverage: bool = False,
+        signoff: HumanSignoff | None = None,
+        signing_key: str | None = None,
+    ) -> list[EvaluationCase]:
         """Validate the human gate without promoting any Case review status."""
 
         if require_split and self.split_manifest is None:
             raise ValueError("formal scoring requires a family split manifest")
+        if require_coverage and signoff is None:
+            raise ValueError("formal scoring requires a detached human signoff")
         self._validate_family_split()
+        if signoff is not None:
+            self._validate_human_signoff(
+                signoff,
+                require_coverage=require_coverage,
+                signing_key=signing_key or os.getenv(SIGNOFF_KEY_ENV),
+            )
         errors: dict[str, list[str]] = {}
         for case in self.cases:
             case_errors = case.scoring_validation_errors()
@@ -525,10 +745,22 @@ class CaseDataset(BaseModel):
             raise ValueError("dataset is not ready for scoring: " + details)
         return list(self.verified_cases)
 
-    def scoring_manifest(self) -> ScoringManifest:
+    def scoring_manifest(
+        self,
+        signoff: HumanSignoff | None = None,
+        *,
+        signing_key: str | None = None,
+    ) -> ScoringManifest:
         """Return a versioned, label-free formal-scoring Case list."""
 
-        cases = self.validate_for_scoring(require_split=True)
+        cases = self.validate_for_scoring(
+            require_split=True,
+            require_coverage=True,
+            signoff=signoff,
+            signing_key=signing_key,
+        )
+        if signoff is None:
+            raise ValueError("formal scoring requires a detached human signoff")
         if self.split_manifest is None:
             raise ValueError("formal scoring requires a family split manifest")
         return ScoringManifest(
@@ -551,10 +783,17 @@ class CaseDataset(BaseModel):
                 for case in self.cases
                 if case.review.status == "disputed"
             },
+            human_signoff=signoff,
         )
 
-    def save_scoring_manifest(self, path: str | Path) -> None:
-        manifest = self.scoring_manifest()
+    def save_scoring_manifest(
+        self,
+        path: str | Path,
+        signoff: HumanSignoff | None = None,
+        *,
+        signing_key: str | None = None,
+    ) -> None:
+        manifest = self.scoring_manifest(signoff, signing_key=signing_key)
         Path(path).write_text(
             json.dumps(manifest.model_dump(mode="json"), ensure_ascii=False, indent=2) + "\n",
             encoding="utf-8",
@@ -819,11 +1058,25 @@ class EvaluationRunner:
         )
 
     def run_dataset(
-        self, dataset: CaseDataset, *, verified_only: bool = False
+        self,
+        dataset: CaseDataset,
+        *,
+        verified_only: bool = False,
+        formal: bool = False,
+        signoff: HumanSignoff | None = None,
+        signing_key: str | None = None,
     ) -> list[ReplayResult]:
-        cases = (
-            dataset.validate_for_scoring(require_split=False) if verified_only else dataset.cases
-        )
+        if formal:
+            cases = dataset.validate_for_scoring(
+                require_split=True,
+                require_coverage=True,
+                signoff=signoff,
+                signing_key=signing_key,
+            )
+        elif verified_only:
+            cases = dataset.validate_for_scoring(require_split=False)
+        else:
+            cases = dataset.cases
         return [self.run_case(case) for case in cases]
 
 
@@ -1079,10 +1332,22 @@ def _score_view(
     )
 
 
-def score_results(dataset: CaseDataset, results: list[ReplayResult]) -> EvaluationReport:
-    """Score only verified Cases, retaining excluded counts for auditability."""
+def score_results(
+    dataset: CaseDataset,
+    results: list[ReplayResult],
+    *,
+    formal: bool = False,
+    signoff: HumanSignoff | None = None,
+    signing_key: str | None = None,
+) -> EvaluationReport:
+    """Score Cases, optionally enforcing the complete formal release gate."""
 
-    verified = dataset.validate_for_scoring(require_split=False)
+    verified = dataset.validate_for_scoring(
+        require_split=formal,
+        require_coverage=formal,
+        signoff=signoff,
+        signing_key=signing_key,
+    )
     outcomes = {
         result.case_id: result
         for result in results
@@ -1130,6 +1395,7 @@ def main(argv: list[str] | None = None) -> int:
     validate = subparsers.add_parser("validate", help="validate a candidate Case dataset")
     validate.add_argument("dataset", type=Path)
     validate.add_argument("--formal", action="store_true")
+    validate.add_argument("--signoff", type=Path)
 
     report = subparsers.add_parser("report", help="view an exported evaluation report")
     report.add_argument("report", type=Path)
@@ -1143,12 +1409,20 @@ def main(argv: list[str] | None = None) -> int:
     )
     manifest.add_argument("dataset", type=Path)
     manifest.add_argument("--output", type=Path)
+    manifest.add_argument("--signoff", type=Path, required=True)
 
     args = parser.parse_args(argv)
     if args.command == "validate":
         dataset = CaseDataset.from_json(args.dataset)
+        signoff = HumanSignoff.from_json(args.signoff) if args.signoff else None
+        signing_key = os.getenv(SIGNOFF_KEY_ENV)
         if args.formal:
-            dataset.validate_for_scoring(require_split=True)
+            dataset.validate_for_scoring(
+                require_split=True,
+                require_coverage=True,
+                signoff=signoff,
+                signing_key=signing_key,
+            )
         payload = {
             "dataset_version": dataset.dataset_version,
             "case_count": len(dataset.cases),
@@ -1163,9 +1437,11 @@ def main(argv: list[str] | None = None) -> int:
         output = json.dumps(payload, ensure_ascii=False, indent=2) + "\n"
     elif args.command in {"manifest", "release"}:
         dataset = CaseDataset.from_json(args.dataset)
+        signoff = HumanSignoff.from_json(args.signoff)
+        signing_key = os.getenv(SIGNOFF_KEY_ENV)
         output = (
             json.dumps(
-                dataset.scoring_manifest().model_dump(mode="json"),
+                dataset.scoring_manifest(signoff, signing_key=signing_key).model_dump(mode="json"),
                 ensure_ascii=False,
                 indent=2,
             )
