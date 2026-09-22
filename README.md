@@ -1,7 +1,9 @@
 # RuleCourt M0
 
-This first slice stores Cases and public investigation events. Domain rules and
-verified evidence are not installed, so every run ends in `UNRESOLVED`.
+This M0 slice stores Cases and public investigation events. With an enabled,
+human-verified Root rule package, the fixed workflow adjudicates Marquise
+ordinary moves as `LEGAL`, `ILLEGAL`, or `INSUFFICIENT_INFORMATION`; unsupported
+actions and missing rule evidence remain `UNRESOLVED`.
 
 ## Start
 
@@ -49,4 +51,12 @@ The unverified demo package is
 [`examples/root-m0-candidate-package.json`](examples/root-m0-candidate-package.json).
 It points to the official [Leder Games Root rules library](https://rules.ledergames.com/?locale=en-US&printing=p1&product=root),
 but its excerpts and package-local IDs still require T03 human review.
+
+## T05 fixed ordinary-move workflow
+
+After enabling a verified package that covers Root sections 2.2, 2.5, 4.2,
+and 4.2.1, submit a complete Marquise ordinary-move description in a Case.
+The result records the deterministic Decision, Verification, rule evidence,
+scope, and conditions that were not checked. Eyrie moves and full-turn
+legality remain outside this ticket's scope.
 

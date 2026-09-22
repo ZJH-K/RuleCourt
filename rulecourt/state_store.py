@@ -544,6 +544,24 @@ class StateStore:
                     unknown_fields = _unique(unknown_fields + [change.field_path])
                 else:
                     unknown_fields = [item for item in unknown_fields if item != change.field_path]
+            for unknown_field in list(unknown_fields):
+                parts = unknown_field.split(".")
+                if len(parts) != 3 or parts[0] != "clearings" or parts[2] != "presence":
+                    continue
+                expected_paths = [
+                    f"{unknown_field}.{faction}.{piece}"
+                    for faction in ("eyrie", "marquise")
+                    for piece in ("warriors", "buildings")
+                ]
+                if all(
+                    db.execute(
+                        "SELECT 1 FROM state_facts WHERE case_id=? AND field_path=? AND status='active'",
+                        (case_id, path),
+                    ).fetchone()
+                    is not None
+                    for path in expected_paths
+                ):
+                    unknown_fields.remove(unknown_field)
             combined_issues = fact_issues
             db.execute(
                 """INSERT INTO state_observations(case_id, unknown_fields, issues, updated_at)

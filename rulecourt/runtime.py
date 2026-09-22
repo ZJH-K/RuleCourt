@@ -12,6 +12,7 @@ from nanobot.utils.llm_runtime import LLMRuntime
 from .state import NaturalLanguageStateExtractor
 from .state_store import StateStore
 from .store import CaseStore
+from .workflow import FixedWorkflow
 
 
 class InspectCase(Tool):
@@ -53,12 +54,77 @@ async def _no_compaction(*args, **kwargs):
 
 
 class RuleCourtController:
-    def __init__(self, store: CaseStore, provider, model: str, state_store: StateStore):
+    def __init__(
+        self,
+        store: CaseStore,
+        provider,
+        model: str,
+        state_store: StateStore,
+        rule_store=None,
+    ):
         self.store = store
         self.provider = provider
         self.model = model
         self.state_store = state_store
         self.extractor = NaturalLanguageStateExtractor()
+        self.workflow = FixedWorkflow(rule_store) if rule_store is not None else None
+
+    def _case_view(self, case_id: str) -> dict[str, Any]:
+        case = self.store.get(case_id)
+        assert case is not None
+        state_view = self.state_store.view(case_id)
+        assert state_view is not None
+        return {**case, **state_view}
+
+    @staticmethod
+    def _has_move_action(state: dict[str, Any]) -> bool:
+        action = state.get("action")
+        return isinstance(action, dict) and action.get("type") == "move"
+
+    def _record_workflow_result(
+        self, case_id: str, run_id: str, result: dict[str, Any], state_update: dict[str, Any] | None
+    ) -> dict[str, Any]:
+        decision = self.store.add_decision(
+            case_id, run_id, result["decision"], result["ruleset_id"]
+        )
+        verification = self.store.add_verification(
+            case_id,
+            run_id,
+            result["verification"],
+            decision_id=decision["id"],
+        )
+        result["decision"] = decision
+        result["verification"] = verification
+        result["decision_ref"] = decision["id"]
+        result["verification_refs"] = [verification["id"]]
+        details = {
+            key: result[key]
+            for key in (
+                "scope",
+                "scope_confirmation_ref",
+                "not_checked",
+                "decision_ref",
+                "verification_refs",
+                "applicable_rules",
+                "derived_facts",
+                "checks",
+                "explanation",
+                "missing_fields",
+            )
+            if key in result
+        }
+        verdict = self.store.add_verdict(
+            case_id,
+            run_id,
+            result["status"],
+            result["reason"],
+            evidence=result["evidence"],
+            details=details,
+        )
+        response = {**verdict, **result}
+        if state_update is not None:
+            response["state_update"] = state_update
+        return response
 
     async def investigate(self, case_id: str, text: str) -> dict[str, Any]:
         run_id = str(uuid4())
@@ -100,10 +166,30 @@ class RuleCourtController:
                 )
                 verdict = self.store.add_verdict(case_id, run_id, "UNRESOLVED", reason)
                 return {**verdict, "state_update": state_update}
+        case = self._case_view(case_id)
+        if self.workflow is not None and self._has_move_action(case["confirmed_state"]):
+            self.store.add_event(
+                case_id, run_id, "fixed_workflow_started", workflow="m0-marquise-move"
+            )
+            result = self.workflow.run(case)
+            self.store.add_event(
+                case_id,
+                run_id,
+                "decision_computed",
+                status=result["decision"]["status"],
+                reason_codes=result["decision"]["reason_codes"],
+                rule_ids=result["decision"]["rule_ids"],
+            )
+            self.store.add_event(
+                case_id,
+                run_id,
+                "verification_finished",
+                status=result["verification"]["status"],
+                rule_ids=result["verification"]["rule_ids"],
+            )
+            return self._record_workflow_result(case_id, run_id, result, state_update)
         tools = ToolRegistry()
         tools.register(InspectCase(case_id, self.store))
-        case = self.store.get(case_id)
-        assert case is not None
         messages = [
             {
                 "role": "system",

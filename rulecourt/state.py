@@ -167,6 +167,11 @@ _CHINESE_NUMBERS = {
     "九": 9,
     "九个": 9,
     "十": 10,
+    "one": 1,
+    "two": 2,
+    "three": 3,
+    "four": 4,
+    "five": 5,
 }
 
 
@@ -179,7 +184,7 @@ def _count(value: str) -> int | None:
 
 _FACTION = r"(?:Eyrie(?:\s+Dynasties)?|Marquise(?:\s+de\s+Cat)?|老鹰|鹰|鸟巢|猫咪|猫侯爵|猫)"
 _PIECE = r"(?:warriors?|units?|buildings?|roost|兵|战士|建筑(?:物)?|巢穴)"
-_COUNT = r"(?:-?\d+|零|〇|一(?:个|只)?|二(?:个)?|两(?:个|只)?|三(?:个)?|四(?:个)?|五(?:个)?|六(?:个)?|七(?:个)?|八(?:个)?|九(?:个)?|十)"
+_COUNT = r"(?:-?\d+|零|〇|一(?:个|只)?|二(?:个)?|两(?:个|只)?|三(?:个)?|四(?:个)?|五(?:个)?|六(?:个)?|七(?:个)?|八(?:个)?|九(?:个)?|十|one|two|three|four|five)"
 _CLEARING = r"[A-Za-z][A-Za-z0-9_-]{0,63}"
 
 
@@ -310,6 +315,14 @@ class NaturalLanguageStateExtractor:
             text,
             re.IGNORECASE,
         )
+        if move_match is None:
+            move_match = re.search(
+                rf"(?:从|from)\s*(?P<origin>{_CLEARING})\s*"
+                rf"(?:移动|move)[^。.!?；;\n]*?(?:到|to)\s*"
+                rf"(?P<destination>{_CLEARING})",
+                text,
+                re.IGNORECASE,
+            )
         if move_match or re.search(r"移动|\bmove\b", text, re.IGNORECASE):
             recognized = True
         if move_match:
@@ -346,6 +359,26 @@ class NaturalLanguageStateExtractor:
             if not _has_path(state, f"clearings.{destination}.presence"):
                 unknown_fields.append(f"clearings.{destination}.presence")
 
+        move_count_pattern = re.compile(
+            rf"(?:移动|move)\s*(?P<count>{_COUNT})\s*(?:个|只)?\s*(?:warriors?|units?|兵|战士)",
+            re.IGNORECASE,
+        )
+        for count_match in move_count_pattern.finditer(text):
+            count = _count(count_match.group("count"))
+            if count is None:
+                issues.append(
+                    _issue("INVALID_COUNT", "The moved warrior count could not be understood.")
+                )
+                continue
+            changes.append(
+                ProposedFactChange(
+                    operation=fact_operation,
+                    field_path="action.warrior_count",
+                    value=count,
+                    evidence=[_evidence("action.warrior_count", message_id, count_match.group(0))],
+                )
+            )
+
         presence_patterns = [
             re.compile(
                 rf"(?P<faction>{_FACTION})\s*(?:在|于|in|at)\s*(?P<clearing>{_CLEARING})\s*"
@@ -360,8 +393,12 @@ class NaturalLanguageStateExtractor:
                 re.IGNORECASE,
             ),
         ]
-        for pattern in presence_patterns:
+        for pattern_index, pattern in enumerate(presence_patterns):
             for match in pattern.finditer(text):
+                if pattern_index == 1:
+                    prefix = text[max(0, match.start() - 100) : match.start()]
+                    if re.search(rf"{_FACTION}\s*(?:在|于|in|at)\s*$", prefix, re.IGNORECASE):
+                        continue
                 recognized = True
                 clearing = _clearing(match.group("clearing"))
                 faction = _faction(match.group("faction")) or actor

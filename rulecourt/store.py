@@ -37,9 +37,32 @@ class CaseStore:
                     id TEXT PRIMARY KEY, case_id TEXT NOT NULL REFERENCES cases(id),
                     run_id TEXT NOT NULL, revision INTEGER NOT NULL,
                     status TEXT NOT NULL, reason TEXT NOT NULL,
+                    created_at TEXT NOT NULL,
+                    evidence TEXT NOT NULL DEFAULT '[]',
+                    details TEXT NOT NULL DEFAULT '{}'
+                );
+                CREATE TABLE IF NOT EXISTS decisions (
+                    id TEXT PRIMARY KEY, case_id TEXT NOT NULL REFERENCES cases(id),
+                    run_id TEXT NOT NULL, revision INTEGER NOT NULL,
+                    ruleset_id TEXT NOT NULL, status TEXT NOT NULL,
+                    reason_codes TEXT NOT NULL, rule_ids TEXT NOT NULL,
+                    derived_facts TEXT NOT NULL, missing_fields TEXT NOT NULL,
                     created_at TEXT NOT NULL
                 );
+                CREATE TABLE IF NOT EXISTS verifications (
+                    id TEXT PRIMARY KEY, case_id TEXT NOT NULL REFERENCES cases(id),
+                    run_id TEXT NOT NULL, revision INTEGER NOT NULL,
+                    decision_id TEXT, ruleset_id TEXT NOT NULL,
+                    ruleset_version_ref TEXT, status TEXT NOT NULL,
+                    rule_ids TEXT NOT NULL, evidence TEXT NOT NULL,
+                    checks TEXT NOT NULL, created_at TEXT NOT NULL
+                );
             """)
+            verdict_columns = {row["name"] for row in db.execute("PRAGMA table_info(verdicts)")}
+            if "evidence" not in verdict_columns:
+                db.execute("ALTER TABLE verdicts ADD COLUMN evidence TEXT NOT NULL DEFAULT '[]'")
+            if "details" not in verdict_columns:
+                db.execute("ALTER TABLE verdicts ADD COLUMN details TEXT NOT NULL DEFAULT '{}'")
 
     @contextmanager
     def _connect(self) -> Iterator[sqlite3.Connection]:
@@ -80,13 +103,109 @@ class CaseStore:
                 (case_id, run_id, event_type, json.dumps(payload, ensure_ascii=False), _now()),
             )
 
-    def add_verdict(self, case_id: str, run_id: str, status: str, reason: str) -> dict[str, Any]:
-        verdict_id = str(uuid4())
+    def add_decision(
+        self, case_id: str, run_id: str, decision: dict[str, Any], ruleset_id: str
+    ) -> dict[str, Any]:
+        decision_id = str(uuid4())
         with self._connect() as db:
             revision = db.execute("SELECT revision FROM cases WHERE id=?", (case_id,)).fetchone()[0]
             db.execute(
-                "INSERT INTO verdicts VALUES (?, ?, ?, ?, ?, ?, ?)",
-                (verdict_id, case_id, run_id, revision, status, reason, _now()),
+                """INSERT INTO decisions
+                (id, case_id, run_id, revision, ruleset_id, status, reason_codes,
+                 rule_ids, derived_facts, missing_fields, created_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                (
+                    decision_id,
+                    case_id,
+                    run_id,
+                    revision,
+                    ruleset_id,
+                    decision["status"],
+                    json.dumps(decision.get("reason_codes", []), ensure_ascii=False),
+                    json.dumps(decision.get("rule_ids", []), ensure_ascii=False),
+                    json.dumps(decision.get("derived_facts", {}), ensure_ascii=False),
+                    json.dumps(decision.get("missing_fields", []), ensure_ascii=False),
+                    _now(),
+                ),
+            )
+        return {
+            **decision,
+            "id": decision_id,
+            "case_id": case_id,
+            "run_id": run_id,
+            "revision": revision,
+        }
+
+    def add_verification(
+        self,
+        case_id: str,
+        run_id: str,
+        verification: dict[str, Any],
+        *,
+        decision_id: str | None,
+    ) -> dict[str, Any]:
+        verification_id = verification.get("id") or str(uuid4())
+        with self._connect() as db:
+            revision = db.execute("SELECT revision FROM cases WHERE id=?", (case_id,)).fetchone()[0]
+            db.execute(
+                """INSERT INTO verifications
+                (id, case_id, run_id, revision, decision_id, ruleset_id,
+                 ruleset_version_ref, status, rule_ids, evidence, checks, created_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                (
+                    verification_id,
+                    case_id,
+                    run_id,
+                    revision,
+                    decision_id,
+                    verification["ruleset_id"],
+                    verification.get("ruleset_version_ref"),
+                    verification["status"],
+                    json.dumps(verification.get("rule_ids", []), ensure_ascii=False),
+                    json.dumps(verification.get("evidence", []), ensure_ascii=False),
+                    json.dumps(verification.get("checks", {}), ensure_ascii=False),
+                    _now(),
+                ),
+            )
+        return {
+            **verification,
+            "id": verification_id,
+            "case_id": case_id,
+            "run_id": run_id,
+            "revision": revision,
+            "decision_id": decision_id,
+        }
+
+    def add_verdict(
+        self,
+        case_id: str,
+        run_id: str,
+        status: str,
+        reason: str,
+        *,
+        evidence: list[str] | None = None,
+        details: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        verdict_id = str(uuid4())
+        evidence = evidence or []
+        details = details or {}
+        with self._connect() as db:
+            revision = db.execute("SELECT revision FROM cases WHERE id=?", (case_id,)).fetchone()[0]
+            db.execute(
+                """INSERT INTO verdicts
+                (id, case_id, run_id, revision, status, reason, created_at, evidence, details)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                (
+                    verdict_id,
+                    case_id,
+                    run_id,
+                    revision,
+                    status,
+                    reason,
+                    _now(),
+                    json.dumps(evidence, ensure_ascii=False),
+                    json.dumps(details, ensure_ascii=False),
+                ),
             )
             db.execute(
                 "INSERT INTO events(case_id, run_id, type, payload, created_at) VALUES (?, ?, ?, ?, ?)",
@@ -105,7 +224,8 @@ class CaseStore:
             "revision": revision,
             "status": status,
             "reason": reason,
-            "evidence": [],
+            "evidence": evidence,
+            "details": details,
         }
 
     def get(self, case_id: str) -> dict[str, Any] | None:
@@ -120,13 +240,36 @@ class CaseStore:
                     (case_id,),
                 )
             ]
-            verdicts = [
-                dict(item)
-                for item in db.execute(
-                    "SELECT * FROM verdicts WHERE case_id=? ORDER BY created_at, rowid",
-                    (case_id,),
-                )
-            ]
+            verdicts = []
+            for item in db.execute(
+                "SELECT * FROM verdicts WHERE case_id=? ORDER BY created_at, rowid",
+                (case_id,),
+            ):
+                verdict = dict(item)
+                verdict["evidence"] = json.loads(verdict["evidence"] or "[]")
+                verdict["details"] = json.loads(verdict["details"] or "{}")
+                verdicts.append(verdict)
+            decisions = []
+            for item in db.execute(
+                "SELECT * FROM decisions WHERE case_id=? ORDER BY created_at, rowid",
+                (case_id,),
+            ):
+                decision = dict(item)
+                decision["reason_codes"] = json.loads(decision["reason_codes"])
+                decision["rule_ids"] = json.loads(decision["rule_ids"])
+                decision["derived_facts"] = json.loads(decision["derived_facts"])
+                decision["missing_fields"] = json.loads(decision["missing_fields"])
+                decisions.append(decision)
+            verifications = []
+            for item in db.execute(
+                "SELECT * FROM verifications WHERE case_id=? ORDER BY created_at, rowid",
+                (case_id,),
+            ):
+                verification = dict(item)
+                verification["rule_ids"] = json.loads(verification["rule_ids"])
+                verification["evidence"] = json.loads(verification["evidence"])
+                verification["checks"] = json.loads(verification["checks"])
+                verifications.append(verification)
             return {
                 "id": row["id"],
                 "created_at": row["created_at"],
@@ -134,6 +277,8 @@ class CaseStore:
                 "confirmed_state": json.loads(row["confirmed_state"]),
                 "messages": messages,
                 "verdicts": verdicts,
+                "decisions": decisions,
+                "verifications": verifications,
             }
 
     def events(self, case_id: str) -> list[dict[str, Any]]:

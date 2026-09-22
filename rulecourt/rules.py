@@ -466,6 +466,24 @@ class RuleStore:
         assert result is not None
         return result
 
+    def get_enabled_package(self, game_id: str, revision: str) -> dict[str, Any] | None:
+        """Return the one verified package selected by the fixed workflow."""
+
+        with self._connect() as db:
+            rows = db.execute(
+                """SELECT id FROM rule_packages
+                WHERE game_id=? AND revision=? AND status='verified' AND enabled=1
+                ORDER BY id""",
+                (game_id, revision),
+            ).fetchall()
+        if len(rows) > 1:
+            raise AmbiguousPublicRuleError(
+                "multiple enabled rule packages match the fixed workflow version"
+            )
+        if not rows:
+            return None
+        return self.get_package(rows[0]["id"])
+
     @staticmethod
     def _public_source(row: sqlite3.Row) -> dict[str, Any]:
         return {

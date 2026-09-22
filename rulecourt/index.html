@@ -17,7 +17,7 @@
 </head>
 <body>
   <h1>RuleCourt</h1>
-  <p class="muted">Create a Case and inspect the saved investigation. Local move rules are not available yet.</p>
+  <p class="muted">Create a Case and inspect a source-backed state and local move adjudication. Full-turn legality is not checked.</p>
   <button id="create">Create Case</button>
   <p><a href="/rules">Rule package review</a></p>
   <section id="case" hidden>
@@ -35,6 +35,7 @@
     <h3>State corrections and clarifications</h3><div id="state-issues"></div>
     <h3>Messages</h3><div id="messages"></div>
     <h3>Verdicts</h3><div id="verdicts"></div>
+    <h3>Adjudication result</h3><pre id="adjudication"></pre>
     <h3>Public events</h3><div id="events"></div>
   </section>
   <script>
@@ -90,6 +91,30 @@
         if (!item.textContent.startsWith('No ')) item.className = 'warning';
       });
     }
+    function renderAdjudication(data) {
+      const verdict = (data.verdicts || []).at(-1);
+      const decision = (data.decisions || []).at(-1);
+      const verification = (data.verifications || []).at(-1);
+      if (!verdict) {
+        el('adjudication').textContent = 'No adjudication has been finalized yet.';
+        return;
+      }
+      const details = verdict.details || {};
+      el('adjudication').textContent = JSON.stringify({
+        verdict: verdict.status,
+        reason: verdict.reason,
+        state_revision: verdict.revision,
+        scope: details.scope,
+        scope_confirmation_ref: details.scope_confirmation_ref,
+        not_checked: details.not_checked || [],
+        applicable_rules: details.applicable_rules || [],
+        evidence: verdict.evidence || [],
+        decision,
+        verification,
+        checks: details.checks || {},
+        explanation: details.explanation || ''
+      }, null, 2);
+    }
     async function refresh() {
       if (!caseId) return;
       const [data, events] = await Promise.all([
@@ -102,6 +127,7 @@
       renderState(data);
       lines(el('messages'), data.messages, x => x.text);
       lines(el('verdicts'), data.verdicts, x => `${x.status}: ${x.reason} (revision ${x.revision})`);
+      renderAdjudication(data);
       lines(el('events'), events, x => `${x.type}${x.name ? ': ' + x.name + ' (' + x.status + ')' : ''}`);
     }
     el('create').onclick = async () => {
