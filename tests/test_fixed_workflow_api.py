@@ -496,6 +496,51 @@ def test_partial_and_complete_adjacency_change_the_move_result(tmp_path):
         assert complete["reason"] == "MOVE_NOT_ADJACENT"
 
 
+def test_unavailable_unknown_stays_insufficient_after_user_cannot_supply_it(tmp_path):
+    with TestClient(
+        create_app(
+            tmp_path / "cases.sqlite3",
+            provider=PassiveProvider(),
+            maintenance_token="test-secret",
+        )
+    ) as client:
+        install_verified_package(client)
+        case_id = client.post("/api/cases", json={}).json()["id"]
+        first = client.post(
+            f"/api/cases/{case_id}/messages",
+            json={
+                "text": (
+                    "确认本次只裁决 Marquise 普通移动范围。"
+                    "Marquise 在 A 有 3 个 warriors。"
+                    "Marquise 在 A 有 0 个 buildings。"
+                    "Eyrie 在 A 有 0 个 warriors。"
+                    "Eyrie 在 A 有 0 个 buildings。"
+                    "Marquise 从 A 移动 1 个 warriors 到 B。"
+                )
+            },
+        ).json()
+        assert first["status"] == "INSUFFICIENT_INFORMATION"
+        assert "clearings.A.adjacent_to" in first["missing_fields"]
+
+        second = client.post(
+            f"/api/cases/{case_id}/messages",
+            json={"text": "我不知道 A 与谁相邻。"},
+        ).json()
+
+        assert second["status"] == "INSUFFICIENT_INFORMATION"
+        assert second["reason"] == "INSUFFICIENT_INFORMATION"
+        assert second["missing_fields"] == ["clearings.A.adjacent_to"]
+        assert [question["field"] for question in second["clarification_questions"]] == [
+            "clearings.A.adjacent_to"
+        ]
+        case = client.get(f"/api/cases/{case_id}").json()
+        assert len(case["messages"]) == 2
+        assert [verdict["status"] for verdict in case["verdicts"]] == [
+            "INSUFFICIENT_INFORMATION",
+            "INSUFFICIENT_INFORMATION",
+        ]
+
+
 def test_scope_unknown_is_a_clarification_before_using_complete_move_facts(tmp_path):
     with TestClient(
         create_app(
