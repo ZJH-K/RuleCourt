@@ -9,6 +9,7 @@ from fastapi import Depends, FastAPI, Header, HTTPException
 from fastapi.responses import FileResponse
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
+from .budget import InvestigationBudget
 from .rules import (
     AmbiguousPublicRuleError,
     DuplicateRulePackageError,
@@ -18,6 +19,7 @@ from .rules import (
     RuleStore,
 )
 from .runtime import RuleCourtController
+from .state import ProposedStatePatch
 from .state_store import StateStore
 from .store import CaseStore
 
@@ -45,6 +47,7 @@ def create_app(
     provider=None,
     model: str | None = None,
     maintenance_token: str | None = None,
+    budget: InvestigationBudget | dict[str, Any] | None = None,
 ) -> FastAPI:
     if provider is None:
         from nanobot.providers.openai_compat_provider import OpenAICompatProvider
@@ -61,7 +64,7 @@ def create_app(
     store = CaseStore(Path(db_path))
     rule_store = RuleStore(Path(db_path))
     state_store = StateStore(Path(db_path))
-    controller = RuleCourtController(store, provider, model, state_store, rule_store)
+    controller = RuleCourtController(store, provider, model, state_store, rule_store, budget)
     app = FastAPI(title="RuleCourt")
     maintenance_token = maintenance_token or os.getenv("RULECOURT_MAINTENANCE_TOKEN")
 
@@ -94,6 +97,15 @@ def create_app(
     @app.post("/api/cases", status_code=201)
     def create_case(_request: CreateCase):
         return store.create()
+
+    @app.post("/api/cases/{case_id}/state")
+    def update_case_state(case_id: str, request: ProposedStatePatch):
+        require_case(case_id)
+        return state_store.apply_patch(case_id, request)
+
+    @app.get("/api/investigation-budget")
+    def get_investigation_budget():
+        return controller.budget.to_dict()
 
     @app.get("/api/cases/{case_id}")
     def get_case(case_id: str):

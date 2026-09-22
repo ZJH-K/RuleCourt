@@ -10,6 +10,7 @@ confirmed snapshot.
 from __future__ import annotations
 
 import json
+import re
 import sqlite3
 from collections.abc import Iterator
 from contextlib import contextmanager
@@ -185,28 +186,49 @@ class StateStore:
     def _evidence_issues(
         db: sqlite3.Connection, case_id: str, patch: ProposedStatePatch
     ) -> list[dict[str, str]]:
-        evidence = []
-        for change in patch.changes:
-            evidence.extend(change.evidence)
-        for assumption in patch.scope_assumptions:
-            evidence.extend(assumption.evidence_refs)
-        for assertion in patch.completeness_assertions:
-            evidence.extend(assertion.evidence_refs)
         issues: list[dict[str, str]] = []
-        for item in evidence:
-            message = db.execute(
-                "SELECT 1 FROM messages WHERE id=? AND case_id=?",
-                (item.source_message_id, case_id),
-            ).fetchone()
-            if message is None:
-                issues.append(
-                    {
-                        "code": "EVIDENCE_NOT_IN_CASE",
-                        "message": "Every source reference must point to a message in this Case.",
-                        "field_path": item.field_path,
-                    }
-                )
+
+        def check(operation: str, references: list[Any]) -> None:
+            for item in references:
+                message = db.execute(
+                    "SELECT text FROM messages WHERE id=? AND case_id=?",
+                    (item.source_message_id, case_id),
+                ).fetchone()
+                if message is None:
+                    issues.append(
+                        {
+                            "code": "EVIDENCE_NOT_IN_CASE",
+                            "message": "Every source reference must point to a message in this Case.",
+                            "field_path": item.field_path,
+                        }
+                    )
+                elif operation != "assert" and not StateStore._explicit_operation_text(
+                    operation, message["text"]
+                ):
+                    issues.append(
+                        {
+                            "code": "OPERATION_NOT_EXPLICIT",
+                            "message": "Correction and retraction require explicit source wording.",
+                            "field_path": item.field_path,
+                        }
+                    )
+
+        for change in patch.changes:
+            check(change.operation, change.evidence)
+        for assumption in patch.scope_assumptions:
+            check(assumption.operation, assumption.evidence_refs)
+        for assertion in patch.completeness_assertions:
+            check(assertion.operation, assertion.evidence_refs)
         return issues
+
+    @staticmethod
+    def _explicit_operation_text(operation: str, text: str) -> bool:
+        patterns = {
+            "correct": r"更正|纠正|改为|改成|其实|correction|correct|actually",
+            "retract": r"撤回|取消|不确定|retract|withdraw|uncertain",
+        }
+        pattern = patterns.get(operation)
+        return pattern is None or re.search(pattern, text, re.IGNORECASE) is not None
 
     @staticmethod
     def _active_fact(db: sqlite3.Connection, case_id: str, field_path: str) -> sqlite3.Row | None:
@@ -217,6 +239,165 @@ class StateStore:
             (case_id, field_path),
         ).fetchone()
 
+    def _reference_issues(
+        self, db: sqlite3.Connection, case_id: str, patch: ProposedStatePatch
+    ) -> list[dict[str, str]]:
+        issues: list[dict[str, str]] = []
+
+        def check_reference(
+            table: str,
+            object_id: str,
+            *,
+            allowed_statuses: set[str],
+            field_path: str | None = None,
+        ) -> sqlite3.Row | None:
+            row = db.execute(
+                f"SELECT * FROM {table} WHERE id=?", (object_id,)
+            ).fetchone()
+            if row is None:
+                issues.append(
+                    {
+                        "code": "OBJECT_NOT_FOUND",
+                        "message": "The referenced state object does not exist.",
+                    }
+                )
+                return None
+            if row["case_id"] != case_id:
+                issues.append(
+                    {
+                        "code": "CROSS_CASE_REFERENCE",
+                        "message": "A state object from another Case cannot be used here.",
+                    }
+                )
+                return None
+            if row["status"] not in allowed_statuses:
+                issues.append(
+                    {
+                        "code": "STALE_OBJECT_REFERENCE",
+                        "message": "The referenced state object is no longer current.",
+                    }
+                )
+                return None
+            if field_path is not None and row["field_path"] != field_path:
+                issues.append(
+                    {
+                        "code": "INVALID_REPLACEMENT_TARGET",
+                        "message": "A replacement must target the same fact field.",
+                        "field_path": field_path,
+                    }
+                )
+                return None
+            return row
+
+        for change in patch.changes:
+            active = self._active_fact(db, case_id, change.field_path)
+            if change.operation == "assert" and active is None:
+                conflicted = db.execute(
+                    """SELECT 1 FROM state_facts
+                    WHERE case_id=? AND field_path=? AND status='conflicted' LIMIT 1""",
+                    (case_id, change.field_path),
+                ).fetchone()
+                if conflicted is not None:
+                    issues.append(
+                        {
+                            "code": "FACT_CONFLICT",
+                            "message": "A conflicting candidate already requires explicit correction.",
+                            "field_path": change.field_path,
+                        }
+                    )
+            if change.operation == "correct" and active is None and not change.supersedes_id:
+                issues.append(
+                    {
+                        "code": "CORRECTION_TARGET_NOT_FOUND",
+                        "message": "A correction must identify a current or conflicted fact.",
+                        "field_path": change.field_path,
+                    }
+                )
+            if change.supersedes_id:
+                target = check_reference(
+                    "state_facts",
+                    change.supersedes_id,
+                    allowed_statuses=(
+                        {"active", "conflicted"}
+                        if change.operation == "correct"
+                        else {"active"}
+                    ),
+                    field_path=change.field_path,
+                )
+                if target is not None and active is not None and target["id"] != active["id"]:
+                    issues.append(
+                        {
+                            "code": "STALE_OBJECT_REFERENCE",
+                            "message": "The replacement target is not the current fact.",
+                            "field_path": change.field_path,
+                        }
+                    )
+
+        for assumption in patch.scope_assumptions:
+            if assumption.operation in {"correct", "retract"} and not assumption.supersedes_id:
+                target = db.execute(
+                    """SELECT 1 FROM scope_assumptions
+                    WHERE case_id=? AND scope_id=? AND predicate_id=?
+                    AND status IN ('proposed', 'confirmed')""",
+                    (case_id, assumption.scope_id, assumption.predicate_id),
+                ).fetchone()
+                if target is None:
+                    issues.append(
+                        {
+                            "code": "CORRECTION_TARGET_NOT_FOUND",
+                            "message": "A declaration correction must replace a current object.",
+                        }
+                    )
+            if assumption.supersedes_id:
+                target = check_reference(
+                    "scope_assumptions",
+                    assumption.supersedes_id,
+                    allowed_statuses={"proposed", "confirmed"},
+                )
+                if target is not None and (
+                    target["scope_id"] != assumption.scope_id
+                    or target["predicate_id"] != assumption.predicate_id
+                ):
+                    issues.append(
+                        {
+                            "code": "INVALID_REPLACEMENT_TARGET",
+                            "message": "A scope correction must target the same assumption.",
+                        }
+                    )
+            for fact_id in assumption.depends_on_fact_refs:
+                check_reference("state_facts", fact_id, allowed_statuses={"active"})
+
+        for assertion in patch.completeness_assertions:
+            if assertion.operation in {"correct", "retract"} and not assertion.supersedes_id:
+                target = db.execute(
+                    """SELECT 1 FROM completeness_assertions
+                    WHERE case_id=? AND collection_target=?
+                    AND status IN ('proposed', 'confirmed')""",
+                    (case_id, assertion.collection_target),
+                ).fetchone()
+                if target is None:
+                    issues.append(
+                        {
+                            "code": "CORRECTION_TARGET_NOT_FOUND",
+                            "message": "A completeness correction must replace a current object.",
+                            "field_path": assertion.collection_target,
+                        }
+                    )
+            if assertion.supersedes_id:
+                target = check_reference(
+                    "completeness_assertions",
+                    assertion.supersedes_id,
+                    allowed_statuses={"proposed", "confirmed"},
+                )
+                if target is not None and target["collection_target"] != assertion.collection_target:
+                    issues.append(
+                        {
+                            "code": "INVALID_REPLACEMENT_TARGET",
+                            "message": "A completeness correction must target the same collection.",
+                            "field_path": assertion.collection_target,
+                        }
+                    )
+        return issues
     @staticmethod
     def _merge_evidence(old: str, additions: list[Any]) -> str:
         current = json.loads(old)
@@ -234,6 +415,11 @@ class StateStore:
         revision: int,
     ) -> tuple[bool, bool, list[dict[str, str]]]:
         old = self._active_fact(db, case_id, change.field_path)
+        if old is None and change.operation == "correct" and change.supersedes_id:
+            old = db.execute(
+                "SELECT * FROM state_facts WHERE id=? AND case_id=? AND status='conflicted'",
+                (change.supersedes_id, case_id),
+            ).fetchone()
         old_value = self._fact_value(old)
         if change.operation == "assert" and old is not None and old_value == change.value:
             db.execute(
@@ -259,9 +445,27 @@ class StateStore:
             value = change.value
 
         if change.operation == "retract":
-            if old is None:
-                return False, False, []
-            db.execute("UPDATE state_facts SET status='retracted' WHERE id=?", (old["id"],))
+            if old is not None:
+                db.execute("UPDATE state_facts SET status='retracted' WHERE id=?", (old["id"],))
+            fact_id = str(uuid4())
+            db.execute(
+                """INSERT INTO state_facts
+                (id, case_id, field_path, value, operation, status, created_revision,
+                 evidence_refs, supersedes_id, created_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                (
+                    fact_id,
+                    case_id,
+                    change.field_path,
+                    _json(None),
+                    change.operation,
+                    "retracted",
+                    revision,
+                    _json([item.model_dump() for item in change.evidence]),
+                    old["id"] if old is not None else None,
+                    _now(),
+                ),
+            )
             self._invalidate_completeness_for_fact(db, case_id, change.field_path)
             return True, False, []
 
@@ -302,6 +506,52 @@ class StateStore:
         )
         self._invalidate_completeness_for_fact(db, case_id, change.field_path)
         return True, conflict is not None, [conflict] if conflict else []
+
+    @staticmethod
+    def _scope_fact_is_related(field_path: str) -> bool:
+        if field_path in {
+            "actor",
+            "phase",
+            "action.type",
+            "action.actor",
+            "decree.column",
+            "decree.card_suit",
+        }:
+            return True
+        parts = field_path.split(".")
+        return len(parts) == 3 and parts[0] == "clearings" and parts[2] == "suit"
+
+    @classmethod
+    def _scope_dependency_ids(cls, db: sqlite3.Connection, case_id: str) -> list[str]:
+        rows = db.execute(
+            "SELECT id, field_path FROM state_facts WHERE case_id=? AND status='active'",
+            (case_id,),
+        )
+        return [row["id"] for row in rows if cls._scope_fact_is_related(row["field_path"])]
+
+    @classmethod
+    def _invalidate_scope_for_fact(
+        cls, db: sqlite3.Connection, case_id: str, field_path: str
+    ) -> None:
+        changed_ids = {
+            row["id"]
+            for row in db.execute(
+                "SELECT id FROM state_facts WHERE case_id=? AND field_path=?",
+                (case_id, field_path),
+            )
+        }
+        rows = db.execute(
+            """SELECT id, depends_on_fact_refs FROM scope_assumptions
+            WHERE case_id=? AND status IN ('proposed', 'confirmed')""",
+            (case_id,),
+        )
+        for row in rows:
+            dependencies = set(json.loads(row["depends_on_fact_refs"]))
+            if cls._scope_fact_is_related(field_path) or changed_ids & dependencies:
+                db.execute(
+                    "UPDATE scope_assumptions SET status='invalidated' WHERE id=?",
+                    (row["id"],),
+                )
 
     @staticmethod
     def _invalidate_completeness_for_fact(
@@ -390,6 +640,7 @@ class StateStore:
 
     def apply_patch(self, case_id: str, patch: ProposedStatePatch) -> dict[str, Any]:
         with self._connect() as db:
+            db.execute("BEGIN IMMEDIATE")
             row = db.execute("SELECT revision FROM cases WHERE id=?", (case_id,)).fetchone()
             if row is None:
                 return {
@@ -428,6 +679,7 @@ class StateStore:
                 if problem:
                     issues.append(problem)
             issues.extend(self._evidence_issues(db, case_id, patch))
+            issues.extend(self._reference_issues(db, case_id, patch))
             if issues:
                 return {
                     "accepted": False,
@@ -445,6 +697,8 @@ class StateStore:
                     db, case_id, change, current_revision + 1
                 )
                 has_change = has_change or changed
+                if changed:
+                    self._invalidate_scope_for_fact(db, case_id, change.field_path)
                 has_conflict = has_conflict or conflict
                 fact_issues.extend(new_issues)
 
@@ -457,10 +711,23 @@ class StateStore:
                     if assumption.asserted_value is None
                     else "confirmed"
                 )
-                if assumption.supersedes_id:
+                replacement_id = assumption.supersedes_id
+                if replacement_id is None and assumption.operation in {"correct", "retract"}:
+                    target = db.execute(
+                        """SELECT id FROM scope_assumptions
+                        WHERE case_id=? AND scope_id=? AND predicate_id=?
+                        AND status IN ('proposed', 'confirmed')
+                        ORDER BY created_revision DESC, created_at DESC LIMIT 1""",
+                        (case_id, assumption.scope_id, assumption.predicate_id),
+                    ).fetchone()
+                    replacement_id = None if target is None else target["id"]
+                if replacement_id:
+                    previous_status = (
+                        "retracted" if assumption.operation == "retract" else "superseded"
+                    )
                     db.execute(
-                        "UPDATE scope_assumptions SET status='superseded' WHERE id=? AND case_id=?",
-                        (assumption.supersedes_id, case_id),
+                        "UPDATE scope_assumptions SET status=? WHERE id=? AND case_id=?",
+                        (previous_status, replacement_id, case_id),
                     )
                 db.execute(
                     """INSERT INTO scope_assumptions
@@ -478,11 +745,11 @@ class StateStore:
                         else int(assumption.asserted_value),
                         assumption.ruleset_version,
                         assumption.scope_policy_version,
-                        _json(assumption.depends_on_fact_refs),
+                        _json(assumption.depends_on_fact_refs or self._scope_dependency_ids(db, case_id)),
                         _json([item.model_dump() for item in assumption.evidence_refs]),
                         current_revision + 1,
                         status,
-                        assumption.supersedes_id,
+                        replacement_id,
                         _now(),
                     ),
                 )
@@ -491,10 +758,23 @@ class StateStore:
             for assertion in patch.completeness_assertions:
                 assertion_id = str(uuid4())
                 status = "retracted" if assertion.operation == "retract" else "confirmed"
-                if assertion.supersedes_id:
+                replacement_id = assertion.supersedes_id
+                if replacement_id is None and assertion.operation in {"correct", "retract"}:
+                    target = db.execute(
+                        """SELECT id FROM completeness_assertions
+                        WHERE case_id=? AND collection_target=?
+                        AND status IN ('proposed', 'confirmed')
+                        ORDER BY created_revision DESC, created_at DESC LIMIT 1""",
+                        (case_id, assertion.collection_target),
+                    ).fetchone()
+                    replacement_id = None if target is None else target["id"]
+                if replacement_id:
+                    previous_status = (
+                        "retracted" if assertion.operation == "retract" else "superseded"
+                    )
                     db.execute(
-                        "UPDATE completeness_assertions SET status='superseded' WHERE id=? AND case_id=?",
-                        (assertion.supersedes_id, case_id),
+                        "UPDATE completeness_assertions SET status=? WHERE id=? AND case_id=?",
+                        (previous_status, replacement_id, case_id),
                     )
                 db.execute(
                     """INSERT INTO completeness_assertions
@@ -513,7 +793,7 @@ class StateStore:
                         _json([item.model_dump() for item in assertion.evidence_refs]),
                         current_revision + 1,
                         status,
-                        assertion.supersedes_id,
+                        replacement_id,
                         _now(),
                     ),
                 )
@@ -544,6 +824,12 @@ class StateStore:
                     unknown_fields = _unique(unknown_fields + [change.field_path])
                 else:
                     unknown_fields = [item for item in unknown_fields if item != change.field_path]
+            conflict_fields = [
+                issue["field_path"]
+                for issue in fact_issues
+                if issue.get("code") == "FACT_CONFLICT" and issue.get("field_path")
+            ]
+            unknown_fields = _unique(unknown_fields + conflict_fields)
             for unknown_field in list(unknown_fields):
                 parts = unknown_field.split(".")
                 if len(parts) != 3 or parts[0] != "clearings" or parts[2] != "presence":
@@ -610,6 +896,21 @@ class StateStore:
                     (case_id,),
                 )
             ]
+            active_fact_ids = {
+                item["id"] for item in facts if item["status"] == "active"
+            }
+            for assumption in assumptions:
+                dependencies = set(assumption["depends_on_fact_refs"])
+                valid = (
+                    assumption["status"] == "confirmed"
+                    and dependencies <= active_fact_ids
+                )
+                assumption["valid_for_state_revision"] = valid
+                assumption["validated_revision"] = case["revision"] if valid else None
+            for assertion in assertions:
+                valid = assertion["status"] in {"proposed", "confirmed"}
+                assertion["valid_for_state_revision"] = valid
+                assertion["validated_revision"] = case["revision"] if valid else None
             return {
                 "confirmed_state": json.loads(case["confirmed_state"]),
                 "state_revision": case["revision"],
@@ -621,9 +922,15 @@ class StateStore:
                 "scope_assumptions": assumptions,
                 "completeness_assertions": assertions,
                 "active_scope_assumptions": [
-                    item for item in assumptions if item["status"] in {"proposed", "confirmed"}
+                    item
+                    for item in assumptions
+                    if item["status"] in {"proposed", "confirmed"}
+                    and item.get("valid_for_state_revision", True)
                 ],
                 "active_completeness_assertions": [
-                    item for item in assertions if item["status"] in {"proposed", "confirmed"}
+                    item
+                    for item in assertions
+                    if item["status"] in {"proposed", "confirmed"}
+                    and item.get("valid_for_state_revision", True)
                 ],
             }

@@ -22,6 +22,7 @@
   <p><a href="/rules">Rule package review</a></p>
   <section id="case" hidden>
     <h2>Case <small id="case-id"></small></h2>
+    <p id="revision" class="muted"></p>
     <label for="message">Your question</label>
     <textarea id="message" placeholder="Describe your proposed move"></textarea>
     <button id="submit">Submit</button>
@@ -35,6 +36,7 @@
     <h3>State corrections and clarifications</h3><div id="state-issues"></div>
     <h3>Messages</h3><div id="messages"></div>
     <h3>Verdicts</h3><div id="verdicts"></div>
+    <h3>Investigation budget and outcome</h3><pre id="investigation"></pre>
     <h3>Adjudication result</h3><pre id="adjudication"></pre>
     <h3>Clarification requested</h3><pre id="clarification"></pre>
     <h3>Public events</h3><div id="events"></div>
@@ -71,18 +73,23 @@
         return `${ref.source_message_id}${span}`;
       }).join('; ') || 'source unavailable';
     }
+    function objectRef(item) {
+      const replacement = item.supersedes_id ? `; supersedes ${item.supersedes_id}` : '';
+      return `id ${item.id}${replacement}`;
+    }
+
     function renderState(data) {
       list(el('facts'), data.state_facts || [], fact =>
-        `${fact.field_path} = ${value(fact.value)} (${fact.status}); source: ${sources(fact.evidence_refs)}`,
+        `${fact.field_path} = ${value(fact.value)} (${fact.status}); ${objectRef(fact)}; source: ${sources(fact.evidence_refs)}`,
         'No accepted facts yet.');
       list(el('unknowns'), data.unknown_fields || [], field =>
         `${field} is still unknown; do not treat it as zero or as an empty list.`,
         'No unknown fields recorded.');
       list(el('assumptions'), data.scope_assumptions || [], assumption =>
-        `${assumption.scope_id}.${assumption.predicate_id} = ${assumption.asserted_value === null ? 'unknown' : assumption.asserted_value} (${assumption.status}); source: ${sources(assumption.evidence_refs)}`,
+        `${assumption.scope_id}.${assumption.predicate_id} = ${assumption.asserted_value === null ? 'unknown' : assumption.asserted_value} (${assumption.status}); ${objectRef(assumption)}; current revision validation: ${assumption.validated_revision ?? 'not current'}; source: ${sources(assumption.evidence_refs)}`,
         'No scope assumptions recorded.');
       list(el('completeness'), data.completeness_assertions || [], assertion =>
-        `${assertion.collection_target} is ${assertion.completeness} for ${value(assertion.covered_scope)} (${assertion.status}); members: ${value(assertion.member_snapshot.members || [])}; source: ${sources(assertion.evidence_refs)}`,
+        `${assertion.collection_target} is ${assertion.completeness} for ${value(assertion.covered_scope)} (${assertion.status}); ${objectRef(assertion)}; members: ${value(assertion.member_snapshot.members || [])}; source: ${sources(assertion.evidence_refs)}`,
         'No completeness assertions recorded. Lists are partial by default.');
       const issues = [...(data.state_issues || []), ...((latestStateUpdate && latestStateUpdate.issues) || [])];
       list(el('state-issues'), issues, issue =>
@@ -92,10 +99,38 @@
         if (!item.textContent.startsWith('No ')) item.className = 'warning';
       });
     }
+    function renderInvestigation(data) {
+      const latest = data.latest_investigation;
+      const latestRun = (data.investigation_runs || []).at(-1);
+      if (!latest) {
+        el('investigation').textContent = 'No investigation run has been recorded.';
+        return;
+      }
+      const usage = latest.usage || {};
+      const budget = latest.budget || {};
+      el('investigation').textContent = JSON.stringify({
+        status: latestRun?.status || latest.status,
+        reason: latestRun?.reason || latest.last_reason,
+        strategy: latestRun?.strategy || latest.strategy,
+        model: latestRun?.model || 'unavailable',
+        provider: latestRun?.provider || 'unavailable',
+        stop_reason: latestRun?.stop_reason || latest.last_reason,
+        failure_reason: latestRun?.failure_reason || null,
+        usage,
+        remaining: {
+          duration_seconds: Math.max(0, (budget.max_duration_seconds || 0) - (usage.latency_ms || 0) / 1000),
+          iterations: Math.max(0, (budget.max_iterations || 0) - (usage.iterations || 0)),
+          tool_calls: Math.max(0, (budget.max_tool_calls || 0) - (usage.tool_calls || 0)),
+          total_tokens: Math.max(0, (budget.max_total_tokens || 0) - (usage.total_tokens || 0))
+        },
+        budget
+      }, null, 2);
+    }
+
     function renderAdjudication(data) {
-      const verdict = (data.verdicts || []).at(-1);
-      const decision = (data.decisions || []).at(-1);
-      const verification = (data.verifications || []).at(-1);
+      const verdict = data.current_verdict;
+      const decision = data.current_decision;
+      const verification = data.current_verification;
       if (!verdict) {
         el('adjudication').textContent = 'No adjudication has been finalized yet.';
         el('clarification').textContent = 'No clarification requested.';
@@ -131,10 +166,12 @@
       ]);
       el('case').hidden = false;
       el('case-id').textContent = caseId;
+      el('revision').textContent = `Current state revision: ${data.state_revision ?? data.revision}`;
       el('state').textContent = JSON.stringify(data.confirmed_state, null, 2);
       renderState(data);
       lines(el('messages'), data.messages, x => x.text);
-      lines(el('verdicts'), data.verdicts, x => `${x.status}: ${x.reason} (revision ${x.revision})`);
+      lines(el('verdicts'), data.verdicts, x => `${x.status}: ${x.reason} (${x.valid_for_current_state ? 'current' : 'historical'}, revision ${x.revision})`);
+      renderInvestigation(data);
       renderAdjudication(data);
       lines(el('events'), events, x => `${x.type}${x.name ? ': ' + x.name + ' (' + x.status + ')' : ''}`);
     }

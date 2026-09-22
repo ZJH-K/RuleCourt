@@ -45,6 +45,7 @@ class FixedWorkflow:
         for assumption in assumptions:
             if (
                 assumption.get("status") == "confirmed"
+                and assumption.get("valid_for_state_revision", True) is True
                 and assumption.get("asserted_value") is True
                 and assumption.get("scope_id") == "root-local-move"
                 and assumption.get("predicate_id") == "m0.local_warrior_move_scope"
@@ -125,6 +126,19 @@ class FixedWorkflow:
             "scope_confirmation_ref": (
                 scope_confirmation["id"] if scope_confirmation is not None else None
             ),
+            "scope_confirmation_revision": (
+                scope_confirmation.get("validated_revision")
+                if scope_confirmation is not None
+                else None
+            ),
+            "validated_completeness_refs": [
+                item["id"]
+                for item in case.get(
+                    "active_completeness_assertions", case.get("completeness_assertions", [])
+                )
+                if item.get("valid_for_state_revision", True)
+            ],
+            "validated_completeness_revision": case.get("state_revision", case["revision"]),
             "not_checked": list(self.not_checked),
             "decision": decision.model_dump(),
             "verification": verification.model_dump(),
