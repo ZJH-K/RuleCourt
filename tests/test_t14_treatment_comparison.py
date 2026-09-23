@@ -11,6 +11,7 @@ from rulecourt.comparison import (
     TreatmentComparisonRunner,
     TreatmentConfig,
     VisibilityAuditor,
+    _load_artifact,
     check_determinism,
 )
 from rulecourt.evaluation import CaseDataset, EvaluationCase, ReplayResult
@@ -287,6 +288,37 @@ def test_fixed_workflow_unavailable_is_persisted(tmp_path):
     )
 
 
+def test_signed_replay_artifact_rejects_tampered_results(tmp_path):
+    case = _case()
+    dataset = CaseDataset(dataset_version="trial-v1", cases=[case])
+    report = _runner(
+        _Adapter("dynamic_agent", [_response("LEGAL")]),
+        _Adapter("fixed_workflow", [_response("LEGAL")]),
+    ).run_dataset(dataset)
+    signed = report.runs["dynamic_agent"].seal_artifact("t14-test-key")
+    artifact_path = tmp_path / "signed-dynamic.json"
+    payload = signed.model_dump(mode="json")
+    artifact_path.write_text(json.dumps(payload), encoding="utf-8")
+
+    results, _, _ = _load_artifact(
+        artifact_path,
+        require_envelope=True,
+        signing_key="t14-test-key",
+        require_signature=True,
+    )
+    assert results[0].case_id == case.id
+
+    payload["results"][0]["complete_result"]["status"] = "ILLEGAL"
+    artifact_path.write_text(json.dumps(payload), encoding="utf-8")
+    with pytest.raises(ValueError, match="invalid T14 HMAC signature"):
+        _load_artifact(
+            artifact_path,
+            require_envelope=True,
+            signing_key="t14-test-key",
+            require_signature=True,
+        )
+
+
 def test_visibility_audit_rejects_next_step_leak():
     audit = VisibilityAuditor.audit(
         "dynamic_agent",
@@ -442,18 +474,26 @@ def test_runner_records_determinism_for_two_provider_model_sets():
         _Adapter("dynamic_agent", [_response("LEGAL")]),
         _Adapter("fixed_workflow", [_response("LEGAL")]),
     )
-    provider_a = _runner(
+    provider_a_runner = _runner(
         _Adapter("dynamic_agent", [_response("LEGAL")]),
         _Adapter("fixed_workflow", [_response("LEGAL")]),
         provider="provider-a",
         model="model-a",
-    ).adapters
-    provider_b = _runner(
+    )
+    provider_a = {
+        "dynamic_agent": provider_a_runner.adapters["dynamic_agent"],
+        "fixed_workflow": provider_a_runner.adapters["fixed_workflow"],
+    }
+    provider_b_runner = _runner(
         _Adapter("dynamic_agent", [_response("LEGAL")]),
         _Adapter("fixed_workflow", [_response("LEGAL")]),
         provider="provider-b",
         model="model-b",
-    ).adapters
+    )
+    provider_b = {
+        "dynamic_agent": provider_b_runner.adapters["dynamic_agent"],
+        "fixed_workflow": provider_b_runner.adapters["fixed_workflow"],
+    }
 
     report = base.run_dataset(
         dataset,

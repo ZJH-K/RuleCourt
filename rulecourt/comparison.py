@@ -3,8 +3,10 @@
 from __future__ import annotations
 
 import hashlib
+import hmac
 import json
 import math
+import os
 import re
 import sys
 from argparse import ArgumentParser
@@ -16,6 +18,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 
 from .budget import InvestigationBudget
 from .evaluation import (
+    SIGNOFF_KEY_ENV,
     CaseAdapter,
     CaseDataset,
     EvaluationCase,
@@ -130,6 +133,26 @@ def _is_nonnegative_number(value: Any) -> bool:
         and math.isfinite(float(value))
         and value >= 0
     )
+
+
+def _run_artifact_signature(
+    config: Mapping[str, Any],
+    results: Sequence[Mapping[str, Any]],
+    observations: Mapping[str, Mapping[str, Any]],
+    signing_key: str,
+) -> str:
+    if not signing_key:
+        raise ValueError("a T14 artifact signing key is required")
+    payload = _json(
+        {
+            "config": config,
+            "results": results,
+            "observations": observations,
+        }
+    ).encode("utf-8")
+    digest = hmac.new(signing_key.encode("utf-8"), payload, hashlib.sha256).hexdigest()
+    return f"hmac-sha256:{digest}"
+
 
 def _provider_model_identity(metadata: Mapping[str, Any]) -> str:
     provider = str(metadata.get("provider") or "").strip()
@@ -323,6 +346,13 @@ class StrategyRunReport(BaseModel):
     audit: dict[str, Any] = Field(default_factory=dict)
     results: list[dict[str, Any]] = Field(default_factory=list)
     observations: dict[str, dict[str, Any]] = Field(default_factory=dict)
+    artifact_signature: str | None = None
+
+    def seal_artifact(self, signing_key: str) -> StrategyRunReport:
+        signature = _run_artifact_signature(
+            self.config, self.results, self.observations, signing_key
+        )
+        return self.model_copy(update={"artifact_signature": signature})
 
 
 class DeterminismMismatch(BaseModel):
@@ -672,9 +702,9 @@ class VisibilityAuditor:
                 field
                 for field in _USAGE_EVIDENCE_FIELDS
                 if field not in (usage or {})
-                or (
-                    field != "cost_usd"
-                    and not _is_nonnegative_number((usage or {}).get(field))
+                or not (
+                    (field == "cost_usd" and (usage or {}).get(field) is None)
+                    or _is_nonnegative_number((usage or {}).get(field))
                 )
             ]
             if not usage_provenance:
@@ -1261,6 +1291,14 @@ class TreatmentComparisonRunner:
             )
             for name, evaluation in (("dynamic_agent", dynamic_eval), ("fixed_workflow", fixed_eval))
         }
+        if formal:
+            artifact_key = signing_key or os.getenv(SIGNOFF_KEY_ENV)
+            if not artifact_key:
+                raise ValueError("formal T14 replay artifacts require the protected signing key")
+            runs = {
+                name: run.seal_artifact(artifact_key)
+                for name, run in runs.items()
+            }
         excluded = {
             "invalid_audit": sorted(pair.case_id for pair in pairs if not pair.valid_for_comparison),
             "draft": sorted(case.id for case in cases if case.review.status == "draft"),
@@ -1722,12 +1760,16 @@ def _load_artifact(
     strategy: StrategyName | None = None,
     require_envelope: bool = False,
     allow_model_provider_override: bool = False,
+    signing_key: str | None = None,
+    require_signature: bool | None = None,
 ) -> tuple[list[ReplayResult], dict[str, dict[str, Any]], dict[str, Any]]:
     payload = json.loads(path.read_text(encoding="utf-8"))
     observations: dict[str, dict[str, Any]] = {}
     artifact_config: dict[str, Any] = {}
+    artifact_signature: Any = None
     enveloped = isinstance(payload, Mapping)
     if enveloped:
+        artifact_signature = payload.get("artifact_signature")
         raw_config = payload.get("config")
         if isinstance(raw_config, Mapping):
             artifact_config = dict(raw_config)
@@ -1763,11 +1805,47 @@ def _load_artifact(
         raise TypeError(f"result artifact {path} must contain a JSON list")
     results = [ReplayResult.model_validate(item) for item in payload]
     case_ids = [item.case_id for item in results]
-    duplicates = sorted({case_id for case_id in case_ids if case_ids.count(case_id) > 1})
+    seen_case_ids: set[str] = set()
+    duplicate_case_ids: set[str] = set()
+    for case_id in case_ids:
+        if case_id in seen_case_ids:
+            duplicate_case_ids.add(case_id)
+        seen_case_ids.add(case_id)
+    duplicates = sorted(duplicate_case_ids)
     if duplicates:
         raise ValueError(
             "result artifact " + str(path) + " contains duplicate case IDs: " + ", ".join(duplicates)
         )
+    signature_required = (
+        require_signature
+        if require_signature is not None
+        else bool(
+            require_envelope and config is not None and config.run_kind == "formal"
+        )
+    )
+    if signature_required:
+        artifact_key = signing_key or os.getenv(SIGNOFF_KEY_ENV)
+        normalized_results = [
+            item.model_dump(mode="json") for item in results
+        ]
+        expected_signature = (
+            _run_artifact_signature(
+                artifact_config,
+                normalized_results,
+                observations,
+                artifact_key,
+            )
+            if artifact_key
+            else None
+        )
+        if (
+            not isinstance(artifact_signature, str)
+            or expected_signature is None
+            or not hmac.compare_digest(artifact_signature, expected_signature)
+        ):
+            raise ValueError(
+                f"result artifact {path} has a missing or invalid T14 HMAC signature"
+            )
     if require_envelope and set(observations) != set(case_ids):
         raise ValueError(
             f"result artifact {path} must provide observations for every result"

@@ -295,4 +295,6 @@ two model/provider adapter sets, complete resource dimensions, and usage
 provenance for both arms. For exported formal replay, pass --signoff together
 with --determinism-manifest; the manifest maps each provider or model identity
 to its dynamic and fixed StrategyRunReport artifacts and their per-case public
-observations.
+observations. Formal StrategyRunReport artifacts include an HMAC over the exact
+config, results, and observations; replay requires the protected
+RULECOURT_GOLDEN_SIGNOFF_KEY to validate that signature.
