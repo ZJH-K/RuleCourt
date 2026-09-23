@@ -1,0 +1,2839 @@
+{
+  "schema_version": "rulecourt-five-group-development-snapshot-v1",
+  "status": "frozen_development_snapshot",
+  "formal_release": false,
+  "review_basis": "ai_trial",
+  "frozen_at_utc": "2026-09-23T13:07:12.173146+00:00",
+  "git_commit": "e74766975b0c09fb378cc3187b073039ac283353",
+  "dataset_version": "m0-candidate-v3",
+  "dataset_approval_digest": "1441d912c0db7baa4c5cb54b23afa185db50772a319fb787be009443d8eca945",
+  "case_count": 13,
+  "repeat_count": 1,
+  "statistical_method": "descriptive_only",
+  "reproduction_steps": [
+    "uv run --offline --no-sync --env-file .env rulecourt-baselines examples/m0-candidate-cases.json --rules examples/root-m0-candidate-package.json --config examples/t13-hybrid-baseline-config.json --output <new-baseline-report.json>",
+    "uv run --offline --no-sync --env-file .env python experiments/2026-09-23/run_t14_trial.py --tag <new-tag> --iterations 3 --tool-calls 8 --total-tokens 32768 --duration 60"
+  ],
+  "shared_limits": {
+    "max_total_tokens": 32768,
+    "max_duration_seconds": 60.0
+  },
+  "artifacts_sha256": {
+    "examples/m0-candidate-cases.json": "c1409ae400007f775913ba69544b90a2cd323847ff15858af8d9ed229358ef07",
+    "examples/root-m0-candidate-package.json": "9b7f50ebc4297df09d0fa1763fb0dd6765b2d659e7cdb2254eadc7538af4763e",
+    "docs/research/root-m0-ai-attestation.json": "9a0a8807362e2238c9723d69eaf7f5b35ae0bbfdeac5a1dd46a6fc4e62c842db",
+    "experiments/2026-09-23/t13-development-plan.json": "62ae7cde904f481d81dbb8fff9487422768f770f3dd8bed23ce316082422be06",
+    "experiments/2026-09-23/t13-development-results.json": "25c021a41d93932319aad4c51ea990ca243efa0428cba866ea3743c1b6129632",
+    "experiments/2026-09-23/t14-development-config.json": "f20a7eb1d0403f1ed447eef9d879fb792f0cec6d5beffc5675dd0c9842b888aa",
+    "experiments/2026-09-23/t14-development-results.json": "aad83d9ad4d2fcb4a88419f97ada57df1fe8789ea0925d62817fd3d14710fc2a"
+  },
+  "code_sha256": {
+    "rulecourt/baselines.py": "0a18fce94b938c4a9671b547c01856e29e1c410cb1db3c4d664be07072a5a3fe",
+    "rulecourt/hybrid_baselines.py": "056f61389633be0ad5fd1c3940bf5c350b2243dba5c7694f815c4f19d9653ce7",
+    "rulecourt/embeddings.py": "82a1763b43985f7a2afc92865a240430035f89fd9cdeb55bcfac2e0638c474ed",
+    "rulecourt/dashscope.py": "aab173cbda429df79bf30f391a381ebeb24133ad3df4cd2bf746ad4b168e42e9",
+    "rulecourt/runtime.py": "88861f824902e348b454e655ab50f95f03eb9faf8a4cba494a6bc4c776d451eb",
+    "rulecourt/workflow.py": "3ea0bef13e1e90fe4c28ff47fb00c782af75be53cb19b1d3ed237905450bd707",
+    "rulecourt/comparison.py": "3a3dd3a533de43ffc9c2e30e8ef677acf527d9e5813ffd90af601bc02dafc82e",
+    "rulecourt/evaluation.py": "6294c48a822b79db38f47f59689a8daf105c0bc3fb48ad5d15b2b7909b0f7d9e",
+    "experiments/2026-09-23/run_t14_trial.py": "501ddcf38413621f14bdbdb38c4208c212e6d9096f88a278a94dded08245db65",
+    "experiments/2026-09-23/freeze_development_snapshot.py": "1a2620da184736461356831a21f4d3cee37a33593578179735a17f82e66799e5"
+  },
+  "groups": {
+    "llm_only": {
+      "case_count": 13,
+      "run_kind": "development_trial",
+      "review_basis": "ai_trial",
+      "initial": {
+        "sample_count": 13,
+        "decision_domain_count": 3,
+        "refusal_domain_count": 10,
+        "correct_ruling_rate": {
+          "numerator": 2,
+          "denominator": 3,
+          "value": 0.6666666666666666
+        },
+        "coverage_rate": {
+          "numerator": 2,
+          "denominator": 3,
+          "value": 0.6666666666666666
+        },
+        "adjudicated_accuracy": {
+          "numerator": 2,
+          "denominator": 2,
+          "value": 1.0
+        },
+        "wrong_allow_rate": {
+          "numerator": 0,
+          "denominator": 2,
+          "value": 0.0
+        },
+        "correct_refusal_rate": {
+          "numerator": 3,
+          "denominator": 10,
+          "value": 0.3
+        },
+        "four_state_label_match": {
+          "numerator": 5,
+          "denominator": 13,
+          "value": 0.38461538461538464
+        },
+        "by_category": {
+          "adversarial": {
+            "correct_ruling_rate": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "coverage_rate": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "adjudicated_accuracy": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "wrong_allow_rate": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "correct_refusal_rate": {
+              "numerator": 1,
+              "denominator": 2,
+              "value": 0.5
+            },
+            "four_state_label_match": {
+              "numerator": 1,
+              "denominator": 2,
+              "value": 0.5
+            }
+          },
+          "correction": {
+            "correct_ruling_rate": {
+              "numerator": 1,
+              "denominator": 1,
+              "value": 1.0
+            },
+            "coverage_rate": {
+              "numerator": 1,
+              "denominator": 1,
+              "value": 1.0
+            },
+            "adjudicated_accuracy": {
+              "numerator": 1,
+              "denominator": 1,
+              "value": 1.0
+            },
+            "wrong_allow_rate": {
+              "numerator": 0,
+              "denominator": 1,
+              "value": 0.0
+            },
+            "correct_refusal_rate": {
+              "numerator": 0,
+              "denominator": 1,
+              "value": 0.0
+            },
+            "four_state_label_match": {
+              "numerator": 1,
+              "denominator": 2,
+              "value": 0.5
+            }
+          },
+          "eyrie": {
+            "correct_ruling_rate": {
+              "numerator": 0,
+              "denominator": 1,
+              "value": 0.0
+            },
+            "coverage_rate": {
+              "numerator": 0,
+              "denominator": 1,
+              "value": 0.0
+            },
+            "adjudicated_accuracy": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "wrong_allow_rate": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "correct_refusal_rate": {
+              "numerator": 0,
+              "denominator": 2,
+              "value": 0.0
+            },
+            "four_state_label_match": {
+              "numerator": 0,
+              "denominator": 3,
+              "value": 0.0
+            }
+          },
+          "missing_information": {
+            "correct_ruling_rate": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "coverage_rate": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "adjudicated_accuracy": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "wrong_allow_rate": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "correct_refusal_rate": {
+              "numerator": 0,
+              "denominator": 1,
+              "value": 0.0
+            },
+            "four_state_label_match": {
+              "numerator": 0,
+              "denominator": 1,
+              "value": 0.0
+            }
+          },
+          "ordinary": {
+            "correct_ruling_rate": {
+              "numerator": 1,
+              "denominator": 1,
+              "value": 1.0
+            },
+            "coverage_rate": {
+              "numerator": 1,
+              "denominator": 1,
+              "value": 1.0
+            },
+            "adjudicated_accuracy": {
+              "numerator": 1,
+              "denominator": 1,
+              "value": 1.0
+            },
+            "wrong_allow_rate": {
+              "numerator": 0,
+              "denominator": 1,
+              "value": 0.0
+            },
+            "correct_refusal_rate": {
+              "numerator": 2,
+              "denominator": 2,
+              "value": 1.0
+            },
+            "four_state_label_match": {
+              "numerator": 3,
+              "denominator": 3,
+              "value": 1.0
+            }
+          },
+          "unsupported": {
+            "correct_ruling_rate": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "coverage_rate": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "adjudicated_accuracy": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "wrong_allow_rate": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "correct_refusal_rate": {
+              "numerator": 0,
+              "denominator": 1,
+              "value": 0.0
+            },
+            "four_state_label_match": {
+              "numerator": 0,
+              "denominator": 1,
+              "value": 0.0
+            }
+          },
+          "unsupported_interaction": {
+            "correct_ruling_rate": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "coverage_rate": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "adjudicated_accuracy": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "wrong_allow_rate": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "correct_refusal_rate": {
+              "numerator": 0,
+              "denominator": 1,
+              "value": 0.0
+            },
+            "four_state_label_match": {
+              "numerator": 0,
+              "denominator": 1,
+              "value": 0.0
+            }
+          }
+        }
+      },
+      "complete": {
+        "sample_count": 13,
+        "decision_domain_count": 6,
+        "refusal_domain_count": 7,
+        "correct_ruling_rate": {
+          "numerator": 3,
+          "denominator": 6,
+          "value": 0.5
+        },
+        "coverage_rate": {
+          "numerator": 3,
+          "denominator": 6,
+          "value": 0.5
+        },
+        "adjudicated_accuracy": {
+          "numerator": 3,
+          "denominator": 3,
+          "value": 1.0
+        },
+        "wrong_allow_rate": {
+          "numerator": 0,
+          "denominator": 3,
+          "value": 0.0
+        },
+        "correct_refusal_rate": {
+          "numerator": 1,
+          "denominator": 7,
+          "value": 0.14285714285714285
+        },
+        "four_state_label_match": {
+          "numerator": 4,
+          "denominator": 13,
+          "value": 0.3076923076923077
+        },
+        "by_category": {
+          "adversarial": {
+            "correct_ruling_rate": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "coverage_rate": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "adjudicated_accuracy": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "wrong_allow_rate": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "correct_refusal_rate": {
+              "numerator": 1,
+              "denominator": 2,
+              "value": 0.5
+            },
+            "four_state_label_match": {
+              "numerator": 1,
+              "denominator": 2,
+              "value": 0.5
+            }
+          },
+          "correction": {
+            "correct_ruling_rate": {
+              "numerator": 1,
+              "denominator": 1,
+              "value": 1.0
+            },
+            "coverage_rate": {
+              "numerator": 1,
+              "denominator": 1,
+              "value": 1.0
+            },
+            "adjudicated_accuracy": {
+              "numerator": 1,
+              "denominator": 1,
+              "value": 1.0
+            },
+            "wrong_allow_rate": {
+              "numerator": 0,
+              "denominator": 1,
+              "value": 0.0
+            },
+            "correct_refusal_rate": {
+              "numerator": 0,
+              "denominator": 1,
+              "value": 0.0
+            },
+            "four_state_label_match": {
+              "numerator": 1,
+              "denominator": 2,
+              "value": 0.5
+            }
+          },
+          "eyrie": {
+            "correct_ruling_rate": {
+              "numerator": 0,
+              "denominator": 2,
+              "value": 0.0
+            },
+            "coverage_rate": {
+              "numerator": 0,
+              "denominator": 2,
+              "value": 0.0
+            },
+            "adjudicated_accuracy": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "wrong_allow_rate": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "correct_refusal_rate": {
+              "numerator": 0,
+              "denominator": 1,
+              "value": 0.0
+            },
+            "four_state_label_match": {
+              "numerator": 0,
+              "denominator": 3,
+              "value": 0.0
+            }
+          },
+          "missing_information": {
+            "correct_ruling_rate": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "coverage_rate": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "adjudicated_accuracy": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "wrong_allow_rate": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "correct_refusal_rate": {
+              "numerator": 0,
+              "denominator": 1,
+              "value": 0.0
+            },
+            "four_state_label_match": {
+              "numerator": 0,
+              "denominator": 1,
+              "value": 0.0
+            }
+          },
+          "ordinary": {
+            "correct_ruling_rate": {
+              "numerator": 2,
+              "denominator": 3,
+              "value": 0.6666666666666666
+            },
+            "coverage_rate": {
+              "numerator": 2,
+              "denominator": 3,
+              "value": 0.6666666666666666
+            },
+            "adjudicated_accuracy": {
+              "numerator": 2,
+              "denominator": 2,
+              "value": 1.0
+            },
+            "wrong_allow_rate": {
+              "numerator": 0,
+              "denominator": 2,
+              "value": 0.0
+            },
+            "correct_refusal_rate": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "four_state_label_match": {
+              "numerator": 2,
+              "denominator": 3,
+              "value": 0.6666666666666666
+            }
+          },
+          "unsupported": {
+            "correct_ruling_rate": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "coverage_rate": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "adjudicated_accuracy": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "wrong_allow_rate": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "correct_refusal_rate": {
+              "numerator": 0,
+              "denominator": 1,
+              "value": 0.0
+            },
+            "four_state_label_match": {
+              "numerator": 0,
+              "denominator": 1,
+              "value": 0.0
+            }
+          },
+          "unsupported_interaction": {
+            "correct_ruling_rate": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "coverage_rate": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "adjudicated_accuracy": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "wrong_allow_rate": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "correct_refusal_rate": {
+              "numerator": 0,
+              "denominator": 1,
+              "value": 0.0
+            },
+            "four_state_label_match": {
+              "numerator": 0,
+              "denominator": 1,
+              "value": 0.0
+            }
+          }
+        }
+      },
+      "usage": {
+        "provider_calls": 15,
+        "input_tokens": 5648,
+        "output_tokens": 12283,
+        "total_tokens": 17931,
+        "latency_ms": 69810,
+        "cost_usd": null,
+        "usage_available": true,
+        "embedding_calls": 0,
+        "embedding_tokens": 0,
+        "unknown_usage_calls": 0,
+        "known_cost_usd": 0.0
+      },
+      "config_hash": "9b93b6b1010ae18f1004c055041fd52ca559156a29bbd9546afc1b2483c337fe",
+      "failure_case_ids": [
+        "adversarial-conflict-01",
+        "correction-legal-01",
+        "eyrie-bird-legal-01",
+        "eyrie-decree-unsupported-01",
+        "eyrie-legal-01",
+        "missing-fact-01",
+        "unsupported-action-01",
+        "unsupported-interaction-01"
+      ]
+    },
+    "vanilla_rag": {
+      "case_count": 13,
+      "run_kind": "development_trial",
+      "review_basis": "ai_trial",
+      "initial": {
+        "sample_count": 13,
+        "decision_domain_count": 3,
+        "refusal_domain_count": 10,
+        "correct_ruling_rate": {
+          "numerator": 1,
+          "denominator": 3,
+          "value": 0.3333333333333333
+        },
+        "coverage_rate": {
+          "numerator": 3,
+          "denominator": 3,
+          "value": 1.0
+        },
+        "adjudicated_accuracy": {
+          "numerator": 1,
+          "denominator": 3,
+          "value": 0.3333333333333333
+        },
+        "wrong_allow_rate": {
+          "numerator": 0,
+          "denominator": 2,
+          "value": 0.0
+        },
+        "correct_refusal_rate": {
+          "numerator": 1,
+          "denominator": 10,
+          "value": 0.1
+        },
+        "four_state_label_match": {
+          "numerator": 2,
+          "denominator": 13,
+          "value": 0.15384615384615385
+        },
+        "by_category": {
+          "adversarial": {
+            "correct_ruling_rate": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "coverage_rate": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "adjudicated_accuracy": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "wrong_allow_rate": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "correct_refusal_rate": {
+              "numerator": 0,
+              "denominator": 2,
+              "value": 0.0
+            },
+            "four_state_label_match": {
+              "numerator": 0,
+              "denominator": 2,
+              "value": 0.0
+            }
+          },
+          "correction": {
+            "correct_ruling_rate": {
+              "numerator": 1,
+              "denominator": 1,
+              "value": 1.0
+            },
+            "coverage_rate": {
+              "numerator": 2,
+              "denominator": 1,
+              "value": 2.0
+            },
+            "adjudicated_accuracy": {
+              "numerator": 1,
+              "denominator": 2,
+              "value": 0.5
+            },
+            "wrong_allow_rate": {
+              "numerator": 0,
+              "denominator": 1,
+              "value": 0.0
+            },
+            "correct_refusal_rate": {
+              "numerator": 0,
+              "denominator": 1,
+              "value": 0.0
+            },
+            "four_state_label_match": {
+              "numerator": 1,
+              "denominator": 2,
+              "value": 0.5
+            }
+          },
+          "eyrie": {
+            "correct_ruling_rate": {
+              "numerator": 0,
+              "denominator": 1,
+              "value": 0.0
+            },
+            "coverage_rate": {
+              "numerator": 1,
+              "denominator": 1,
+              "value": 1.0
+            },
+            "adjudicated_accuracy": {
+              "numerator": 0,
+              "denominator": 1,
+              "value": 0.0
+            },
+            "wrong_allow_rate": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "correct_refusal_rate": {
+              "numerator": 0,
+              "denominator": 2,
+              "value": 0.0
+            },
+            "four_state_label_match": {
+              "numerator": 0,
+              "denominator": 3,
+              "value": 0.0
+            }
+          },
+          "missing_information": {
+            "correct_ruling_rate": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "coverage_rate": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "adjudicated_accuracy": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "wrong_allow_rate": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "correct_refusal_rate": {
+              "numerator": 0,
+              "denominator": 1,
+              "value": 0.0
+            },
+            "four_state_label_match": {
+              "numerator": 0,
+              "denominator": 1,
+              "value": 0.0
+            }
+          },
+          "ordinary": {
+            "correct_ruling_rate": {
+              "numerator": 0,
+              "denominator": 1,
+              "value": 0.0
+            },
+            "coverage_rate": {
+              "numerator": 0,
+              "denominator": 1,
+              "value": 0.0
+            },
+            "adjudicated_accuracy": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "wrong_allow_rate": {
+              "numerator": 0,
+              "denominator": 1,
+              "value": 0.0
+            },
+            "correct_refusal_rate": {
+              "numerator": 1,
+              "denominator": 2,
+              "value": 0.5
+            },
+            "four_state_label_match": {
+              "numerator": 1,
+              "denominator": 3,
+              "value": 0.3333333333333333
+            }
+          },
+          "unsupported": {
+            "correct_ruling_rate": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "coverage_rate": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "adjudicated_accuracy": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "wrong_allow_rate": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "correct_refusal_rate": {
+              "numerator": 0,
+              "denominator": 1,
+              "value": 0.0
+            },
+            "four_state_label_match": {
+              "numerator": 0,
+              "denominator": 1,
+              "value": 0.0
+            }
+          },
+          "unsupported_interaction": {
+            "correct_ruling_rate": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "coverage_rate": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "adjudicated_accuracy": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "wrong_allow_rate": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "correct_refusal_rate": {
+              "numerator": 0,
+              "denominator": 1,
+              "value": 0.0
+            },
+            "four_state_label_match": {
+              "numerator": 0,
+              "denominator": 1,
+              "value": 0.0
+            }
+          }
+        }
+      },
+      "complete": {
+        "sample_count": 13,
+        "decision_domain_count": 6,
+        "refusal_domain_count": 7,
+        "correct_ruling_rate": {
+          "numerator": 3,
+          "denominator": 6,
+          "value": 0.5
+        },
+        "coverage_rate": {
+          "numerator": 4,
+          "denominator": 6,
+          "value": 0.6666666666666666
+        },
+        "adjudicated_accuracy": {
+          "numerator": 3,
+          "denominator": 4,
+          "value": 0.75
+        },
+        "wrong_allow_rate": {
+          "numerator": 0,
+          "denominator": 3,
+          "value": 0.0
+        },
+        "correct_refusal_rate": {
+          "numerator": 0,
+          "denominator": 7,
+          "value": 0.0
+        },
+        "four_state_label_match": {
+          "numerator": 3,
+          "denominator": 13,
+          "value": 0.23076923076923078
+        },
+        "by_category": {
+          "adversarial": {
+            "correct_ruling_rate": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "coverage_rate": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "adjudicated_accuracy": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "wrong_allow_rate": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "correct_refusal_rate": {
+              "numerator": 0,
+              "denominator": 2,
+              "value": 0.0
+            },
+            "four_state_label_match": {
+              "numerator": 0,
+              "denominator": 2,
+              "value": 0.0
+            }
+          },
+          "correction": {
+            "correct_ruling_rate": {
+              "numerator": 1,
+              "denominator": 1,
+              "value": 1.0
+            },
+            "coverage_rate": {
+              "numerator": 2,
+              "denominator": 1,
+              "value": 2.0
+            },
+            "adjudicated_accuracy": {
+              "numerator": 1,
+              "denominator": 2,
+              "value": 0.5
+            },
+            "wrong_allow_rate": {
+              "numerator": 0,
+              "denominator": 1,
+              "value": 0.0
+            },
+            "correct_refusal_rate": {
+              "numerator": 0,
+              "denominator": 1,
+              "value": 0.0
+            },
+            "four_state_label_match": {
+              "numerator": 1,
+              "denominator": 2,
+              "value": 0.5
+            }
+          },
+          "eyrie": {
+            "correct_ruling_rate": {
+              "numerator": 1,
+              "denominator": 2,
+              "value": 0.5
+            },
+            "coverage_rate": {
+              "numerator": 1,
+              "denominator": 2,
+              "value": 0.5
+            },
+            "adjudicated_accuracy": {
+              "numerator": 1,
+              "denominator": 1,
+              "value": 1.0
+            },
+            "wrong_allow_rate": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "correct_refusal_rate": {
+              "numerator": 0,
+              "denominator": 1,
+              "value": 0.0
+            },
+            "four_state_label_match": {
+              "numerator": 1,
+              "denominator": 3,
+              "value": 0.3333333333333333
+            }
+          },
+          "missing_information": {
+            "correct_ruling_rate": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "coverage_rate": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "adjudicated_accuracy": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "wrong_allow_rate": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "correct_refusal_rate": {
+              "numerator": 0,
+              "denominator": 1,
+              "value": 0.0
+            },
+            "four_state_label_match": {
+              "numerator": 0,
+              "denominator": 1,
+              "value": 0.0
+            }
+          },
+          "ordinary": {
+            "correct_ruling_rate": {
+              "numerator": 1,
+              "denominator": 3,
+              "value": 0.3333333333333333
+            },
+            "coverage_rate": {
+              "numerator": 1,
+              "denominator": 3,
+              "value": 0.3333333333333333
+            },
+            "adjudicated_accuracy": {
+              "numerator": 1,
+              "denominator": 1,
+              "value": 1.0
+            },
+            "wrong_allow_rate": {
+              "numerator": 0,
+              "denominator": 2,
+              "value": 0.0
+            },
+            "correct_refusal_rate": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "four_state_label_match": {
+              "numerator": 1,
+              "denominator": 3,
+              "value": 0.3333333333333333
+            }
+          },
+          "unsupported": {
+            "correct_ruling_rate": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "coverage_rate": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "adjudicated_accuracy": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "wrong_allow_rate": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "correct_refusal_rate": {
+              "numerator": 0,
+              "denominator": 1,
+              "value": 0.0
+            },
+            "four_state_label_match": {
+              "numerator": 0,
+              "denominator": 1,
+              "value": 0.0
+            }
+          },
+          "unsupported_interaction": {
+            "correct_ruling_rate": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "coverage_rate": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "adjudicated_accuracy": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "wrong_allow_rate": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "correct_refusal_rate": {
+              "numerator": 0,
+              "denominator": 1,
+              "value": 0.0
+            },
+            "four_state_label_match": {
+              "numerator": 0,
+              "denominator": 1,
+              "value": 0.0
+            }
+          }
+        }
+      },
+      "usage": {
+        "provider_calls": 14,
+        "input_tokens": 7210,
+        "output_tokens": 12074,
+        "total_tokens": 20803,
+        "latency_ms": 70124,
+        "cost_usd": null,
+        "usage_available": true,
+        "embedding_calls": 15,
+        "embedding_tokens": 1519,
+        "unknown_usage_calls": 0,
+        "known_cost_usd": 0.0
+      },
+      "config_hash": "9b93b6b1010ae18f1004c055041fd52ca559156a29bbd9546afc1b2483c337fe",
+      "failure_case_ids": [
+        "adversarial-conflict-01",
+        "adversarial-prompt-01",
+        "eyrie-bird-legal-01",
+        "eyrie-decree-unsupported-01",
+        "missing-fact-01",
+        "ordinary-illegal-01",
+        "ordinary-legal-01",
+        "unsupported-action-01",
+        "unsupported-interaction-01"
+      ]
+    },
+    "hybrid_rag": {
+      "case_count": 13,
+      "run_kind": "development_trial",
+      "review_basis": "ai_trial",
+      "initial": {
+        "sample_count": 13,
+        "decision_domain_count": 3,
+        "refusal_domain_count": 10,
+        "correct_ruling_rate": {
+          "numerator": 2,
+          "denominator": 3,
+          "value": 0.6666666666666666
+        },
+        "coverage_rate": {
+          "numerator": 4,
+          "denominator": 3,
+          "value": 1.3333333333333333
+        },
+        "adjudicated_accuracy": {
+          "numerator": 2,
+          "denominator": 4,
+          "value": 0.5
+        },
+        "wrong_allow_rate": {
+          "numerator": 0,
+          "denominator": 2,
+          "value": 0.0
+        },
+        "correct_refusal_rate": {
+          "numerator": 1,
+          "denominator": 10,
+          "value": 0.1
+        },
+        "four_state_label_match": {
+          "numerator": 3,
+          "denominator": 13,
+          "value": 0.23076923076923078
+        },
+        "by_category": {
+          "adversarial": {
+            "correct_ruling_rate": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "coverage_rate": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "adjudicated_accuracy": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "wrong_allow_rate": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "correct_refusal_rate": {
+              "numerator": 0,
+              "denominator": 2,
+              "value": 0.0
+            },
+            "four_state_label_match": {
+              "numerator": 0,
+              "denominator": 2,
+              "value": 0.0
+            }
+          },
+          "correction": {
+            "correct_ruling_rate": {
+              "numerator": 1,
+              "denominator": 1,
+              "value": 1.0
+            },
+            "coverage_rate": {
+              "numerator": 2,
+              "denominator": 1,
+              "value": 2.0
+            },
+            "adjudicated_accuracy": {
+              "numerator": 1,
+              "denominator": 2,
+              "value": 0.5
+            },
+            "wrong_allow_rate": {
+              "numerator": 0,
+              "denominator": 1,
+              "value": 0.0
+            },
+            "correct_refusal_rate": {
+              "numerator": 0,
+              "denominator": 1,
+              "value": 0.0
+            },
+            "four_state_label_match": {
+              "numerator": 1,
+              "denominator": 2,
+              "value": 0.5
+            }
+          },
+          "eyrie": {
+            "correct_ruling_rate": {
+              "numerator": 0,
+              "denominator": 1,
+              "value": 0.0
+            },
+            "coverage_rate": {
+              "numerator": 1,
+              "denominator": 1,
+              "value": 1.0
+            },
+            "adjudicated_accuracy": {
+              "numerator": 0,
+              "denominator": 1,
+              "value": 0.0
+            },
+            "wrong_allow_rate": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "correct_refusal_rate": {
+              "numerator": 0,
+              "denominator": 2,
+              "value": 0.0
+            },
+            "four_state_label_match": {
+              "numerator": 0,
+              "denominator": 3,
+              "value": 0.0
+            }
+          },
+          "missing_information": {
+            "correct_ruling_rate": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "coverage_rate": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "adjudicated_accuracy": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "wrong_allow_rate": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "correct_refusal_rate": {
+              "numerator": 1,
+              "denominator": 1,
+              "value": 1.0
+            },
+            "four_state_label_match": {
+              "numerator": 1,
+              "denominator": 1,
+              "value": 1.0
+            }
+          },
+          "ordinary": {
+            "correct_ruling_rate": {
+              "numerator": 1,
+              "denominator": 1,
+              "value": 1.0
+            },
+            "coverage_rate": {
+              "numerator": 1,
+              "denominator": 1,
+              "value": 1.0
+            },
+            "adjudicated_accuracy": {
+              "numerator": 1,
+              "denominator": 1,
+              "value": 1.0
+            },
+            "wrong_allow_rate": {
+              "numerator": 0,
+              "denominator": 1,
+              "value": 0.0
+            },
+            "correct_refusal_rate": {
+              "numerator": 0,
+              "denominator": 2,
+              "value": 0.0
+            },
+            "four_state_label_match": {
+              "numerator": 1,
+              "denominator": 3,
+              "value": 0.3333333333333333
+            }
+          },
+          "unsupported": {
+            "correct_ruling_rate": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "coverage_rate": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "adjudicated_accuracy": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "wrong_allow_rate": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "correct_refusal_rate": {
+              "numerator": 0,
+              "denominator": 1,
+              "value": 0.0
+            },
+            "four_state_label_match": {
+              "numerator": 0,
+              "denominator": 1,
+              "value": 0.0
+            }
+          },
+          "unsupported_interaction": {
+            "correct_ruling_rate": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "coverage_rate": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "adjudicated_accuracy": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "wrong_allow_rate": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "correct_refusal_rate": {
+              "numerator": 0,
+              "denominator": 1,
+              "value": 0.0
+            },
+            "four_state_label_match": {
+              "numerator": 0,
+              "denominator": 1,
+              "value": 0.0
+            }
+          }
+        }
+      },
+      "complete": {
+        "sample_count": 13,
+        "decision_domain_count": 6,
+        "refusal_domain_count": 7,
+        "correct_ruling_rate": {
+          "numerator": 3,
+          "denominator": 6,
+          "value": 0.5
+        },
+        "coverage_rate": {
+          "numerator": 4,
+          "denominator": 6,
+          "value": 0.6666666666666666
+        },
+        "adjudicated_accuracy": {
+          "numerator": 3,
+          "denominator": 4,
+          "value": 0.75
+        },
+        "wrong_allow_rate": {
+          "numerator": 0,
+          "denominator": 3,
+          "value": 0.0
+        },
+        "correct_refusal_rate": {
+          "numerator": 1,
+          "denominator": 7,
+          "value": 0.14285714285714285
+        },
+        "four_state_label_match": {
+          "numerator": 4,
+          "denominator": 13,
+          "value": 0.3076923076923077
+        },
+        "by_category": {
+          "adversarial": {
+            "correct_ruling_rate": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "coverage_rate": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "adjudicated_accuracy": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "wrong_allow_rate": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "correct_refusal_rate": {
+              "numerator": 0,
+              "denominator": 2,
+              "value": 0.0
+            },
+            "four_state_label_match": {
+              "numerator": 0,
+              "denominator": 2,
+              "value": 0.0
+            }
+          },
+          "correction": {
+            "correct_ruling_rate": {
+              "numerator": 1,
+              "denominator": 1,
+              "value": 1.0
+            },
+            "coverage_rate": {
+              "numerator": 2,
+              "denominator": 1,
+              "value": 2.0
+            },
+            "adjudicated_accuracy": {
+              "numerator": 1,
+              "denominator": 2,
+              "value": 0.5
+            },
+            "wrong_allow_rate": {
+              "numerator": 0,
+              "denominator": 1,
+              "value": 0.0
+            },
+            "correct_refusal_rate": {
+              "numerator": 0,
+              "denominator": 1,
+              "value": 0.0
+            },
+            "four_state_label_match": {
+              "numerator": 1,
+              "denominator": 2,
+              "value": 0.5
+            }
+          },
+          "eyrie": {
+            "correct_ruling_rate": {
+              "numerator": 1,
+              "denominator": 2,
+              "value": 0.5
+            },
+            "coverage_rate": {
+              "numerator": 1,
+              "denominator": 2,
+              "value": 0.5
+            },
+            "adjudicated_accuracy": {
+              "numerator": 1,
+              "denominator": 1,
+              "value": 1.0
+            },
+            "wrong_allow_rate": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "correct_refusal_rate": {
+              "numerator": 0,
+              "denominator": 1,
+              "value": 0.0
+            },
+            "four_state_label_match": {
+              "numerator": 1,
+              "denominator": 3,
+              "value": 0.3333333333333333
+            }
+          },
+          "missing_information": {
+            "correct_ruling_rate": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "coverage_rate": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "adjudicated_accuracy": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "wrong_allow_rate": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "correct_refusal_rate": {
+              "numerator": 1,
+              "denominator": 1,
+              "value": 1.0
+            },
+            "four_state_label_match": {
+              "numerator": 1,
+              "denominator": 1,
+              "value": 1.0
+            }
+          },
+          "ordinary": {
+            "correct_ruling_rate": {
+              "numerator": 1,
+              "denominator": 3,
+              "value": 0.3333333333333333
+            },
+            "coverage_rate": {
+              "numerator": 1,
+              "denominator": 3,
+              "value": 0.3333333333333333
+            },
+            "adjudicated_accuracy": {
+              "numerator": 1,
+              "denominator": 1,
+              "value": 1.0
+            },
+            "wrong_allow_rate": {
+              "numerator": 0,
+              "denominator": 2,
+              "value": 0.0
+            },
+            "correct_refusal_rate": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "four_state_label_match": {
+              "numerator": 1,
+              "denominator": 3,
+              "value": 0.3333333333333333
+            }
+          },
+          "unsupported": {
+            "correct_ruling_rate": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "coverage_rate": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "adjudicated_accuracy": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "wrong_allow_rate": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "correct_refusal_rate": {
+              "numerator": 0,
+              "denominator": 1,
+              "value": 0.0
+            },
+            "four_state_label_match": {
+              "numerator": 0,
+              "denominator": 1,
+              "value": 0.0
+            }
+          },
+          "unsupported_interaction": {
+            "correct_ruling_rate": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "coverage_rate": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "adjudicated_accuracy": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "wrong_allow_rate": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "correct_refusal_rate": {
+              "numerator": 0,
+              "denominator": 1,
+              "value": 0.0
+            },
+            "four_state_label_match": {
+              "numerator": 0,
+              "denominator": 1,
+              "value": 0.0
+            }
+          }
+        }
+      },
+      "usage": {
+        "provider_calls": 13,
+        "input_tokens": 6951,
+        "output_tokens": 11022,
+        "total_tokens": 29948,
+        "latency_ms": 70270,
+        "cost_usd": null,
+        "usage_available": true,
+        "embedding_calls": 14,
+        "embedding_tokens": 1451,
+        "unknown_usage_calls": 0,
+        "known_cost_usd": 0.0,
+        "reranker_calls": 13,
+        "reranker_input_tokens": 10524,
+        "reranker_output_tokens": 0,
+        "reranker_tokens": 10524,
+        "reranker_unknown_usage_calls": 0,
+        "reranker_reported_cost_calls": 0,
+        "reranker_usage_available": true,
+        "reranker_cost_usd": 0.0
+      },
+      "config_hash": "ebdd5282551b9bfb4fa5d09cb72ca6f429278a8e90b32e0465a441c733b737fc",
+      "failure_case_ids": [
+        "adversarial-conflict-01",
+        "adversarial-prompt-01",
+        "eyrie-bird-legal-01",
+        "eyrie-decree-unsupported-01",
+        "ordinary-legal-01",
+        "ordinary-partial-01",
+        "unsupported-action-01",
+        "unsupported-interaction-01"
+      ]
+    },
+    "dynamic_agent": {
+      "case_count": 13,
+      "run_kind": "development_trial",
+      "review_basis": "ai_trial",
+      "initial": {
+        "sample_count": 13,
+        "decision_domain_count": 3,
+        "refusal_domain_count": 10,
+        "correct_ruling_rate": {
+          "numerator": 0,
+          "denominator": 3,
+          "value": 0.0
+        },
+        "coverage_rate": {
+          "numerator": 0,
+          "denominator": 3,
+          "value": 0.0
+        },
+        "adjudicated_accuracy": {
+          "numerator": 0,
+          "denominator": 0,
+          "value": null
+        },
+        "wrong_allow_rate": {
+          "numerator": 0,
+          "denominator": 2,
+          "value": 0.0
+        },
+        "correct_refusal_rate": {
+          "numerator": 1,
+          "denominator": 10,
+          "value": 0.1
+        },
+        "four_state_label_match": {
+          "numerator": 1,
+          "denominator": 13,
+          "value": 0.07692307692307693
+        },
+        "by_category": {
+          "adversarial": {
+            "correct_ruling_rate": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "coverage_rate": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "adjudicated_accuracy": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "wrong_allow_rate": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "correct_refusal_rate": {
+              "numerator": 1,
+              "denominator": 2,
+              "value": 0.5
+            },
+            "four_state_label_match": {
+              "numerator": 1,
+              "denominator": 2,
+              "value": 0.5
+            }
+          },
+          "correction": {
+            "correct_ruling_rate": {
+              "numerator": 0,
+              "denominator": 1,
+              "value": 0.0
+            },
+            "coverage_rate": {
+              "numerator": 0,
+              "denominator": 1,
+              "value": 0.0
+            },
+            "adjudicated_accuracy": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "wrong_allow_rate": {
+              "numerator": 0,
+              "denominator": 1,
+              "value": 0.0
+            },
+            "correct_refusal_rate": {
+              "numerator": 0,
+              "denominator": 1,
+              "value": 0.0
+            },
+            "four_state_label_match": {
+              "numerator": 0,
+              "denominator": 2,
+              "value": 0.0
+            }
+          },
+          "eyrie": {
+            "correct_ruling_rate": {
+              "numerator": 0,
+              "denominator": 1,
+              "value": 0.0
+            },
+            "coverage_rate": {
+              "numerator": 0,
+              "denominator": 1,
+              "value": 0.0
+            },
+            "adjudicated_accuracy": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "wrong_allow_rate": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "correct_refusal_rate": {
+              "numerator": 0,
+              "denominator": 2,
+              "value": 0.0
+            },
+            "four_state_label_match": {
+              "numerator": 0,
+              "denominator": 3,
+              "value": 0.0
+            }
+          },
+          "missing_information": {
+            "correct_ruling_rate": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "coverage_rate": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "adjudicated_accuracy": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "wrong_allow_rate": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "correct_refusal_rate": {
+              "numerator": 0,
+              "denominator": 1,
+              "value": 0.0
+            },
+            "four_state_label_match": {
+              "numerator": 0,
+              "denominator": 1,
+              "value": 0.0
+            }
+          },
+          "ordinary": {
+            "correct_ruling_rate": {
+              "numerator": 0,
+              "denominator": 1,
+              "value": 0.0
+            },
+            "coverage_rate": {
+              "numerator": 0,
+              "denominator": 1,
+              "value": 0.0
+            },
+            "adjudicated_accuracy": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "wrong_allow_rate": {
+              "numerator": 0,
+              "denominator": 1,
+              "value": 0.0
+            },
+            "correct_refusal_rate": {
+              "numerator": 0,
+              "denominator": 2,
+              "value": 0.0
+            },
+            "four_state_label_match": {
+              "numerator": 0,
+              "denominator": 3,
+              "value": 0.0
+            }
+          },
+          "unsupported": {
+            "correct_ruling_rate": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "coverage_rate": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "adjudicated_accuracy": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "wrong_allow_rate": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "correct_refusal_rate": {
+              "numerator": 0,
+              "denominator": 1,
+              "value": 0.0
+            },
+            "four_state_label_match": {
+              "numerator": 0,
+              "denominator": 1,
+              "value": 0.0
+            }
+          },
+          "unsupported_interaction": {
+            "correct_ruling_rate": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "coverage_rate": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "adjudicated_accuracy": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "wrong_allow_rate": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "correct_refusal_rate": {
+              "numerator": 0,
+              "denominator": 1,
+              "value": 0.0
+            },
+            "four_state_label_match": {
+              "numerator": 0,
+              "denominator": 1,
+              "value": 0.0
+            }
+          }
+        }
+      },
+      "complete": {
+        "sample_count": 13,
+        "decision_domain_count": 6,
+        "refusal_domain_count": 7,
+        "correct_ruling_rate": {
+          "numerator": 0,
+          "denominator": 6,
+          "value": 0.0
+        },
+        "coverage_rate": {
+          "numerator": 0,
+          "denominator": 6,
+          "value": 0.0
+        },
+        "adjudicated_accuracy": {
+          "numerator": 0,
+          "denominator": 0,
+          "value": null
+        },
+        "wrong_allow_rate": {
+          "numerator": 0,
+          "denominator": 3,
+          "value": 0.0
+        },
+        "correct_refusal_rate": {
+          "numerator": 1,
+          "denominator": 7,
+          "value": 0.14285714285714285
+        },
+        "four_state_label_match": {
+          "numerator": 1,
+          "denominator": 13,
+          "value": 0.07692307692307693
+        },
+        "by_category": {
+          "adversarial": {
+            "correct_ruling_rate": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "coverage_rate": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "adjudicated_accuracy": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "wrong_allow_rate": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "correct_refusal_rate": {
+              "numerator": 1,
+              "denominator": 2,
+              "value": 0.5
+            },
+            "four_state_label_match": {
+              "numerator": 1,
+              "denominator": 2,
+              "value": 0.5
+            }
+          },
+          "correction": {
+            "correct_ruling_rate": {
+              "numerator": 0,
+              "denominator": 1,
+              "value": 0.0
+            },
+            "coverage_rate": {
+              "numerator": 0,
+              "denominator": 1,
+              "value": 0.0
+            },
+            "adjudicated_accuracy": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "wrong_allow_rate": {
+              "numerator": 0,
+              "denominator": 1,
+              "value": 0.0
+            },
+            "correct_refusal_rate": {
+              "numerator": 0,
+              "denominator": 1,
+              "value": 0.0
+            },
+            "four_state_label_match": {
+              "numerator": 0,
+              "denominator": 2,
+              "value": 0.0
+            }
+          },
+          "eyrie": {
+            "correct_ruling_rate": {
+              "numerator": 0,
+              "denominator": 2,
+              "value": 0.0
+            },
+            "coverage_rate": {
+              "numerator": 0,
+              "denominator": 2,
+              "value": 0.0
+            },
+            "adjudicated_accuracy": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "wrong_allow_rate": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "correct_refusal_rate": {
+              "numerator": 0,
+              "denominator": 1,
+              "value": 0.0
+            },
+            "four_state_label_match": {
+              "numerator": 0,
+              "denominator": 3,
+              "value": 0.0
+            }
+          },
+          "missing_information": {
+            "correct_ruling_rate": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "coverage_rate": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "adjudicated_accuracy": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "wrong_allow_rate": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "correct_refusal_rate": {
+              "numerator": 0,
+              "denominator": 1,
+              "value": 0.0
+            },
+            "four_state_label_match": {
+              "numerator": 0,
+              "denominator": 1,
+              "value": 0.0
+            }
+          },
+          "ordinary": {
+            "correct_ruling_rate": {
+              "numerator": 0,
+              "denominator": 3,
+              "value": 0.0
+            },
+            "coverage_rate": {
+              "numerator": 0,
+              "denominator": 3,
+              "value": 0.0
+            },
+            "adjudicated_accuracy": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "wrong_allow_rate": {
+              "numerator": 0,
+              "denominator": 2,
+              "value": 0.0
+            },
+            "correct_refusal_rate": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "four_state_label_match": {
+              "numerator": 0,
+              "denominator": 3,
+              "value": 0.0
+            }
+          },
+          "unsupported": {
+            "correct_ruling_rate": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "coverage_rate": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "adjudicated_accuracy": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "wrong_allow_rate": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "correct_refusal_rate": {
+              "numerator": 0,
+              "denominator": 1,
+              "value": 0.0
+            },
+            "four_state_label_match": {
+              "numerator": 0,
+              "denominator": 1,
+              "value": 0.0
+            }
+          },
+          "unsupported_interaction": {
+            "correct_ruling_rate": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "coverage_rate": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "adjudicated_accuracy": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "wrong_allow_rate": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "correct_refusal_rate": {
+              "numerator": 0,
+              "denominator": 1,
+              "value": 0.0
+            },
+            "four_state_label_match": {
+              "numerator": 0,
+              "denominator": 1,
+              "value": 0.0
+            }
+          }
+        }
+      },
+      "usage": {
+        "iterations": 32,
+        "tool_calls": 69,
+        "tool_failures": 1,
+        "provider_calls": 0,
+        "input_tokens": 72186,
+        "output_tokens": 7435,
+        "total_tokens": 79621,
+        "latency_ms": 45501,
+        "planning_tokens": 0,
+        "planning_calls": 0,
+        "cost_usd": 0.0,
+        "known_cost_usd": 0.0,
+        "usage_available": true,
+        "planning_usage_available": false,
+        "latency_p50_ms": 3901.0,
+        "latency_p95_ms": 4992.5,
+        "case_count": 11
+      },
+      "config_hash": "5ca30340b03dc64a35caeab692b8b51f31e5dc0ef586eaf018737efa0fd70b67",
+      "failure_case_ids": [
+        "adversarial-prompt-01",
+        "correction-illegal-01",
+        "eyrie-bird-legal-01",
+        "eyrie-decree-unsupported-01",
+        "eyrie-legal-01",
+        "missing-fact-01",
+        "ordinary-illegal-01",
+        "ordinary-legal-01",
+        "ordinary-partial-01",
+        "unsupported-action-01",
+        "unsupported-interaction-01"
+      ]
+    },
+    "fixed_workflow": {
+      "case_count": 13,
+      "run_kind": "development_trial",
+      "review_basis": "ai_trial",
+      "initial": {
+        "sample_count": 13,
+        "decision_domain_count": 3,
+        "refusal_domain_count": 10,
+        "correct_ruling_rate": {
+          "numerator": 2,
+          "denominator": 3,
+          "value": 0.6666666666666666
+        },
+        "coverage_rate": {
+          "numerator": 2,
+          "denominator": 3,
+          "value": 0.6666666666666666
+        },
+        "adjudicated_accuracy": {
+          "numerator": 2,
+          "denominator": 2,
+          "value": 1.0
+        },
+        "wrong_allow_rate": {
+          "numerator": 0,
+          "denominator": 2,
+          "value": 0.0
+        },
+        "correct_refusal_rate": {
+          "numerator": 6,
+          "denominator": 10,
+          "value": 0.6
+        },
+        "four_state_label_match": {
+          "numerator": 10,
+          "denominator": 13,
+          "value": 0.7692307692307693
+        },
+        "by_category": {
+          "adversarial": {
+            "correct_ruling_rate": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "coverage_rate": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "adjudicated_accuracy": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "wrong_allow_rate": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "correct_refusal_rate": {
+              "numerator": 2,
+              "denominator": 2,
+              "value": 1.0
+            },
+            "four_state_label_match": {
+              "numerator": 2,
+              "denominator": 2,
+              "value": 1.0
+            }
+          },
+          "correction": {
+            "correct_ruling_rate": {
+              "numerator": 1,
+              "denominator": 1,
+              "value": 1.0
+            },
+            "coverage_rate": {
+              "numerator": 1,
+              "denominator": 1,
+              "value": 1.0
+            },
+            "adjudicated_accuracy": {
+              "numerator": 1,
+              "denominator": 1,
+              "value": 1.0
+            },
+            "wrong_allow_rate": {
+              "numerator": 0,
+              "denominator": 1,
+              "value": 0.0
+            },
+            "correct_refusal_rate": {
+              "numerator": 0,
+              "denominator": 1,
+              "value": 0.0
+            },
+            "four_state_label_match": {
+              "numerator": 1,
+              "denominator": 2,
+              "value": 0.5
+            }
+          },
+          "eyrie": {
+            "correct_ruling_rate": {
+              "numerator": 0,
+              "denominator": 1,
+              "value": 0.0
+            },
+            "coverage_rate": {
+              "numerator": 0,
+              "denominator": 1,
+              "value": 0.0
+            },
+            "adjudicated_accuracy": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "wrong_allow_rate": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "correct_refusal_rate": {
+              "numerator": 1,
+              "denominator": 2,
+              "value": 0.5
+            },
+            "four_state_label_match": {
+              "numerator": 2,
+              "denominator": 3,
+              "value": 0.6666666666666666
+            }
+          },
+          "missing_information": {
+            "correct_ruling_rate": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "coverage_rate": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "adjudicated_accuracy": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "wrong_allow_rate": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "correct_refusal_rate": {
+              "numerator": 1,
+              "denominator": 1,
+              "value": 1.0
+            },
+            "four_state_label_match": {
+              "numerator": 1,
+              "denominator": 1,
+              "value": 1.0
+            }
+          },
+          "ordinary": {
+            "correct_ruling_rate": {
+              "numerator": 1,
+              "denominator": 1,
+              "value": 1.0
+            },
+            "coverage_rate": {
+              "numerator": 1,
+              "denominator": 1,
+              "value": 1.0
+            },
+            "adjudicated_accuracy": {
+              "numerator": 1,
+              "denominator": 1,
+              "value": 1.0
+            },
+            "wrong_allow_rate": {
+              "numerator": 0,
+              "denominator": 1,
+              "value": 0.0
+            },
+            "correct_refusal_rate": {
+              "numerator": 2,
+              "denominator": 2,
+              "value": 1.0
+            },
+            "four_state_label_match": {
+              "numerator": 3,
+              "denominator": 3,
+              "value": 1.0
+            }
+          },
+          "unsupported": {
+            "correct_ruling_rate": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "coverage_rate": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "adjudicated_accuracy": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "wrong_allow_rate": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "correct_refusal_rate": {
+              "numerator": 0,
+              "denominator": 1,
+              "value": 0.0
+            },
+            "four_state_label_match": {
+              "numerator": 0,
+              "denominator": 1,
+              "value": 0.0
+            }
+          },
+          "unsupported_interaction": {
+            "correct_ruling_rate": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "coverage_rate": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "adjudicated_accuracy": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "wrong_allow_rate": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "correct_refusal_rate": {
+              "numerator": 0,
+              "denominator": 1,
+              "value": 0.0
+            },
+            "four_state_label_match": {
+              "numerator": 1,
+              "denominator": 1,
+              "value": 1.0
+            }
+          }
+        }
+      },
+      "complete": {
+        "sample_count": 13,
+        "decision_domain_count": 6,
+        "refusal_domain_count": 7,
+        "correct_ruling_rate": {
+          "numerator": 4,
+          "denominator": 6,
+          "value": 0.6666666666666666
+        },
+        "coverage_rate": {
+          "numerator": 5,
+          "denominator": 6,
+          "value": 0.8333333333333334
+        },
+        "adjudicated_accuracy": {
+          "numerator": 4,
+          "denominator": 5,
+          "value": 0.8
+        },
+        "wrong_allow_rate": {
+          "numerator": 0,
+          "denominator": 3,
+          "value": 0.0
+        },
+        "correct_refusal_rate": {
+          "numerator": 3,
+          "denominator": 7,
+          "value": 0.42857142857142855
+        },
+        "four_state_label_match": {
+          "numerator": 9,
+          "denominator": 13,
+          "value": 0.6923076923076923
+        },
+        "by_category": {
+          "adversarial": {
+            "correct_ruling_rate": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "coverage_rate": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "adjudicated_accuracy": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "wrong_allow_rate": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "correct_refusal_rate": {
+              "numerator": 2,
+              "denominator": 2,
+              "value": 1.0
+            },
+            "four_state_label_match": {
+              "numerator": 2,
+              "denominator": 2,
+              "value": 1.0
+            }
+          },
+          "correction": {
+            "correct_ruling_rate": {
+              "numerator": 1,
+              "denominator": 1,
+              "value": 1.0
+            },
+            "coverage_rate": {
+              "numerator": 1,
+              "denominator": 1,
+              "value": 1.0
+            },
+            "adjudicated_accuracy": {
+              "numerator": 1,
+              "denominator": 1,
+              "value": 1.0
+            },
+            "wrong_allow_rate": {
+              "numerator": 0,
+              "denominator": 1,
+              "value": 0.0
+            },
+            "correct_refusal_rate": {
+              "numerator": 0,
+              "denominator": 1,
+              "value": 0.0
+            },
+            "four_state_label_match": {
+              "numerator": 1,
+              "denominator": 2,
+              "value": 0.5
+            }
+          },
+          "eyrie": {
+            "correct_ruling_rate": {
+              "numerator": 0,
+              "denominator": 2,
+              "value": 0.0
+            },
+            "coverage_rate": {
+              "numerator": 1,
+              "denominator": 2,
+              "value": 0.5
+            },
+            "adjudicated_accuracy": {
+              "numerator": 0,
+              "denominator": 1,
+              "value": 0.0
+            },
+            "wrong_allow_rate": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "correct_refusal_rate": {
+              "numerator": 0,
+              "denominator": 1,
+              "value": 0.0
+            },
+            "four_state_label_match": {
+              "numerator": 1,
+              "denominator": 3,
+              "value": 0.3333333333333333
+            }
+          },
+          "missing_information": {
+            "correct_ruling_rate": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "coverage_rate": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "adjudicated_accuracy": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "wrong_allow_rate": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "correct_refusal_rate": {
+              "numerator": 1,
+              "denominator": 1,
+              "value": 1.0
+            },
+            "four_state_label_match": {
+              "numerator": 1,
+              "denominator": 1,
+              "value": 1.0
+            }
+          },
+          "ordinary": {
+            "correct_ruling_rate": {
+              "numerator": 3,
+              "denominator": 3,
+              "value": 1.0
+            },
+            "coverage_rate": {
+              "numerator": 3,
+              "denominator": 3,
+              "value": 1.0
+            },
+            "adjudicated_accuracy": {
+              "numerator": 3,
+              "denominator": 3,
+              "value": 1.0
+            },
+            "wrong_allow_rate": {
+              "numerator": 0,
+              "denominator": 2,
+              "value": 0.0
+            },
+            "correct_refusal_rate": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "four_state_label_match": {
+              "numerator": 3,
+              "denominator": 3,
+              "value": 1.0
+            }
+          },
+          "unsupported": {
+            "correct_ruling_rate": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "coverage_rate": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "adjudicated_accuracy": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "wrong_allow_rate": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "correct_refusal_rate": {
+              "numerator": 0,
+              "denominator": 1,
+              "value": 0.0
+            },
+            "four_state_label_match": {
+              "numerator": 0,
+              "denominator": 1,
+              "value": 0.0
+            }
+          },
+          "unsupported_interaction": {
+            "correct_ruling_rate": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "coverage_rate": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "adjudicated_accuracy": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "wrong_allow_rate": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null
+            },
+            "correct_refusal_rate": {
+              "numerator": 0,
+              "denominator": 1,
+              "value": 0.0
+            },
+            "four_state_label_match": {
+              "numerator": 1,
+              "denominator": 1,
+              "value": 1.0
+            }
+          }
+        }
+      },
+      "usage": {
+        "iterations": 15,
+        "tool_calls": 0,
+        "tool_failures": 0,
+        "provider_calls": 0,
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "total_tokens": 0,
+        "latency_ms": 559,
+        "planning_tokens": 0,
+        "planning_calls": 0,
+        "cost_usd": 0.0,
+        "known_cost_usd": 0.0,
+        "usage_available": true,
+        "planning_usage_available": true,
+        "latency_p50_ms": 38.0,
+        "latency_p95_ms": 97.0,
+        "case_count": 11
+      },
+      "config_hash": "5ca30340b03dc64a35caeab692b8b51f31e5dc0ef586eaf018737efa0fd70b67",
+      "failure_case_ids": []
+    }
+  },
+  "treatment_paired_case_ids": [
+    "adversarial-prompt-01",
+    "correction-illegal-01",
+    "eyrie-bird-legal-01",
+    "eyrie-decree-unsupported-01",
+    "eyrie-legal-01",
+    "missing-fact-01",
+    "ordinary-illegal-01",
+    "ordinary-legal-01",
+    "ordinary-partial-01",
+    "unsupported-action-01",
+    "unsupported-interaction-01"
+  ],
+  "treatment_invalid_audit_case_ids": [
+    "adversarial-conflict-01",
+    "correction-legal-01"
+  ],
+  "limitations": [
+    "All 13 Cases are draft; no independent human Golden Case signoff exists.",
+    "The candidate rule package is unverified and was injected only into isolated development apps.",
+    "No holdout partition or two-model determinism run exists.",
+    "deepseek-flash is a provider alias rather than a pinned model snapshot.",
+    "Provider prices and complete billed usage are not established; costs may be N/A.",
+    "This snapshot cannot be used as a T16 formal release or formal experiment freeze."
+  ]
+}

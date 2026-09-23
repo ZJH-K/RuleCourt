@@ -1,13 +1,13 @@
 {
   "game_id": "root",
-  "title": "Root Law of Root October 2025 candidate excerpts (unverified)",
+  "title": "Root Law of Root October 2025 candidate summaries (unverified)",
   "source_type": "law",
   "revision": "2025-10",
-  "published_at": null,
+  "published_at": "2025-10-13",
   "authority": "official",
-  "locator": "https://rules.ledergames.com/?locale=en-US&printing=p1&product=root",
+  "locator": "https://cdn.shopify.com/s/files/1/0106/0162/7706/files/Root_Base_Law_Oct_2025.pdf?v=1774903756",
   "scope_strategy": {
-    "name": "M0 candidate: clearing movement, rule, and battle excerpts",
+    "name": "M0 candidate: local Marquise and Eyrie warrior Move conditions",
     "included_factions": [
       "eyrie",
       "marquise"
@@ -17,20 +17,45 @@
       "rule"
     ],
     "notes": [
-      "This is an unverified candidate package for T03 human review.",
-      "The scope covers only clearing movement and rule excerpts and does not claim complete turn legality.",
-      "Rule IDs are package-local design identifiers, not official source identifiers."
+      "Draft paraphrases against the official 2025-10-13 Law; independent human source review is required.",
+      "M0 checks local warrior movement and Eyrie Decree Move origin-suit conditions, not full turn action availability or complete Decree progress.",
+      "Pawn movement, other factions, card effects, map exceptions, and unmodelled interactions are outside this candidate package.",
+      "Package-local IDs mirror official section references; they are not independent official identifiers.",
+      "The Bird wildcard relation is relevant to a Decree Move only when its card is Bird."
     ]
   },
-  "source_content": "Candidate transcription set for manual T03 review.\r\nTarget: Root Law of Root, October 2025.\r\nEvery excerpt below must be compared with the official source before verification.\r\n2.1 Clearing: A clearing is a location on the map connected by paths.\r\n2.2 Path: A path connects adjacent clearings for movement.\r\n2.5 Rule: A faction rules a clearing if it has more warriors and buildings there than any other faction.\r\n4.2 Move: A faction may move warriors from one clearing to an adjacent clearing.\r\n4.2.1 Move restriction: A faction must rule the origin or destination clearing to move.\r\n7.2.2 Lords of the Forest: The Eyrie Dynasties rule a clearing with their roosts as described by their faction rules.",
-  "checksum": "71d904c3d639410edc9e4192956a2fc4d73094c9a5714d8ff57be96c7db00500",
+  "source_content": "Candidate paraphrases for human review; not verbatim official rule text.\nOfficial source: The Law of Root, October 13, 2025.\nLocator: https://cdn.shopify.com/s/files/1/0106/0162/7706/files/Root_Base_Law_Oct_2025.pdf?v=1774903756\n2.1.1 Birds Are Wild: A bird card can represent another card suit when matching a suit is required.\n2.2 Clearings and Paths: The Woodland map has clearings linked by paths.\n2.2.1 Adjacency: Two clearings joined by a path are adjacent.\n2.2.2 Suit: Each clearing has one of three suits: fox, rabbit, or mouse.\n2.5 Rule: Compare each player’s warriors plus buildings in a clearing; an ordinary tie leaves it unruled, while tokens and pawns do not contribute.\n4.2 Move: Move at least one of your own warriors and/or pawns from one clearing along a linking path to an adjacent clearing.\n4.2.1 You Must Rule: Taking a Move requires rule of the origin or the destination, subject to applicable faction and card exceptions.\n6.5.2 March: The Marquise Daylight March action permits up to two Moves; action availability is outside this local-condition package.\n7.2.2 Lords of the Forest: On a tie for the highest warrior-plus-building total, the Eyrie rule if at least one Eyrie piece is present.\n7.5.2 Resolve the Decree: During Daylight, the Eyrie resolve Decree columns in order and attempt each listed action; full Decree progress is outside M0.\n7.5.2.II Move column: A Decree Move card requires moving at least one warrior from a clearing whose suit matches the card.\nCoverage draft v2: generic movement conditions and the conditional Eyrie tie exception have separate review obligations.",
+  "checksum": "50ba5e4fe3d6eb5396eb8e59e0e4b248024c19d91d9e84baed00c13835d69fb8",
   "rules": [
     {
-      "id": "root-2.1",
-      "section": "2.1",
+      "id": "root-2.1.1",
+      "section": "2.1.1",
+      "parent_section": "2.1",
+      "title": "Birds Are Wild",
+      "text": "A bird card can represent another card suit when matching a suit is required.",
+      "scope": {
+        "factions": [],
+        "actions": [
+          "move"
+        ],
+        "phases": [],
+        "tags": [
+          "cards",
+          "suit"
+        ]
+      },
+      "keywords": [
+        "bird",
+        "wild",
+        "suit"
+      ]
+    },
+    {
+      "id": "root-2.2",
+      "section": "2.2",
       "parent_section": "2",
-      "title": "Clearing",
-      "text": "A clearing is a location on the map connected by paths.",
+      "title": "Clearings and Paths",
+      "text": "The Woodland map has clearings linked by paths.",
       "scope": {
         "factions": [],
         "actions": [],
@@ -41,8 +66,51 @@
       },
       "keywords": [
         "clearing",
-        "map",
         "path"
+      ]
+    },
+    {
+      "id": "root-2.2.1",
+      "section": "2.2.1",
+      "parent_section": "2.2",
+      "title": "Adjacency",
+      "text": "Two clearings joined by a path are adjacent.",
+      "scope": {
+        "factions": [],
+        "actions": [
+          "move"
+        ],
+        "phases": [],
+        "tags": [
+          "map",
+          "movement"
+        ]
+      },
+      "keywords": [
+        "adjacent",
+        "path"
+      ]
+    },
+    {
+      "id": "root-2.2.2",
+      "section": "2.2.2",
+      "parent_section": "2.2",
+      "title": "Suit",
+      "text": "Each clearing has one of three suits: fox, rabbit, or mouse.",
+      "scope": {
+        "factions": [],
+        "actions": [
+          "move"
+        ],
+        "phases": [],
+        "tags": [
+          "map",
+          "suit"
+        ]
+      },
+      "keywords": [
+        "clearing",
+        "suit"
       ]
     },
     {
@@ -50,7 +118,7 @@
       "section": "2.5",
       "parent_section": "2",
       "title": "Rule",
-      "text": "A faction rules a clearing if it has more warriors and buildings there than any other faction.",
+      "text": "Compare each player’s warriors plus buildings in a clearing; an ordinary tie leaves it unruled, while tokens and pawns do not contribute.",
       "scope": {
         "factions": [],
         "actions": [
@@ -63,6 +131,7 @@
       },
       "keywords": [
         "rule",
+        "tie",
         "warriors",
         "buildings"
       ]
@@ -72,22 +141,20 @@
       "section": "4.2",
       "parent_section": "4",
       "title": "Move",
-      "text": "A faction may move warriors from one clearing to an adjacent clearing.",
+      "text": "Move at least one of your own warriors and/or pawns from one clearing along a linking path to an adjacent clearing.",
       "scope": {
         "factions": [],
         "actions": [
           "move"
         ],
-        "phases": [
-          "daylight"
-        ],
+        "phases": [],
         "tags": [
           "movement"
         ]
       },
       "keywords": [
         "move",
-        "adjacent",
+        "path",
         "warriors"
       ]
     },
@@ -95,16 +162,14 @@
       "id": "root-4.2.1",
       "section": "4.2.1",
       "parent_section": "4.2",
-      "title": "Move restriction",
-      "text": "A faction must rule the origin or destination clearing to move.",
+      "title": "You Must Rule",
+      "text": "Taking a Move requires rule of the origin or the destination, subject to applicable faction and card exceptions.",
       "scope": {
         "factions": [],
         "actions": [
           "move"
         ],
-        "phases": [
-          "daylight"
-        ],
+        "phases": [],
         "tags": [
           "movement",
           "rule"
@@ -118,11 +183,36 @@
       ]
     },
     {
+      "id": "root-6.5.2",
+      "section": "6.5.2",
+      "parent_section": "6.5",
+      "title": "March",
+      "text": "The Marquise Daylight March action permits up to two Moves; action availability is outside this local-condition package.",
+      "scope": {
+        "factions": [
+          "marquise"
+        ],
+        "actions": [
+          "move"
+        ],
+        "phases": [],
+        "tags": [
+          "faction-action",
+          "scope-boundary"
+        ]
+      },
+      "keywords": [
+        "marquise",
+        "march",
+        "daylight"
+      ]
+    },
+    {
       "id": "root-7.2.2",
       "section": "7.2.2",
       "parent_section": "7.2",
       "title": "Lords of the Forest",
-      "text": "The Eyrie Dynasties rule a clearing with their roosts as described by their faction rules.",
+      "text": "On a tie for the highest warrior-plus-building total, the Eyrie rule if at least one Eyrie piece is present.",
       "scope": {
         "factions": [
           "eyrie"
@@ -137,98 +227,171 @@
       },
       "keywords": [
         "eyrie",
-        "roost",
-        "rule"
+        "rule",
+        "tie"
       ]
     },
     {
-      "id": "root-2.2",
-      "section": "2.2",
-      "parent_section": "2",
-      "title": "Path",
-      "text": "A path connects adjacent clearings for movement.",
+      "id": "root-7.5.2",
+      "section": "7.5.2",
+      "parent_section": "7.5",
+      "title": "Resolve the Decree",
+      "text": "During Daylight, the Eyrie resolve Decree columns in order and attempt each listed action; full Decree progress is outside M0.",
       "scope": {
-        "factions": [],
+        "factions": [
+          "eyrie"
+        ],
         "actions": [
           "move"
         ],
         "phases": [],
         "tags": [
-          "map",
+          "faction-action",
+          "scope-boundary"
+        ]
+      },
+      "keywords": [
+        "eyrie",
+        "decree",
+        "daylight"
+      ]
+    },
+    {
+      "id": "root-7.5.2.II",
+      "section": "7.5.2.II",
+      "parent_section": "7.5.2",
+      "title": "Move column",
+      "text": "A Decree Move card requires moving at least one warrior from a clearing whose suit matches the card.",
+      "scope": {
+        "factions": [
+          "eyrie"
+        ],
+        "actions": [
+          "move"
+        ],
+        "phases": [],
+        "tags": [
+          "faction-action",
           "movement"
         ]
       },
       "keywords": [
-        "path",
-        "adjacent",
-        "movement"
+        "eyrie",
+        "decree",
+        "move",
+        "suit"
       ]
     }
   ],
   "relations": [
     {
+      "source_rule_id": "root-2.2.1",
+      "target_rule_id": "root-2.2",
+      "relation": "depends_on"
+    },
+    {
+      "source_rule_id": "root-4.2",
+      "target_rule_id": "root-2.2.1",
+      "relation": "depends_on"
+    },
+    {
       "source_rule_id": "root-4.2.1",
       "target_rule_id": "root-4.2",
-      "relation": "exception_to"
+      "relation": "depends_on"
     },
     {
       "source_rule_id": "root-7.2.2",
       "target_rule_id": "root-2.5",
-      "relation": "clarifies"
+      "relation": "overrides"
     },
     {
-      "source_rule_id": "root-4.2",
-      "target_rule_id": "root-2.2",
+      "source_rule_id": "root-7.5.2.II",
+      "target_rule_id": "root-7.5.2",
       "relation": "depends_on"
+    },
+    {
+      "source_rule_id": "root-7.5.2.II",
+      "target_rule_id": "root-4.2",
+      "relation": "depends_on"
+    },
+    {
+      "source_rule_id": "root-7.5.2.II",
+      "target_rule_id": "root-2.2.2",
+      "relation": "depends_on"
+    },
+    {
+      "source_rule_id": "root-2.1.1",
+      "target_rule_id": "root-7.5.2.II",
+      "relation": "clarifies"
     }
   ],
   "coverage_obligations": [
     {
-      "id": "movement-adjacency",
+      "id": "movement-path-and-adjacency",
       "rule_ids": [
-        "root-4.2",
-        "root-4.2.1"
+        "root-2.2",
+        "root-2.2.1",
+        "root-4.2"
       ],
       "applies_when": [
-        "The proposed action is a Move between clearings."
+        "A proposed local warrior Move crosses between two clearings."
       ],
       "acceptable_evidence": [
-        "The official source text for sections 4.2 and 4.2.1 has been compared by a human reviewer."
+        "Human-reviewed source references for sections 2.2, 2.2.1, and 4.2, plus current Case path facts."
       ],
       "satisfied_when": [
-        "The origin and destination are adjacent and the faction rules one of them."
+        "A linking path makes the origin and destination adjacent in the current state."
       ]
     },
     {
-      "id": "rule-control",
+      "id": "movement-piece-and-rule",
+      "rule_ids": [
+        "root-4.2",
+        "root-4.2.1",
+        "root-2.5"
+      ],
+      "applies_when": [
+        "The proposed local warrior Move depends on piece count and clearing rule."
+      ],
+      "acceptable_evidence": [
+        "Human-reviewed source references for sections 2.5, 4.2, and 4.2.1, plus current Case piece counts."
+      ],
+      "satisfied_when": [
+        "At least one owned warrior can move; endpoint rule is determined from current warriors and buildings, with the Eyrie tie obligation applied when relevant."
+      ]
+    },
+    {
+      "id": "eyrie-rule-tie",
       "rule_ids": [
         "root-2.5",
         "root-7.2.2"
       ],
       "applies_when": [
-        "The proposed action depends on which faction rules a clearing."
+        "The proposed local Move is by the Eyrie and endpoint rule depends on a highest-count tie."
       ],
       "acceptable_evidence": [
-        "The official source text for sections 2.5 and 7.2.2 has been compared by a human reviewer."
+        "Human-reviewed sections 2.5 and 7.2.2, plus a complete current count of warriors and buildings by player and Eyrie piece presence."
       ],
       "satisfied_when": [
-        "The controlling faction is determined from the recorded warriors, buildings, and faction exception."
+        "For a highest-count tie at an endpoint, the Eyrie also rule it only when at least one Eyrie piece is present there."
       ]
     },
     {
-      "id": "movement-path",
+      "id": "eyrie-decree-move-suit",
       "rule_ids": [
-        "root-2.1",
-        "root-2.2"
+        "root-2.1.1",
+        "root-2.2.2",
+        "root-7.5.2",
+        "root-7.5.2.II"
       ],
       "applies_when": [
-        "The proposed action moves warriors between clearings."
+        "The proposed local Move is an Eyrie Decree Move."
       ],
       "acceptable_evidence": [
-        "The official source text for sections 2.1 and 2.2 has been compared by a human reviewer."
+        "Human-reviewed source references for sections 2.1.1, 2.2.2, 7.5.2, and 7.5.2.II, plus the current card and origin suit."
       ],
       "satisfied_when": [
-        "The origin and destination are clearings connected by a path."
+        "The Move card is in the relevant Decree column and the origin clearing matches its suit, including a valid bird-card substitution."
       ]
     }
   ]

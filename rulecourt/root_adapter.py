@@ -78,9 +78,9 @@ class RootAdapter:
         "full_decree_progress",
     ]
 
-    base_sections = ("2.2", "2.5", "4.2", "4.2.1")
+    base_sections = ("2.2.1", "2.5", "4.2", "4.2.1")
     eyrie_sections = ("7.2.2",)
-    decree_sections = ("2.1", "7.5.2")
+    decree_sections = ("2.2.2", "2.1.1", "7.5.2", "7.5.2.II")
 
     def required_sections(self, state: dict[str, Any]) -> tuple[str, ...]:
         """Return the rules needed for the action visible in ``state``."""
@@ -88,13 +88,14 @@ class RootAdapter:
         sections: list[str] = list(self.base_sections)
         action = state.get("action")
         actor = action.get("actor") if isinstance(action, dict) else None
-        if actor == "eyrie" and isinstance(state.get("decree"), dict):
+        if actor == "eyrie":
             sections.extend(self.eyrie_sections)
-            sections.extend(self.decree_sections)
+            if isinstance(state.get("decree"), dict):
+                sections.extend(self.decree_sections)
         return tuple(dict.fromkeys(sections))
 
     def rule_index(self, package: dict[str, Any], state: dict[str, Any]) -> dict[str, str] | None:
-        """Resolve package-local rule IDs only when verified coverage is complete."""
+        """Resolve package-local rule IDs only when required coverage is complete."""
 
         by_section = {rule["section"]: rule["id"] for rule in package.get("rules", [])}
         required = self.required_sections(state)
@@ -113,7 +114,7 @@ class RootAdapter:
         if actor == "eyrie" and "7.2.2" in by_section and by_section["7.2.2"] not in covered:
             return None
         result = {
-            "path": by_section["2.2"],
+            "path": by_section["2.2.1"],
             "rule": by_section["2.5"],
             "move": by_section["4.2"],
             "move_restriction": by_section["4.2.1"],
@@ -121,8 +122,10 @@ class RootAdapter:
         if actor == "eyrie" and "7.2.2" in by_section:
             result["eyrie_rule"] = by_section["7.2.2"]
         if self._is_decree_move(state):
-            result["suit"] = by_section["2.1"]
+            result["suit"] = by_section["2.2.2"]
+            result["bird_wild"] = by_section["2.1.1"]
             result["decree"] = by_section["7.5.2"]
+            result["decree_move"] = by_section["7.5.2.II"]
         return result
 
     @staticmethod

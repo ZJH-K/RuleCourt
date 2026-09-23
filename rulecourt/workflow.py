@@ -33,7 +33,7 @@ class FixedWorkflow:
         "full_turn_action_availability",
         "full_decree_progress",
     ]
-    required_sections: ClassVar[tuple[str, ...]] = ("2.2", "2.5", "4.2", "4.2.1")
+    required_sections: ClassVar[tuple[str, ...]] = RootAdapter.base_sections
 
     def __init__(self, rule_store: RuleStore, adapter: RootAdapter | None = None):
         self.rule_store = rule_store

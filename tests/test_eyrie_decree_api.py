@@ -20,8 +20,9 @@ class PassiveProvider(LLMProvider):
 def package_payload():
     source_content = "Root Law October 2025: movement, rule, Eyrie and Decree excerpts"
     rules = [
-        ("root-2.1", "2.1", "Clearing suit", "Each clearing has a suit."),
-        ("root-2.2", "2.2", "Path", "A path connects adjacent clearings for movement."),
+        ("root-2.1.1", "2.1.1", "Birds Are Wild", "A bird card can match another suit."),
+        ("root-2.2.1", "2.2.1", "Adjacency", "A path makes two clearings adjacent."),
+        ("root-2.2.2", "2.2.2", "Clearing suit", "Each clearing has fox, rabbit, or mouse suit."),
         (
             "root-2.5",
             "2.5",
@@ -50,7 +51,13 @@ def package_payload():
             "root-7.5.2",
             "7.5.2",
             "Resolve the Decree",
-            "The Eyrie resolves the Move column during Daylight from the matching suit.",
+            "The Eyrie resolves Decree columns during Daylight.",
+        ),
+        (
+            "root-7.5.2.II",
+            "7.5.2.II",
+            "Move column",
+            "The Eyrie moves at least one warrior from a clearing matching the card suit.",
         ),
     ]
     return {
@@ -82,7 +89,7 @@ def package_payload():
         "relations": [
             {"source_rule_id": "root-7.2.2", "target_rule_id": "root-2.5", "relation": "overrides"},
             {
-                "source_rule_id": "root-7.5.2",
+                "source_rule_id": "root-7.5.2.II",
                 "target_rule_id": "root-4.2",
                 "relation": "depends_on",
             },
@@ -246,6 +253,8 @@ def test_decree_suit_mismatch_is_illegal_and_bird_is_wildcard(tmp_path):
         ).json()
         assert mismatch["status"] == "ILLEGAL"
         assert mismatch["reason"] == "DECREE_SUIT_MISMATCH"
+        assert "root-2.2.2" in mismatch["evidence"]
+        assert "root-7.5.2.II" in mismatch["evidence"]
 
         bird_case_id = new_case(client)
         bird = client.post(
@@ -254,6 +263,8 @@ def test_decree_suit_mismatch_is_illegal_and_bird_is_wildcard(tmp_path):
         ).json()
         assert bird["status"] == "LEGAL"
         assert bird["decision"]["derived_facts"]["decree_suit"]["value"] == "bird"
+        assert "root-2.1.1" in bird["evidence"]
+        assert "root-7.5.2.II" in bird["evidence"]
 
 
 def test_decree_missing_context_returns_relevant_fields(tmp_path):

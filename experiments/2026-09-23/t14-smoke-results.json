@@ -1,0 +1,4666 @@
+{
+  "schema_version": "t14-treatment-comparison-v1",
+  "dataset_version": "m0-candidate-v3",
+  "ruleset_id": "root-law-2025-10",
+  "ruleset_version": "2025-10",
+  "run_kind": "development_trial",
+  "config": {
+    "schema_version": "t14-treatment-config-v1",
+    "ruleset_id": "root-law-2025-10",
+    "ruleset_version": "2025-10",
+    "state_extractor_version": "m0-state-extractor-v1",
+    "domain_adapter_version": "root-adapter-v1",
+    "controller_version": "controller-v1",
+    "visible_projection_version": "public-projection-v1",
+    "dynamic_strategy_version": "dynamic-agent-v1",
+    "fixed_workflow_version": "fixed-workflow-v1",
+    "fixed_template_version": "m0-fixed-template-v1",
+    "fixed_route_source": "hand_authored",
+    "fixed_workflow_llm_routing": false,
+    "planning_cost_included": true,
+    "cache_condition": "no-cache",
+    "run_kind": "development_trial",
+    "budget": {
+      "max_duration_seconds": 60.0,
+      "max_iterations": 3,
+      "max_tool_calls": 8,
+      "max_total_tokens": 32768,
+      "configuration_status": "development_trial",
+      "source": "t14-example"
+    },
+    "max_clarification_rounds": 8,
+    "max_fact_requests": 8,
+    "model": "deepseek-flash",
+    "provider": "openai",
+    "input_cost_per_1k_tokens": null,
+    "output_cost_per_1k_tokens": null,
+    "config_hash": "5ca30340b03dc64a35caeab692b8b51f31e5dc0ef586eaf018737efa0fd70b67"
+  },
+  "runs": {
+    "dynamic_agent": {
+      "strategy": "dynamic_agent",
+      "config": {
+        "schema_version": "t14-treatment-config-v1",
+        "ruleset_id": "root-law-2025-10",
+        "ruleset_version": "2025-10",
+        "state_extractor_version": "m0-state-extractor-v1",
+        "domain_adapter_version": "root-adapter-v1",
+        "controller_version": "controller-v1",
+        "visible_projection_version": "public-projection-v1",
+        "dynamic_strategy_version": "dynamic-agent-v1",
+        "fixed_workflow_version": "fixed-workflow-v1",
+        "fixed_template_version": "m0-fixed-template-v1",
+        "fixed_route_source": "hand_authored",
+        "fixed_workflow_llm_routing": false,
+        "planning_cost_included": true,
+        "cache_condition": "no-cache",
+        "run_kind": "development_trial",
+        "budget": {
+          "max_duration_seconds": 60.0,
+          "max_iterations": 3,
+          "max_tool_calls": 8,
+          "max_total_tokens": 32768,
+          "configuration_status": "development_trial",
+          "source": "t14-example"
+        },
+        "max_clarification_rounds": 8,
+        "max_fact_requests": 8,
+        "model": "deepseek-flash",
+        "provider": "openai",
+        "input_cost_per_1k_tokens": null,
+        "output_cost_per_1k_tokens": null,
+        "strategy": "dynamic_agent",
+        "strategy_version": "dynamic-agent-v1",
+        "budget_enforced": true,
+        "config_hash": "5ca30340b03dc64a35caeab692b8b51f31e5dc0ef586eaf018737efa0fd70b67"
+      },
+      "evaluation": {
+        "dataset_version": "m0-candidate-v3",
+        "review_basis": "human_gate",
+        "scored_case_count": 0,
+        "excluded_counts": {
+          "draft": 1,
+          "disputed": 0
+        },
+        "excluded_case_ids": {
+          "draft": [
+            "ordinary-legal-01"
+          ],
+          "disputed": []
+        },
+        "excluded_reviews": {
+          "draft": [
+            {
+              "status": "draft",
+              "reviewer_id": null,
+              "rule_version": null,
+              "reviewed_at": null,
+              "basis": "Candidate fixture; independent Root review still required.",
+              "evidence": [],
+              "report": "Candidate label assumes a two-faction board and complete endpoint presence; reviewer must establish these scope premises before approving LEGAL.",
+              "checks": {},
+              "dispute_reasons": []
+            }
+          ],
+          "disputed": []
+        },
+        "outcomes": [
+          {
+            "case_id": "ordinary-legal-01",
+            "family_id": "ordinary-legal-01",
+            "category": "ordinary",
+            "initial_result": {
+              "id": "01dfc844-3dc7-4e3d-8e78-3ff4425eb68f",
+              "case_id": "22e293a7-96db-47b2-8ee7-62358d264c1a",
+              "run_id": "861a240b-fefb-42a3-81bf-cc8f9ba7622e",
+              "revision": 1,
+              "status": "UNRESOLVED",
+              "reason": "BUDGET_EXHAUSTED",
+              "evidence": [],
+              "details": {
+                "public_reason": "The investigation budget was exhausted before a reliable result."
+              },
+              "model": "deepseek-flash",
+              "provider": "openai",
+              "stop_reason": "budget_exhausted",
+              "failure_reason": "BUDGET_EXHAUSTED",
+              "investigation": {
+                "id": "63da9b26-1ad4-4d9b-aad4-3027872abca0",
+                "run_id": "861a240b-fefb-42a3-81bf-cc8f9ba7622e",
+                "run_count": 1,
+                "strategy": "dynamic_agent",
+                "strategy_version": "dynamic-agent-v1",
+                "resumed": false,
+                "model": "deepseek-flash",
+                "provider": "openai",
+                "budget": {
+                  "max_duration_seconds": 60.0,
+                  "max_iterations": 3,
+                  "max_tool_calls": 8,
+                  "max_total_tokens": 32768,
+                  "configuration_status": "development_trial",
+                  "source": "t14-example"
+                },
+                "usage": {
+                  "iterations": 3,
+                  "tool_calls": 6,
+                  "tool_failures": 0,
+                  "provider_calls": 0,
+                  "input_tokens": 6147,
+                  "output_tokens": 990,
+                  "total_tokens": 7137,
+                  "latency_ms": 7208,
+                  "cost_usd": null,
+                  "usage_provenance": "controller_budget_ledger"
+                },
+                "remaining": {
+                  "duration_seconds": 52.792,
+                  "iterations": 0,
+                  "tool_calls": 2,
+                  "total_tokens": 25631
+                },
+                "run_usage": {
+                  "iterations": 3,
+                  "tool_calls": 6,
+                  "tool_failures": 0,
+                  "provider_calls": 0,
+                  "input_tokens": 6147,
+                  "output_tokens": 990,
+                  "total_tokens": 7137,
+                  "latency_ms": 7208,
+                  "cost_usd": null,
+                  "usage_provenance": "controller_budget_ledger"
+                },
+                "stop_reason": "budget_exhausted",
+                "failure_reason": "BUDGET_EXHAUSTED",
+                "budget_dimension": "iterations"
+              },
+              "budget_dimension": "iterations",
+              "state_update": {
+                "accepted": true,
+                "state_revision": 1,
+                "sufficient": false,
+                "missing_fields": [
+                  "clearings.A.presence",
+                  "clearings.B.presence"
+                ],
+                "issues": []
+              }
+            },
+            "complete_result": {
+              "id": "01dfc844-3dc7-4e3d-8e78-3ff4425eb68f",
+              "case_id": "22e293a7-96db-47b2-8ee7-62358d264c1a",
+              "run_id": "861a240b-fefb-42a3-81bf-cc8f9ba7622e",
+              "revision": 1,
+              "status": "UNRESOLVED",
+              "reason": "BUDGET_EXHAUSTED",
+              "evidence": [],
+              "details": {
+                "public_reason": "The investigation budget was exhausted before a reliable result."
+              },
+              "model": "deepseek-flash",
+              "provider": "openai",
+              "stop_reason": "budget_exhausted",
+              "failure_reason": "BUDGET_EXHAUSTED",
+              "investigation": {
+                "id": "63da9b26-1ad4-4d9b-aad4-3027872abca0",
+                "run_id": "861a240b-fefb-42a3-81bf-cc8f9ba7622e",
+                "run_count": 1,
+                "strategy": "dynamic_agent",
+                "strategy_version": "dynamic-agent-v1",
+                "resumed": false,
+                "model": "deepseek-flash",
+                "provider": "openai",
+                "budget": {
+                  "max_duration_seconds": 60.0,
+                  "max_iterations": 3,
+                  "max_tool_calls": 8,
+                  "max_total_tokens": 32768,
+                  "configuration_status": "development_trial",
+                  "source": "t14-example"
+                },
+                "usage": {
+                  "iterations": 3,
+                  "tool_calls": 6,
+                  "tool_failures": 0,
+                  "provider_calls": 0,
+                  "input_tokens": 6147,
+                  "output_tokens": 990,
+                  "total_tokens": 7137,
+                  "latency_ms": 7208,
+                  "cost_usd": null,
+                  "usage_provenance": "controller_budget_ledger"
+                },
+                "remaining": {
+                  "duration_seconds": 52.792,
+                  "iterations": 0,
+                  "tool_calls": 2,
+                  "total_tokens": 25631
+                },
+                "run_usage": {
+                  "iterations": 3,
+                  "tool_calls": 6,
+                  "tool_failures": 0,
+                  "provider_calls": 0,
+                  "input_tokens": 6147,
+                  "output_tokens": 990,
+                  "total_tokens": 7137,
+                  "latency_ms": 7208,
+                  "cost_usd": null,
+                  "usage_provenance": "controller_budget_ledger"
+                },
+                "stop_reason": "budget_exhausted",
+                "failure_reason": "BUDGET_EXHAUSTED",
+                "budget_dimension": "iterations"
+              },
+              "budget_dimension": "iterations",
+              "state_update": {
+                "accepted": true,
+                "state_revision": 1,
+                "sufficient": false,
+                "missing_fields": [
+                  "clearings.A.presence",
+                  "clearings.B.presence"
+                ],
+                "issues": []
+              }
+            },
+            "fact_requests": [],
+            "fact_answers": [],
+            "clarification_rounds": 0,
+            "usage": {
+              "iterations": 3,
+              "tool_calls": 6,
+              "tool_failures": 0,
+              "provider_calls": 0,
+              "input_tokens": 6147,
+              "output_tokens": 990,
+              "total_tokens": 7137,
+              "latency_ms": 7208,
+              "cost_usd": null,
+              "usage_provenance": "controller_budget_ledger"
+            },
+            "run_count": 1,
+            "initial_failure_reason": "BUDGET_EXHAUSTED",
+            "complete_failure_reason": "BUDGET_EXHAUSTED",
+            "failure_reason": "BUDGET_EXHAUSTED",
+            "stop_reason": "budget_exhausted"
+          }
+        ],
+        "initial": {
+          "sample_count": 0,
+          "decision_domain_count": 0,
+          "refusal_domain_count": 0,
+          "correct_ruling_rate": {
+            "numerator": 0,
+            "denominator": 0,
+            "value": null
+          },
+          "coverage_rate": {
+            "numerator": 0,
+            "denominator": 0,
+            "value": null
+          },
+          "adjudicated_accuracy": {
+            "numerator": 0,
+            "denominator": 0,
+            "value": null
+          },
+          "wrong_allow_rate": {
+            "numerator": 0,
+            "denominator": 0,
+            "value": null
+          },
+          "correct_refusal_rate": {
+            "numerator": 0,
+            "denominator": 0,
+            "value": null
+          },
+          "four_state_label_match": {
+            "numerator": 0,
+            "denominator": 0,
+            "value": null
+          },
+          "by_category": {}
+        },
+        "complete": {
+          "sample_count": 0,
+          "decision_domain_count": 0,
+          "refusal_domain_count": 0,
+          "correct_ruling_rate": {
+            "numerator": 0,
+            "denominator": 0,
+            "value": null
+          },
+          "coverage_rate": {
+            "numerator": 0,
+            "denominator": 0,
+            "value": null
+          },
+          "adjudicated_accuracy": {
+            "numerator": 0,
+            "denominator": 0,
+            "value": null
+          },
+          "wrong_allow_rate": {
+            "numerator": 0,
+            "denominator": 0,
+            "value": null
+          },
+          "correct_refusal_rate": {
+            "numerator": 0,
+            "denominator": 0,
+            "value": null
+          },
+          "four_state_label_match": {
+            "numerator": 0,
+            "denominator": 0,
+            "value": null
+          },
+          "by_category": {}
+        }
+      },
+      "usage": {
+        "iterations": 3,
+        "tool_calls": 6,
+        "tool_failures": 0,
+        "provider_calls": 0,
+        "input_tokens": 6147,
+        "output_tokens": 990,
+        "total_tokens": 7137,
+        "latency_ms": 7208,
+        "planning_tokens": 0,
+        "planning_calls": 0,
+        "cost_usd": 0.0,
+        "known_cost_usd": 0.0,
+        "usage_available": true,
+        "planning_usage_available": false,
+        "latency_p50_ms": 7208.0,
+        "latency_p95_ms": 7208.0,
+        "case_count": 1
+      },
+      "audit": {
+        "observed_case_count": 1,
+        "valid_case_count": 1,
+        "tool_call_count": 6,
+        "findings": []
+      },
+      "results": [
+        {
+          "case_id": "ordinary-legal-01",
+          "family_id": "ordinary-legal-01",
+          "category": "ordinary",
+          "initial_result": {
+            "id": "01dfc844-3dc7-4e3d-8e78-3ff4425eb68f",
+            "case_id": "22e293a7-96db-47b2-8ee7-62358d264c1a",
+            "run_id": "861a240b-fefb-42a3-81bf-cc8f9ba7622e",
+            "revision": 1,
+            "status": "UNRESOLVED",
+            "reason": "BUDGET_EXHAUSTED",
+            "evidence": [],
+            "details": {
+              "public_reason": "The investigation budget was exhausted before a reliable result."
+            },
+            "model": "deepseek-flash",
+            "provider": "openai",
+            "stop_reason": "budget_exhausted",
+            "failure_reason": "BUDGET_EXHAUSTED",
+            "investigation": {
+              "id": "63da9b26-1ad4-4d9b-aad4-3027872abca0",
+              "run_id": "861a240b-fefb-42a3-81bf-cc8f9ba7622e",
+              "run_count": 1,
+              "strategy": "dynamic_agent",
+              "strategy_version": "dynamic-agent-v1",
+              "resumed": false,
+              "model": "deepseek-flash",
+              "provider": "openai",
+              "budget": {
+                "max_duration_seconds": 60.0,
+                "max_iterations": 3,
+                "max_tool_calls": 8,
+                "max_total_tokens": 32768,
+                "configuration_status": "development_trial",
+                "source": "t14-example"
+              },
+              "usage": {
+                "iterations": 3,
+                "tool_calls": 6,
+                "tool_failures": 0,
+                "provider_calls": 0,
+                "input_tokens": 6147,
+                "output_tokens": 990,
+                "total_tokens": 7137,
+                "latency_ms": 7208,
+                "cost_usd": null,
+                "usage_provenance": "controller_budget_ledger"
+              },
+              "remaining": {
+                "duration_seconds": 52.792,
+                "iterations": 0,
+                "tool_calls": 2,
+                "total_tokens": 25631
+              },
+              "run_usage": {
+                "iterations": 3,
+                "tool_calls": 6,
+                "tool_failures": 0,
+                "provider_calls": 0,
+                "input_tokens": 6147,
+                "output_tokens": 990,
+                "total_tokens": 7137,
+                "latency_ms": 7208,
+                "cost_usd": null,
+                "usage_provenance": "controller_budget_ledger"
+              },
+              "stop_reason": "budget_exhausted",
+              "failure_reason": "BUDGET_EXHAUSTED",
+              "budget_dimension": "iterations"
+            },
+            "budget_dimension": "iterations",
+            "state_update": {
+              "accepted": true,
+              "state_revision": 1,
+              "sufficient": false,
+              "missing_fields": [
+                "clearings.A.presence",
+                "clearings.B.presence"
+              ],
+              "issues": []
+            }
+          },
+          "complete_result": {
+            "id": "01dfc844-3dc7-4e3d-8e78-3ff4425eb68f",
+            "case_id": "22e293a7-96db-47b2-8ee7-62358d264c1a",
+            "run_id": "861a240b-fefb-42a3-81bf-cc8f9ba7622e",
+            "revision": 1,
+            "status": "UNRESOLVED",
+            "reason": "BUDGET_EXHAUSTED",
+            "evidence": [],
+            "details": {
+              "public_reason": "The investigation budget was exhausted before a reliable result."
+            },
+            "model": "deepseek-flash",
+            "provider": "openai",
+            "stop_reason": "budget_exhausted",
+            "failure_reason": "BUDGET_EXHAUSTED",
+            "investigation": {
+              "id": "63da9b26-1ad4-4d9b-aad4-3027872abca0",
+              "run_id": "861a240b-fefb-42a3-81bf-cc8f9ba7622e",
+              "run_count": 1,
+              "strategy": "dynamic_agent",
+              "strategy_version": "dynamic-agent-v1",
+              "resumed": false,
+              "model": "deepseek-flash",
+              "provider": "openai",
+              "budget": {
+                "max_duration_seconds": 60.0,
+                "max_iterations": 3,
+                "max_tool_calls": 8,
+                "max_total_tokens": 32768,
+                "configuration_status": "development_trial",
+                "source": "t14-example"
+              },
+              "usage": {
+                "iterations": 3,
+                "tool_calls": 6,
+                "tool_failures": 0,
+                "provider_calls": 0,
+                "input_tokens": 6147,
+                "output_tokens": 990,
+                "total_tokens": 7137,
+                "latency_ms": 7208,
+                "cost_usd": null,
+                "usage_provenance": "controller_budget_ledger"
+              },
+              "remaining": {
+                "duration_seconds": 52.792,
+                "iterations": 0,
+                "tool_calls": 2,
+                "total_tokens": 25631
+              },
+              "run_usage": {
+                "iterations": 3,
+                "tool_calls": 6,
+                "tool_failures": 0,
+                "provider_calls": 0,
+                "input_tokens": 6147,
+                "output_tokens": 990,
+                "total_tokens": 7137,
+                "latency_ms": 7208,
+                "cost_usd": null,
+                "usage_provenance": "controller_budget_ledger"
+              },
+              "stop_reason": "budget_exhausted",
+              "failure_reason": "BUDGET_EXHAUSTED",
+              "budget_dimension": "iterations"
+            },
+            "budget_dimension": "iterations",
+            "state_update": {
+              "accepted": true,
+              "state_revision": 1,
+              "sufficient": false,
+              "missing_fields": [
+                "clearings.A.presence",
+                "clearings.B.presence"
+              ],
+              "issues": []
+            }
+          },
+          "fact_requests": [],
+          "fact_answers": [],
+          "clarification_rounds": 0,
+          "usage": {
+            "iterations": 3,
+            "tool_calls": 6,
+            "tool_failures": 0,
+            "provider_calls": 0,
+            "input_tokens": 6147,
+            "output_tokens": 990,
+            "total_tokens": 7137,
+            "latency_ms": 7208,
+            "cost_usd": null,
+            "usage_provenance": "controller_budget_ledger"
+          },
+          "run_count": 1,
+          "initial_failure_reason": "BUDGET_EXHAUSTED",
+          "complete_failure_reason": "BUDGET_EXHAUSTED",
+          "failure_reason": "BUDGET_EXHAUSTED",
+          "stop_reason": "budget_exhausted"
+        }
+      ],
+      "observations": {
+        "ordinary-legal-01": {
+          "observed_strategy": "dynamic_agent",
+          "observed_strategy_version": "dynamic-agent-v1",
+          "observed_route": "dynamic_agent",
+          "observed_route_source": null,
+          "observed_template_version": null,
+          "observed_llm_routing": null,
+          "observed_budget": {
+            "max_duration_seconds": 60.0,
+            "max_iterations": 3,
+            "max_tool_calls": 8,
+            "max_total_tokens": 32768,
+            "configuration_status": "development_trial",
+            "source": "t14-example"
+          },
+          "runtime_contract_available": true,
+          "usage_available": true,
+          "usage_provenance": "controller_budget_ledger",
+          "context": [
+            {
+              "id": "1a6abc15-105b-452c-ab55-02bd87bd5cc0",
+              "text": "本局只有 Marquise 与 Eyrie 两名玩家，且没有影响本次移动或统治的卡牌、地标或特殊效果。确认本次只裁决 Marquise 普通移动范围。Marquise 从 A 移动 1 个 warriors 到 B。",
+              "created_at": "2026-09-23T12:53:29.889725+00:00"
+            }
+          ],
+          "tool_results": [
+            {
+              "id": 10,
+              "run_id": "861a240b-fefb-42a3-81bf-cc8f9ba7622e",
+              "type": "tool_call",
+              "payload": "{\"name\": \"inspect_case\", \"status\": \"ok\", \"detail\": \"{\\\"case_id\\\":\\\"22e293a7-96db-47b2-8ee7-62358d264c1a\\\",\\\"state_revision\\\":1,\\\"strategy\\\":\\\"dynamic_agent\\\",\\\"confirmed_state\\\":{\\\"acti...\", \"call_id\": \"call_00_wW2yFudFRNq9ARof04hY5044\", \"arguments_hash\": \"44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a\", \"duration_ms\": 29, \"result_size\": 123}",
+              "created_at": "2026-09-23T12:53:37.132716+00:00",
+              "name": "inspect_case",
+              "status": "ok",
+              "detail": "{\"case_id\":\"22e293a7-96db-47b2-8ee7-62358d264c1a\",\"state_revision\":1,\"strategy\":\"dynamic_agent\",\"confirmed_state\":{\"acti...",
+              "call_id": "call_00_wW2yFudFRNq9ARof04hY5044",
+              "arguments_hash": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+              "duration_ms": 29,
+              "result_size": 123
+            },
+            {
+              "id": 11,
+              "run_id": "861a240b-fefb-42a3-81bf-cc8f9ba7622e",
+              "type": "tool_call",
+              "payload": "{\"name\": \"search_rules\", \"status\": \"ok\", \"detail\": \"{\\\"mode\\\":\\\"support\\\",\\\"ruleset_id\\\":\\\"root-law-2025-10\\\",\\\"results\\\":[]}\", \"call_id\": \"call_00_j6Cyq16dqob0OPFo9H3a4043\", \"arguments_hash\": \"53ee093c649de3b5cbc620c913ed15ec28ba690f56978b37b0f87c402b08f9b4\", \"duration_ms\": 7, \"result_size\": 63}",
+              "created_at": "2026-09-23T12:53:37.140063+00:00",
+              "name": "search_rules",
+              "status": "ok",
+              "detail": "{\"mode\":\"support\",\"ruleset_id\":\"root-law-2025-10\",\"results\":[]}",
+              "call_id": "call_00_j6Cyq16dqob0OPFo9H3a4043",
+              "arguments_hash": "53ee093c649de3b5cbc620c913ed15ec28ba690f56978b37b0f87c402b08f9b4",
+              "duration_ms": 7,
+              "result_size": 63
+            },
+            {
+              "id": 12,
+              "run_id": "861a240b-fefb-42a3-81bf-cc8f9ba7622e",
+              "type": "tool_call",
+              "payload": "{\"name\": \"search_rules\", \"status\": \"ok\", \"detail\": \"{\\\"mode\\\":\\\"clarification\\\",\\\"ruleset_id\\\":\\\"root-law-2025-10\\\",\\\"results\\\":[]}\", \"call_id\": \"call_01_PYxPqaEI6tEBX4kL6Z803365\", \"arguments_hash\": \"0ec4971d382c3990546e6084ad89837256bfaff69917d270221c1814714c311d\", \"duration_ms\": 7, \"result_size\": 69}",
+              "created_at": "2026-09-23T12:53:37.147297+00:00",
+              "name": "search_rules",
+              "status": "ok",
+              "detail": "{\"mode\":\"clarification\",\"ruleset_id\":\"root-law-2025-10\",\"results\":[]}",
+              "call_id": "call_01_PYxPqaEI6tEBX4kL6Z803365",
+              "arguments_hash": "0ec4971d382c3990546e6084ad89837256bfaff69917d270221c1814714c311d",
+              "duration_ms": 7,
+              "result_size": 69
+            },
+            {
+              "id": 13,
+              "run_id": "861a240b-fefb-42a3-81bf-cc8f9ba7622e",
+              "type": "tool_call",
+              "payload": "{\"name\": \"search_rules\", \"status\": \"ok\", \"detail\": \"{\\\"mode\\\":\\\"support\\\",\\\"ruleset_id\\\":\\\"root-law-2025-10\\\",\\\"results\\\":[]}\", \"call_id\": \"call_00_0HpTr6wmV4IicV8DCLgK2104\", \"arguments_hash\": \"5f667c8a7c43381aa96dc921b038df14661c0b11a66d9528b31d2099e0e04bf9\", \"duration_ms\": 8, \"result_size\": 63}",
+              "created_at": "2026-09-23T12:53:37.154464+00:00",
+              "name": "search_rules",
+              "status": "ok",
+              "detail": "{\"mode\":\"support\",\"ruleset_id\":\"root-law-2025-10\",\"results\":[]}",
+              "call_id": "call_00_0HpTr6wmV4IicV8DCLgK2104",
+              "arguments_hash": "5f667c8a7c43381aa96dc921b038df14661c0b11a66d9528b31d2099e0e04bf9",
+              "duration_ms": 8,
+              "result_size": 63
+            },
+            {
+              "id": 14,
+              "run_id": "861a240b-fefb-42a3-81bf-cc8f9ba7622e",
+              "type": "tool_call",
+              "payload": "{\"name\": \"search_rules\", \"status\": \"ok\", \"detail\": \"{\\\"mode\\\":\\\"clarification\\\",\\\"ruleset_id\\\":\\\"root-law-2025-10\\\",\\\"results\\\":[]}\", \"call_id\": \"call_01_qLRaixpVsRqa7d3nuSKO7702\", \"arguments_hash\": \"f300591004cdc9ab4bab8385ba26de6a139301934d8d121dbac7bff4c7c57d95\", \"duration_ms\": 7, \"result_size\": 69}",
+              "created_at": "2026-09-23T12:53:37.163078+00:00",
+              "name": "search_rules",
+              "status": "ok",
+              "detail": "{\"mode\":\"clarification\",\"ruleset_id\":\"root-law-2025-10\",\"results\":[]}",
+              "call_id": "call_01_qLRaixpVsRqa7d3nuSKO7702",
+              "arguments_hash": "f300591004cdc9ab4bab8385ba26de6a139301934d8d121dbac7bff4c7c57d95",
+              "duration_ms": 7,
+              "result_size": 69
+            },
+            {
+              "id": 15,
+              "run_id": "861a240b-fefb-42a3-81bf-cc8f9ba7622e",
+              "type": "tool_call",
+              "payload": "{\"name\": \"search_rules\", \"status\": \"ok\", \"detail\": \"{\\\"mode\\\":\\\"challenge\\\",\\\"ruleset_id\\\":\\\"root-law-2025-10\\\",\\\"results\\\":[]}\", \"call_id\": \"call_02_3M2A8bjbu6hy2njoRGyN5159\", \"arguments_hash\": \"957ae5ecf8743d8a0ac08b7c9940c0e8e621e542893ca7bdc53cfc62f45e7fd0\", \"duration_ms\": 7, \"result_size\": 65}",
+              "created_at": "2026-09-23T12:53:37.170954+00:00",
+              "name": "search_rules",
+              "status": "ok",
+              "detail": "{\"mode\":\"challenge\",\"ruleset_id\":\"root-law-2025-10\",\"results\":[]}",
+              "call_id": "call_02_3M2A8bjbu6hy2njoRGyN5159",
+              "arguments_hash": "957ae5ecf8743d8a0ac08b7c9940c0e8e621e542893ca7bdc53cfc62f45e7fd0",
+              "duration_ms": 7,
+              "result_size": 65
+            }
+          ],
+          "log_projection": [
+            {
+              "id": 1,
+              "run_id": "861a240b-fefb-42a3-81bf-cc8f9ba7622e",
+              "type": "message_received",
+              "payload": "{}",
+              "created_at": "2026-09-23T12:53:29.896629+00:00"
+            },
+            {
+              "id": 2,
+              "run_id": "861a240b-fefb-42a3-81bf-cc8f9ba7622e",
+              "type": "state_accepted",
+              "payload": "{\"state_revision\": 1, \"issues\": []}",
+              "created_at": "2026-09-23T12:53:29.947788+00:00",
+              "state_revision": 1,
+              "issues": []
+            },
+            {
+              "id": 3,
+              "run_id": "861a240b-fefb-42a3-81bf-cc8f9ba7622e",
+              "type": "investigation_started",
+              "payload": "{\"strategy\": \"dynamic_agent\", \"strategy_version\": \"dynamic-agent-v1\", \"resumed\": false, \"model\": \"deepseek-flash\", \"provider\": \"openai\", \"budget\": {\"max_duration_seconds\": 60.0, \"max_iterations\": 3, \"max_tool_calls\": 8, \"max_total_tokens\": 32768, \"configuration_status\": \"development_trial\", \"source\": \"t14-example\"}, \"cumulative_usage\": {\"iterations\": 0, \"tool_calls\": 0, \"tool_failures\": 0, \"provider_calls\": 0, \"input_tokens\": 0, \"output_tokens\": 0, \"total_tokens\": 0, \"latency_ms\": 0}}",
+              "created_at": "2026-09-23T12:53:29.973977+00:00",
+              "strategy": "dynamic_agent",
+              "strategy_version": "dynamic-agent-v1",
+              "resumed": false,
+              "model": "deepseek-flash",
+              "provider": "openai",
+              "budget": {
+                "max_duration_seconds": 60.0,
+                "max_iterations": 3,
+                "max_tool_calls": 8,
+                "max_total_tokens": 32768,
+                "configuration_status": "development_trial",
+                "source": "t14-example"
+              },
+              "cumulative_usage": {
+                "iterations": 0,
+                "tool_calls": 0,
+                "tool_failures": 0,
+                "provider_calls": 0,
+                "input_tokens": 0,
+                "output_tokens": 0,
+                "total_tokens": 0,
+                "latency_ms": 0
+              }
+            },
+            {
+              "id": 4,
+              "run_id": "861a240b-fefb-42a3-81bf-cc8f9ba7622e",
+              "type": "case_inspected",
+              "payload": "{\"state_revision\": 1}",
+              "created_at": "2026-09-23T12:53:32.559568+00:00",
+              "state_revision": 1
+            },
+            {
+              "id": 5,
+              "run_id": "861a240b-fefb-42a3-81bf-cc8f9ba7622e",
+              "type": "rule_searched",
+              "payload": "{\"query\": \"Marquise warriors move range adjacent clearing normal move\", \"mode\": \"support\", \"faction\": null, \"action\": null, \"ruleset_id\": \"root-law-2025-10\", \"result_count\": 0, \"rule_ids\": []}",
+              "created_at": "2026-09-23T12:53:35.671326+00:00",
+              "query": "Marquise warriors move range adjacent clearing normal move",
+              "mode": "support",
+              "faction": null,
+              "action": null,
+              "ruleset_id": "root-law-2025-10",
+              "result_count": 0,
+              "rule_ids": []
+            },
+            {
+              "id": 6,
+              "run_id": "861a240b-fefb-42a3-81bf-cc8f9ba7622e",
+              "type": "rule_searched",
+              "payload": "{\"query\": \"Marquise move warriors from one clearing to adjacent clearing\", \"mode\": \"clarification\", \"faction\": null, \"action\": null, \"ruleset_id\": \"root-law-2025-10\", \"result_count\": 0, \"rule_ids\": []}",
+              "created_at": "2026-09-23T12:53:35.678899+00:00",
+              "query": "Marquise move warriors from one clearing to adjacent clearing",
+              "mode": "clarification",
+              "faction": null,
+              "action": null,
+              "ruleset_id": "root-law-2025-10",
+              "result_count": 0,
+              "rule_ids": []
+            },
+            {
+              "id": 7,
+              "run_id": "861a240b-fefb-42a3-81bf-cc8f9ba7622e",
+              "type": "rule_searched",
+              "payload": "{\"query\": \"move warriors adjacent clearing\", \"mode\": \"support\", \"faction\": \"marquise\", \"action\": \"move\", \"ruleset_id\": \"root-law-2025-10\", \"result_count\": 0, \"rule_ids\": []}",
+              "created_at": "2026-09-23T12:53:37.105352+00:00",
+              "query": "move warriors adjacent clearing",
+              "mode": "support",
+              "faction": "marquise",
+              "action": "move",
+              "ruleset_id": "root-law-2025-10",
+              "result_count": 0,
+              "rule_ids": []
+            },
+            {
+              "id": 8,
+              "run_id": "861a240b-fefb-42a3-81bf-cc8f9ba7622e",
+              "type": "rule_searched",
+              "payload": "{\"query\": \"local warrior move scope legal range\", \"mode\": \"clarification\", \"faction\": null, \"action\": \"move\", \"ruleset_id\": \"root-law-2025-10\", \"result_count\": 0, \"rule_ids\": []}",
+              "created_at": "2026-09-23T12:53:37.113130+00:00",
+              "query": "local warrior move scope legal range",
+              "mode": "clarification",
+              "faction": null,
+              "action": "move",
+              "ruleset_id": "root-law-2025-10",
+              "result_count": 0,
+              "rule_ids": []
+            },
+            {
+              "id": 9,
+              "run_id": "861a240b-fefb-42a3-81bf-cc8f9ba7622e",
+              "type": "rule_searched",
+              "payload": "{\"query\": \"move restriction origin destination presence adjacency\", \"mode\": \"challenge\", \"faction\": null, \"action\": \"move\", \"ruleset_id\": \"root-law-2025-10\", \"result_count\": 0, \"rule_ids\": []}",
+              "created_at": "2026-09-23T12:53:37.120716+00:00",
+              "query": "move restriction origin destination presence adjacency",
+              "mode": "challenge",
+              "faction": null,
+              "action": "move",
+              "ruleset_id": "root-law-2025-10",
+              "result_count": 0,
+              "rule_ids": []
+            },
+            {
+              "id": 10,
+              "run_id": "861a240b-fefb-42a3-81bf-cc8f9ba7622e",
+              "type": "tool_call",
+              "payload": "{\"name\": \"inspect_case\", \"status\": \"ok\", \"detail\": \"{\\\"case_id\\\":\\\"22e293a7-96db-47b2-8ee7-62358d264c1a\\\",\\\"state_revision\\\":1,\\\"strategy\\\":\\\"dynamic_agent\\\",\\\"confirmed_state\\\":{\\\"acti...\", \"call_id\": \"call_00_wW2yFudFRNq9ARof04hY5044\", \"arguments_hash\": \"44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a\", \"duration_ms\": 29, \"result_size\": 123}",
+              "created_at": "2026-09-23T12:53:37.132716+00:00",
+              "name": "inspect_case",
+              "status": "ok",
+              "detail": "{\"case_id\":\"22e293a7-96db-47b2-8ee7-62358d264c1a\",\"state_revision\":1,\"strategy\":\"dynamic_agent\",\"confirmed_state\":{\"acti...",
+              "call_id": "call_00_wW2yFudFRNq9ARof04hY5044",
+              "arguments_hash": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+              "duration_ms": 29,
+              "result_size": 123
+            },
+            {
+              "id": 11,
+              "run_id": "861a240b-fefb-42a3-81bf-cc8f9ba7622e",
+              "type": "tool_call",
+              "payload": "{\"name\": \"search_rules\", \"status\": \"ok\", \"detail\": \"{\\\"mode\\\":\\\"support\\\",\\\"ruleset_id\\\":\\\"root-law-2025-10\\\",\\\"results\\\":[]}\", \"call_id\": \"call_00_j6Cyq16dqob0OPFo9H3a4043\", \"arguments_hash\": \"53ee093c649de3b5cbc620c913ed15ec28ba690f56978b37b0f87c402b08f9b4\", \"duration_ms\": 7, \"result_size\": 63}",
+              "created_at": "2026-09-23T12:53:37.140063+00:00",
+              "name": "search_rules",
+              "status": "ok",
+              "detail": "{\"mode\":\"support\",\"ruleset_id\":\"root-law-2025-10\",\"results\":[]}",
+              "call_id": "call_00_j6Cyq16dqob0OPFo9H3a4043",
+              "arguments_hash": "53ee093c649de3b5cbc620c913ed15ec28ba690f56978b37b0f87c402b08f9b4",
+              "duration_ms": 7,
+              "result_size": 63
+            },
+            {
+              "id": 12,
+              "run_id": "861a240b-fefb-42a3-81bf-cc8f9ba7622e",
+              "type": "tool_call",
+              "payload": "{\"name\": \"search_rules\", \"status\": \"ok\", \"detail\": \"{\\\"mode\\\":\\\"clarification\\\",\\\"ruleset_id\\\":\\\"root-law-2025-10\\\",\\\"results\\\":[]}\", \"call_id\": \"call_01_PYxPqaEI6tEBX4kL6Z803365\", \"arguments_hash\": \"0ec4971d382c3990546e6084ad89837256bfaff69917d270221c1814714c311d\", \"duration_ms\": 7, \"result_size\": 69}",
+              "created_at": "2026-09-23T12:53:37.147297+00:00",
+              "name": "search_rules",
+              "status": "ok",
+              "detail": "{\"mode\":\"clarification\",\"ruleset_id\":\"root-law-2025-10\",\"results\":[]}",
+              "call_id": "call_01_PYxPqaEI6tEBX4kL6Z803365",
+              "arguments_hash": "0ec4971d382c3990546e6084ad89837256bfaff69917d270221c1814714c311d",
+              "duration_ms": 7,
+              "result_size": 69
+            },
+            {
+              "id": 13,
+              "run_id": "861a240b-fefb-42a3-81bf-cc8f9ba7622e",
+              "type": "tool_call",
+              "payload": "{\"name\": \"search_rules\", \"status\": \"ok\", \"detail\": \"{\\\"mode\\\":\\\"support\\\",\\\"ruleset_id\\\":\\\"root-law-2025-10\\\",\\\"results\\\":[]}\", \"call_id\": \"call_00_0HpTr6wmV4IicV8DCLgK2104\", \"arguments_hash\": \"5f667c8a7c43381aa96dc921b038df14661c0b11a66d9528b31d2099e0e04bf9\", \"duration_ms\": 8, \"result_size\": 63}",
+              "created_at": "2026-09-23T12:53:37.154464+00:00",
+              "name": "search_rules",
+              "status": "ok",
+              "detail": "{\"mode\":\"support\",\"ruleset_id\":\"root-law-2025-10\",\"results\":[]}",
+              "call_id": "call_00_0HpTr6wmV4IicV8DCLgK2104",
+              "arguments_hash": "5f667c8a7c43381aa96dc921b038df14661c0b11a66d9528b31d2099e0e04bf9",
+              "duration_ms": 8,
+              "result_size": 63
+            },
+            {
+              "id": 14,
+              "run_id": "861a240b-fefb-42a3-81bf-cc8f9ba7622e",
+              "type": "tool_call",
+              "payload": "{\"name\": \"search_rules\", \"status\": \"ok\", \"detail\": \"{\\\"mode\\\":\\\"clarification\\\",\\\"ruleset_id\\\":\\\"root-law-2025-10\\\",\\\"results\\\":[]}\", \"call_id\": \"call_01_qLRaixpVsRqa7d3nuSKO7702\", \"arguments_hash\": \"f300591004cdc9ab4bab8385ba26de6a139301934d8d121dbac7bff4c7c57d95\", \"duration_ms\": 7, \"result_size\": 69}",
+              "created_at": "2026-09-23T12:53:37.163078+00:00",
+              "name": "search_rules",
+              "status": "ok",
+              "detail": "{\"mode\":\"clarification\",\"ruleset_id\":\"root-law-2025-10\",\"results\":[]}",
+              "call_id": "call_01_qLRaixpVsRqa7d3nuSKO7702",
+              "arguments_hash": "f300591004cdc9ab4bab8385ba26de6a139301934d8d121dbac7bff4c7c57d95",
+              "duration_ms": 7,
+              "result_size": 69
+            },
+            {
+              "id": 15,
+              "run_id": "861a240b-fefb-42a3-81bf-cc8f9ba7622e",
+              "type": "tool_call",
+              "payload": "{\"name\": \"search_rules\", \"status\": \"ok\", \"detail\": \"{\\\"mode\\\":\\\"challenge\\\",\\\"ruleset_id\\\":\\\"root-law-2025-10\\\",\\\"results\\\":[]}\", \"call_id\": \"call_02_3M2A8bjbu6hy2njoRGyN5159\", \"arguments_hash\": \"957ae5ecf8743d8a0ac08b7c9940c0e8e621e542893ca7bdc53cfc62f45e7fd0\", \"duration_ms\": 7, \"result_size\": 65}",
+              "created_at": "2026-09-23T12:53:37.170954+00:00",
+              "name": "search_rules",
+              "status": "ok",
+              "detail": "{\"mode\":\"challenge\",\"ruleset_id\":\"root-law-2025-10\",\"results\":[]}",
+              "call_id": "call_02_3M2A8bjbu6hy2njoRGyN5159",
+              "arguments_hash": "957ae5ecf8743d8a0ac08b7c9940c0e8e621e542893ca7bdc53cfc62f45e7fd0",
+              "duration_ms": 7,
+              "result_size": 65
+            },
+            {
+              "id": 16,
+              "run_id": "861a240b-fefb-42a3-81bf-cc8f9ba7622e",
+              "type": "verdict",
+              "payload": "{\"verdict_id\": \"01dfc844-3dc7-4e3d-8e78-3ff4425eb68f\", \"status\": \"UNRESOLVED\"}",
+              "created_at": "2026-09-23T12:53:37.183731+00:00",
+              "verdict_id": "01dfc844-3dc7-4e3d-8e78-3ff4425eb68f",
+              "status": "UNRESOLVED"
+            },
+            {
+              "id": 17,
+              "run_id": "861a240b-fefb-42a3-81bf-cc8f9ba7622e",
+              "type": "investigation_finished",
+              "payload": "{\"strategy\": \"dynamic_agent\", \"strategy_version\": \"dynamic-agent-v1\", \"model\": \"deepseek-flash\", \"provider\": \"openai\", \"stop_reason\": \"budget_exhausted\", \"failure_reason\": \"BUDGET_EXHAUSTED\", \"budget_dimension\": \"iterations\", \"usage\": {\"iterations\": 3, \"tool_calls\": 6, \"tool_failures\": 0, \"provider_calls\": 0, \"input_tokens\": 6147, \"output_tokens\": 990, \"total_tokens\": 7137, \"latency_ms\": 7208}}",
+              "created_at": "2026-09-23T12:53:37.207225+00:00",
+              "strategy": "dynamic_agent",
+              "strategy_version": "dynamic-agent-v1",
+              "model": "deepseek-flash",
+              "provider": "openai",
+              "stop_reason": "budget_exhausted",
+              "failure_reason": "BUDGET_EXHAUSTED",
+              "budget_dimension": "iterations",
+              "usage": {
+                "iterations": 3,
+                "tool_calls": 6,
+                "tool_failures": 0,
+                "provider_calls": 0,
+                "input_tokens": 6147,
+                "output_tokens": 990,
+                "total_tokens": 7137,
+                "latency_ms": 7208
+              }
+            }
+          ]
+        }
+      },
+      "artifact_signature": null
+    },
+    "fixed_workflow": {
+      "strategy": "fixed_workflow",
+      "config": {
+        "schema_version": "t14-treatment-config-v1",
+        "ruleset_id": "root-law-2025-10",
+        "ruleset_version": "2025-10",
+        "state_extractor_version": "m0-state-extractor-v1",
+        "domain_adapter_version": "root-adapter-v1",
+        "controller_version": "controller-v1",
+        "visible_projection_version": "public-projection-v1",
+        "dynamic_strategy_version": "dynamic-agent-v1",
+        "fixed_workflow_version": "fixed-workflow-v1",
+        "fixed_template_version": "m0-fixed-template-v1",
+        "fixed_route_source": "hand_authored",
+        "fixed_workflow_llm_routing": false,
+        "planning_cost_included": true,
+        "cache_condition": "no-cache",
+        "run_kind": "development_trial",
+        "budget": {
+          "max_duration_seconds": 60.0,
+          "max_iterations": 3,
+          "max_tool_calls": 8,
+          "max_total_tokens": 32768,
+          "configuration_status": "development_trial",
+          "source": "t14-example"
+        },
+        "max_clarification_rounds": 8,
+        "max_fact_requests": 8,
+        "model": "deepseek-flash",
+        "provider": "openai",
+        "input_cost_per_1k_tokens": null,
+        "output_cost_per_1k_tokens": null,
+        "strategy": "fixed_workflow",
+        "strategy_version": "fixed-workflow-v1",
+        "template_version": "m0-fixed-template-v1",
+        "budget_enforced": true,
+        "config_hash": "5ca30340b03dc64a35caeab692b8b51f31e5dc0ef586eaf018737efa0fd70b67"
+      },
+      "evaluation": {
+        "dataset_version": "m0-candidate-v3",
+        "review_basis": "human_gate",
+        "scored_case_count": 0,
+        "excluded_counts": {
+          "draft": 1,
+          "disputed": 0
+        },
+        "excluded_case_ids": {
+          "draft": [
+            "ordinary-legal-01"
+          ],
+          "disputed": []
+        },
+        "excluded_reviews": {
+          "draft": [
+            {
+              "status": "draft",
+              "reviewer_id": null,
+              "rule_version": null,
+              "reviewed_at": null,
+              "basis": "Candidate fixture; independent Root review still required.",
+              "evidence": [],
+              "report": "Candidate label assumes a two-faction board and complete endpoint presence; reviewer must establish these scope premises before approving LEGAL.",
+              "checks": {},
+              "dispute_reasons": []
+            }
+          ],
+          "disputed": []
+        },
+        "outcomes": [
+          {
+            "case_id": "ordinary-legal-01",
+            "family_id": "ordinary-legal-01",
+            "category": "ordinary",
+            "initial_result": {
+              "id": "9c875593-0e26-4468-808b-53361ceaff9d",
+              "case_id": "dfa70e35-14d7-44f1-ba94-5dfa153d7db7",
+              "run_id": "cfbc18d6-4bcd-44c7-b0e4-2e1c98d318b7",
+              "revision": 1,
+              "status": "INSUFFICIENT_INFORMATION",
+              "reason": "INSUFFICIENT_INFORMATION",
+              "evidence": [
+                "root-2.2.1",
+                "root-4.2"
+              ],
+              "details": {
+                "scope": "local_move_conditions",
+                "scope_confirmation_ref": "d2fab933-224f-4de8-b4af-fc1d1e48dddf",
+                "scope_confirmation_revision": 1,
+                "validated_completeness_refs": [],
+                "validated_completeness_revision": 1,
+                "not_checked": [
+                  "full_turn_action_availability",
+                  "full_decree_progress"
+                ],
+                "applicable_rules": [
+                  {
+                    "id": "root-2.2.1",
+                    "title": "Adjacency"
+                  },
+                  {
+                    "id": "root-4.2",
+                    "title": "Move"
+                  }
+                ],
+                "derived_facts": {},
+                "checks": {
+                  "state_sufficient": false,
+                  "evidence_verified": true
+                },
+                "explanation": "More confirmed facts are needed before this local move can be decided.",
+                "missing_fields": [
+                  "clearings.A.adjacent_to",
+                  "clearings.A.presence.marquise.warriors"
+                ],
+                "clarification_questions": [
+                  {
+                    "field": "clearings.A.adjacent_to",
+                    "question": "Which clearings are adjacent to A? State whether the list is complete if you know it."
+                  },
+                  {
+                    "field": "clearings.A.presence.marquise.warriors",
+                    "question": "How many marquise warriors are in clearing A? State whether this is a complete list if relevant."
+                  }
+                ],
+                "decision_ref": "6d5a6487-324e-40a9-b9f0-676d489eb556",
+                "verification_refs": [
+                  "8fa8db98-e507-4d90-891a-65bcde7f1dfa"
+                ]
+              },
+              "state_revision": 1,
+              "verdict": "insufficient_information",
+              "ruleset_id": "root-law-2025-10",
+              "ruleset_version_ref": "candidate-1ad04e7a61205cbc",
+              "scope": "local_move_conditions",
+              "scope_confirmation_ref": "d2fab933-224f-4de8-b4af-fc1d1e48dddf",
+              "scope_confirmation_revision": 1,
+              "validated_completeness_refs": [],
+              "validated_completeness_revision": 1,
+              "not_checked": [
+                "full_turn_action_availability",
+                "full_decree_progress"
+              ],
+              "decision": {
+                "status": "unknown",
+                "reason_codes": [
+                  "MOVE_STATE_MISSING"
+                ],
+                "rule_ids": [
+                  "root-2.2.1",
+                  "root-4.2"
+                ],
+                "derived_facts": {},
+                "missing_fields": [
+                  "clearings.A.adjacent_to",
+                  "clearings.A.presence.marquise.warriors"
+                ],
+                "id": "6d5a6487-324e-40a9-b9f0-676d489eb556",
+                "case_id": "dfa70e35-14d7-44f1-ba94-5dfa153d7db7",
+                "run_id": "cfbc18d6-4bcd-44c7-b0e4-2e1c98d318b7",
+                "revision": 1
+              },
+              "verification": {
+                "id": "8fa8db98-e507-4d90-891a-65bcde7f1dfa",
+                "status": "passed",
+                "ruleset_id": "root-law-2025-10",
+                "ruleset_version_ref": "candidate-1ad04e7a61205cbc",
+                "rule_ids": [
+                  "root-2.2.1",
+                  "root-4.2"
+                ],
+                "evidence": [
+                  "root-2.2.1",
+                  "root-4.2"
+                ],
+                "checks": {
+                  "state_sufficient": false,
+                  "evidence_verified": true
+                },
+                "case_id": "dfa70e35-14d7-44f1-ba94-5dfa153d7db7",
+                "run_id": "cfbc18d6-4bcd-44c7-b0e4-2e1c98d318b7",
+                "revision": 1,
+                "decision_id": "6d5a6487-324e-40a9-b9f0-676d489eb556"
+              },
+              "decision_ref": "6d5a6487-324e-40a9-b9f0-676d489eb556",
+              "verification_refs": [
+                "8fa8db98-e507-4d90-891a-65bcde7f1dfa"
+              ],
+              "applicable_rules": [
+                {
+                  "id": "root-2.2.1",
+                  "title": "Adjacency"
+                },
+                {
+                  "id": "root-4.2",
+                  "title": "Move"
+                }
+              ],
+              "derived_facts": {},
+              "checks": {
+                "state_sufficient": false,
+                "evidence_verified": true
+              },
+              "missing_fields": [
+                "clearings.A.adjacent_to",
+                "clearings.A.presence.marquise.warriors"
+              ],
+              "clarification_questions": [
+                {
+                  "field": "clearings.A.adjacent_to",
+                  "question": "Which clearings are adjacent to A? State whether the list is complete if you know it."
+                },
+                {
+                  "field": "clearings.A.presence.marquise.warriors",
+                  "question": "How many marquise warriors are in clearing A? State whether this is a complete list if relevant."
+                }
+              ],
+              "explanation": "More confirmed facts are needed before this local move can be decided.",
+              "state_update": {
+                "accepted": true,
+                "state_revision": 1,
+                "sufficient": false,
+                "missing_fields": [
+                  "clearings.A.presence",
+                  "clearings.B.presence"
+                ],
+                "issues": []
+              },
+              "model": "deepseek-flash",
+              "provider": "openai",
+              "stop_reason": "completed",
+              "failure_reason": null,
+              "investigation": {
+                "id": "387ec7ed-f2cc-484c-b720-3ffebbe9c796",
+                "run_id": "cfbc18d6-4bcd-44c7-b0e4-2e1c98d318b7",
+                "run_count": 1,
+                "strategy": "fixed_workflow",
+                "strategy_version": "fixed-workflow-v1",
+                "resumed": false,
+                "model": "deepseek-flash",
+                "provider": "openai",
+                "budget": {
+                  "max_duration_seconds": 60.0,
+                  "max_iterations": 3,
+                  "max_tool_calls": 8,
+                  "max_total_tokens": 32768,
+                  "configuration_status": "development_trial",
+                  "source": "t14-example"
+                },
+                "usage": {
+                  "iterations": 1,
+                  "tool_calls": 0,
+                  "tool_failures": 0,
+                  "provider_calls": 0,
+                  "input_tokens": 0,
+                  "output_tokens": 0,
+                  "total_tokens": 0,
+                  "latency_ms": 38,
+                  "cost_usd": null,
+                  "usage_provenance": "controller_budget_ledger"
+                },
+                "remaining": {
+                  "duration_seconds": 59.962,
+                  "iterations": 2,
+                  "tool_calls": 8,
+                  "total_tokens": 32768
+                },
+                "run_usage": {
+                  "iterations": 1,
+                  "tool_calls": 0,
+                  "tool_failures": 0,
+                  "provider_calls": 0,
+                  "input_tokens": 0,
+                  "output_tokens": 0,
+                  "total_tokens": 0,
+                  "latency_ms": 38,
+                  "cost_usd": null,
+                  "usage_provenance": "controller_budget_ledger"
+                },
+                "stop_reason": "completed",
+                "failure_reason": null
+              }
+            },
+            "complete_result": {
+              "id": "5014ba98-b91f-4df6-8e10-10ca65bb2f88",
+              "case_id": "dfa70e35-14d7-44f1-ba94-5dfa153d7db7",
+              "run_id": "3ca11b79-cb9a-4ab9-b024-9abb5c652e5e",
+              "revision": 3,
+              "status": "LEGAL",
+              "reason": "MOVE_LEGAL",
+              "evidence": [
+                "root-2.2.1",
+                "root-2.5",
+                "root-4.2",
+                "root-4.2.1"
+              ],
+              "details": {
+                "scope": "local_move_conditions",
+                "scope_confirmation_ref": "d2fab933-224f-4de8-b4af-fc1d1e48dddf",
+                "scope_confirmation_revision": 3,
+                "validated_completeness_refs": [
+                  "b9323e97-ec0b-445c-b72c-0422821a8dd7"
+                ],
+                "validated_completeness_revision": 3,
+                "not_checked": [
+                  "full_turn_action_availability",
+                  "full_decree_progress"
+                ],
+                "applicable_rules": [
+                  {
+                    "id": "root-2.2.1",
+                    "title": "Adjacency"
+                  },
+                  {
+                    "id": "root-2.5",
+                    "title": "Rule"
+                  },
+                  {
+                    "id": "root-4.2",
+                    "title": "Move"
+                  },
+                  {
+                    "id": "root-4.2.1",
+                    "title": "You Must Rule"
+                  }
+                ],
+                "derived_facts": {
+                  "origin_ruler": {
+                    "status": "resolved",
+                    "value": "marquise",
+                    "reason_codes": [
+                      "RULER_UNIQUE_HIGHEST"
+                    ],
+                    "rule_ids": [
+                      "root-2.5"
+                    ],
+                    "missing_fields": []
+                  }
+                },
+                "checks": {
+                  "state_sufficient": true,
+                  "evidence_verified": true
+                },
+                "explanation": "Marquise rules at least one endpoint and the checked local move conditions hold.",
+                "missing_fields": [],
+                "clarification_questions": [],
+                "decision_ref": "df77e4b0-b4e9-4ab8-b543-9938e142de29",
+                "verification_refs": [
+                  "1dd4e92a-35b9-4519-85dc-ca07a8f83b0e"
+                ]
+              },
+              "state_revision": 3,
+              "verdict": "legal",
+              "ruleset_id": "root-law-2025-10",
+              "ruleset_version_ref": "candidate-1ad04e7a61205cbc",
+              "scope": "local_move_conditions",
+              "scope_confirmation_ref": "d2fab933-224f-4de8-b4af-fc1d1e48dddf",
+              "scope_confirmation_revision": 3,
+              "validated_completeness_refs": [
+                "b9323e97-ec0b-445c-b72c-0422821a8dd7"
+              ],
+              "validated_completeness_revision": 3,
+              "not_checked": [
+                "full_turn_action_availability",
+                "full_decree_progress"
+              ],
+              "decision": {
+                "status": "allow",
+                "reason_codes": [
+                  "MOVE_RULES_ORIGIN"
+                ],
+                "rule_ids": [
+                  "root-2.2.1",
+                  "root-4.2",
+                  "root-4.2.1",
+                  "root-2.5"
+                ],
+                "derived_facts": {
+                  "origin_ruler": {
+                    "status": "resolved",
+                    "value": "marquise",
+                    "reason_codes": [
+                      "RULER_UNIQUE_HIGHEST"
+                    ],
+                    "rule_ids": [
+                      "root-2.5"
+                    ],
+                    "missing_fields": []
+                  },
+                  "origin_warriors_available": 3
+                },
+                "missing_fields": [],
+                "id": "df77e4b0-b4e9-4ab8-b543-9938e142de29",
+                "case_id": "dfa70e35-14d7-44f1-ba94-5dfa153d7db7",
+                "run_id": "3ca11b79-cb9a-4ab9-b024-9abb5c652e5e",
+                "revision": 3
+              },
+              "verification": {
+                "id": "1dd4e92a-35b9-4519-85dc-ca07a8f83b0e",
+                "status": "passed",
+                "ruleset_id": "root-law-2025-10",
+                "ruleset_version_ref": "candidate-1ad04e7a61205cbc",
+                "rule_ids": [
+                  "root-2.2.1",
+                  "root-2.5",
+                  "root-4.2",
+                  "root-4.2.1"
+                ],
+                "evidence": [
+                  "root-2.2.1",
+                  "root-2.5",
+                  "root-4.2",
+                  "root-4.2.1"
+                ],
+                "checks": {
+                  "state_sufficient": true,
+                  "evidence_verified": true
+                },
+                "case_id": "dfa70e35-14d7-44f1-ba94-5dfa153d7db7",
+                "run_id": "3ca11b79-cb9a-4ab9-b024-9abb5c652e5e",
+                "revision": 3,
+                "decision_id": "df77e4b0-b4e9-4ab8-b543-9938e142de29"
+              },
+              "decision_ref": "df77e4b0-b4e9-4ab8-b543-9938e142de29",
+              "verification_refs": [
+                "1dd4e92a-35b9-4519-85dc-ca07a8f83b0e"
+              ],
+              "applicable_rules": [
+                {
+                  "id": "root-2.2.1",
+                  "title": "Adjacency"
+                },
+                {
+                  "id": "root-2.5",
+                  "title": "Rule"
+                },
+                {
+                  "id": "root-4.2",
+                  "title": "Move"
+                },
+                {
+                  "id": "root-4.2.1",
+                  "title": "You Must Rule"
+                }
+              ],
+              "derived_facts": {
+                "origin_ruler": {
+                  "status": "resolved",
+                  "value": "marquise",
+                  "reason_codes": [
+                    "RULER_UNIQUE_HIGHEST"
+                  ],
+                  "rule_ids": [
+                    "root-2.5"
+                  ],
+                  "missing_fields": []
+                }
+              },
+              "checks": {
+                "state_sufficient": true,
+                "evidence_verified": true
+              },
+              "missing_fields": [],
+              "clarification_questions": [],
+              "explanation": "Marquise rules at least one endpoint and the checked local move conditions hold.",
+              "state_update": {
+                "accepted": true,
+                "state_revision": 3,
+                "sufficient": false,
+                "missing_fields": [
+                  "clearings.B.presence"
+                ],
+                "issues": []
+              },
+              "model": "deepseek-flash",
+              "provider": "openai",
+              "stop_reason": "completed",
+              "failure_reason": null,
+              "investigation": {
+                "id": "387ec7ed-f2cc-484c-b720-3ffebbe9c796",
+                "run_id": "3ca11b79-cb9a-4ab9-b024-9abb5c652e5e",
+                "run_count": 3,
+                "strategy": "fixed_workflow",
+                "strategy_version": "fixed-workflow-v1",
+                "resumed": true,
+                "model": "deepseek-flash",
+                "provider": "openai",
+                "budget": {
+                  "max_duration_seconds": 60.0,
+                  "max_iterations": 3,
+                  "max_tool_calls": 8,
+                  "max_total_tokens": 32768,
+                  "configuration_status": "development_trial",
+                  "source": "t14-example"
+                },
+                "usage": {
+                  "iterations": 3,
+                  "tool_calls": 0,
+                  "tool_failures": 0,
+                  "provider_calls": 0,
+                  "input_tokens": 0,
+                  "output_tokens": 0,
+                  "total_tokens": 0,
+                  "latency_ms": 117,
+                  "cost_usd": null,
+                  "usage_provenance": "controller_budget_ledger"
+                },
+                "remaining": {
+                  "duration_seconds": 59.883,
+                  "iterations": 0,
+                  "tool_calls": 8,
+                  "total_tokens": 32768
+                },
+                "run_usage": {
+                  "iterations": 1,
+                  "tool_calls": 0,
+                  "tool_failures": 0,
+                  "provider_calls": 0,
+                  "input_tokens": 0,
+                  "output_tokens": 0,
+                  "total_tokens": 0,
+                  "latency_ms": 40,
+                  "cost_usd": null,
+                  "usage_provenance": "controller_budget_ledger"
+                },
+                "stop_reason": "completed",
+                "failure_reason": null
+              }
+            },
+            "fact_requests": [
+              {
+                "fields": [
+                  "clearings.A.adjacent_to",
+                  "clearings.A.presence.marquise.warriors"
+                ],
+                "text": null
+              },
+              {
+                "fields": [
+                  "clearings.A.presence.eyrie.warriors",
+                  "clearings.A.presence.eyrie.buildings",
+                  "clearings.A.presence.marquise.buildings",
+                  "clearings.B.presence"
+                ],
+                "text": null
+              }
+            ],
+            "fact_answers": [
+              {
+                "status": "answered",
+                "requested_fields": [
+                  "clearings.A.adjacent_to",
+                  "clearings.A.presence.marquise.warriors"
+                ],
+                "facts": {
+                  "clearings.A.adjacent_to": [
+                    "B"
+                  ],
+                  "clearings.A.presence.marquise.warriors": 3
+                },
+                "unknown_fields": [],
+                "text": "A 只与 B 相邻。Marquise 在 A 有 3 个 warriors。",
+                "sources": [
+                  "candidate:ordinary-legal-01"
+                ],
+                "completeness": {
+                  "clearings.A.adjacent_to": true,
+                  "clearings.A.presence.marquise.warriors": false
+                },
+                "completeness_scopes": {
+                  "clearings.A.adjacent_to": null,
+                  "clearings.A.presence.marquise.warriors": null
+                },
+                "round": 1
+              },
+              {
+                "status": "answered",
+                "requested_fields": [
+                  "clearings.A.presence.eyrie.warriors",
+                  "clearings.A.presence.eyrie.buildings",
+                  "clearings.A.presence.marquise.buildings",
+                  "clearings.B.presence"
+                ],
+                "facts": {
+                  "clearings.A.presence.eyrie.warriors": 0,
+                  "clearings.A.presence.eyrie.buildings": 0,
+                  "clearings.A.presence.marquise.buildings": 0
+                },
+                "unknown_fields": [
+                  "clearings.B.presence"
+                ],
+                "text": "Eyrie 在 A 有 0 个 warriors。Eyrie 在 A 有 0 个 buildings。Marquise 在 A 有 0 个 buildings。",
+                "sources": [
+                  "candidate:ordinary-legal-01"
+                ],
+                "completeness": {
+                  "clearings.A.presence.eyrie.warriors": false,
+                  "clearings.A.presence.eyrie.buildings": false,
+                  "clearings.A.presence.marquise.buildings": false
+                },
+                "completeness_scopes": {
+                  "clearings.A.presence.eyrie.warriors": null,
+                  "clearings.A.presence.eyrie.buildings": null,
+                  "clearings.A.presence.marquise.buildings": null
+                },
+                "round": 2
+              }
+            ],
+            "clarification_rounds": 2,
+            "usage": {
+              "iterations": 3,
+              "tool_calls": 0,
+              "tool_failures": 0,
+              "provider_calls": 0,
+              "input_tokens": 0,
+              "output_tokens": 0,
+              "total_tokens": 0,
+              "latency_ms": 117,
+              "cost_usd": null,
+              "usage_provenance": "controller_budget_ledger"
+            },
+            "run_count": 3,
+            "initial_failure_reason": null,
+            "complete_failure_reason": null,
+            "failure_reason": null,
+            "stop_reason": "completed"
+          }
+        ],
+        "initial": {
+          "sample_count": 0,
+          "decision_domain_count": 0,
+          "refusal_domain_count": 0,
+          "correct_ruling_rate": {
+            "numerator": 0,
+            "denominator": 0,
+            "value": null
+          },
+          "coverage_rate": {
+            "numerator": 0,
+            "denominator": 0,
+            "value": null
+          },
+          "adjudicated_accuracy": {
+            "numerator": 0,
+            "denominator": 0,
+            "value": null
+          },
+          "wrong_allow_rate": {
+            "numerator": 0,
+            "denominator": 0,
+            "value": null
+          },
+          "correct_refusal_rate": {
+            "numerator": 0,
+            "denominator": 0,
+            "value": null
+          },
+          "four_state_label_match": {
+            "numerator": 0,
+            "denominator": 0,
+            "value": null
+          },
+          "by_category": {}
+        },
+        "complete": {
+          "sample_count": 0,
+          "decision_domain_count": 0,
+          "refusal_domain_count": 0,
+          "correct_ruling_rate": {
+            "numerator": 0,
+            "denominator": 0,
+            "value": null
+          },
+          "coverage_rate": {
+            "numerator": 0,
+            "denominator": 0,
+            "value": null
+          },
+          "adjudicated_accuracy": {
+            "numerator": 0,
+            "denominator": 0,
+            "value": null
+          },
+          "wrong_allow_rate": {
+            "numerator": 0,
+            "denominator": 0,
+            "value": null
+          },
+          "correct_refusal_rate": {
+            "numerator": 0,
+            "denominator": 0,
+            "value": null
+          },
+          "four_state_label_match": {
+            "numerator": 0,
+            "denominator": 0,
+            "value": null
+          },
+          "by_category": {}
+        }
+      },
+      "usage": {
+        "iterations": 3,
+        "tool_calls": 0,
+        "tool_failures": 0,
+        "provider_calls": 0,
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "total_tokens": 0,
+        "latency_ms": 117,
+        "planning_tokens": 0,
+        "planning_calls": 0,
+        "cost_usd": 0.0,
+        "known_cost_usd": 0.0,
+        "usage_available": true,
+        "planning_usage_available": true,
+        "latency_p50_ms": 117.0,
+        "latency_p95_ms": 117.0,
+        "case_count": 1
+      },
+      "audit": {
+        "observed_case_count": 1,
+        "valid_case_count": 1,
+        "tool_call_count": 0,
+        "findings": []
+      },
+      "results": [
+        {
+          "case_id": "ordinary-legal-01",
+          "family_id": "ordinary-legal-01",
+          "category": "ordinary",
+          "initial_result": {
+            "id": "9c875593-0e26-4468-808b-53361ceaff9d",
+            "case_id": "dfa70e35-14d7-44f1-ba94-5dfa153d7db7",
+            "run_id": "cfbc18d6-4bcd-44c7-b0e4-2e1c98d318b7",
+            "revision": 1,
+            "status": "INSUFFICIENT_INFORMATION",
+            "reason": "INSUFFICIENT_INFORMATION",
+            "evidence": [
+              "root-2.2.1",
+              "root-4.2"
+            ],
+            "details": {
+              "scope": "local_move_conditions",
+              "scope_confirmation_ref": "d2fab933-224f-4de8-b4af-fc1d1e48dddf",
+              "scope_confirmation_revision": 1,
+              "validated_completeness_refs": [],
+              "validated_completeness_revision": 1,
+              "not_checked": [
+                "full_turn_action_availability",
+                "full_decree_progress"
+              ],
+              "applicable_rules": [
+                {
+                  "id": "root-2.2.1",
+                  "title": "Adjacency"
+                },
+                {
+                  "id": "root-4.2",
+                  "title": "Move"
+                }
+              ],
+              "derived_facts": {},
+              "checks": {
+                "state_sufficient": false,
+                "evidence_verified": true
+              },
+              "explanation": "More confirmed facts are needed before this local move can be decided.",
+              "missing_fields": [
+                "clearings.A.adjacent_to",
+                "clearings.A.presence.marquise.warriors"
+              ],
+              "clarification_questions": [
+                {
+                  "field": "clearings.A.adjacent_to",
+                  "question": "Which clearings are adjacent to A? State whether the list is complete if you know it."
+                },
+                {
+                  "field": "clearings.A.presence.marquise.warriors",
+                  "question": "How many marquise warriors are in clearing A? State whether this is a complete list if relevant."
+                }
+              ],
+              "decision_ref": "6d5a6487-324e-40a9-b9f0-676d489eb556",
+              "verification_refs": [
+                "8fa8db98-e507-4d90-891a-65bcde7f1dfa"
+              ]
+            },
+            "state_revision": 1,
+            "verdict": "insufficient_information",
+            "ruleset_id": "root-law-2025-10",
+            "ruleset_version_ref": "candidate-1ad04e7a61205cbc",
+            "scope": "local_move_conditions",
+            "scope_confirmation_ref": "d2fab933-224f-4de8-b4af-fc1d1e48dddf",
+            "scope_confirmation_revision": 1,
+            "validated_completeness_refs": [],
+            "validated_completeness_revision": 1,
+            "not_checked": [
+              "full_turn_action_availability",
+              "full_decree_progress"
+            ],
+            "decision": {
+              "status": "unknown",
+              "reason_codes": [
+                "MOVE_STATE_MISSING"
+              ],
+              "rule_ids": [
+                "root-2.2.1",
+                "root-4.2"
+              ],
+              "derived_facts": {},
+              "missing_fields": [
+                "clearings.A.adjacent_to",
+                "clearings.A.presence.marquise.warriors"
+              ],
+              "id": "6d5a6487-324e-40a9-b9f0-676d489eb556",
+              "case_id": "dfa70e35-14d7-44f1-ba94-5dfa153d7db7",
+              "run_id": "cfbc18d6-4bcd-44c7-b0e4-2e1c98d318b7",
+              "revision": 1
+            },
+            "verification": {
+              "id": "8fa8db98-e507-4d90-891a-65bcde7f1dfa",
+              "status": "passed",
+              "ruleset_id": "root-law-2025-10",
+              "ruleset_version_ref": "candidate-1ad04e7a61205cbc",
+              "rule_ids": [
+                "root-2.2.1",
+                "root-4.2"
+              ],
+              "evidence": [
+                "root-2.2.1",
+                "root-4.2"
+              ],
+              "checks": {
+                "state_sufficient": false,
+                "evidence_verified": true
+              },
+              "case_id": "dfa70e35-14d7-44f1-ba94-5dfa153d7db7",
+              "run_id": "cfbc18d6-4bcd-44c7-b0e4-2e1c98d318b7",
+              "revision": 1,
+              "decision_id": "6d5a6487-324e-40a9-b9f0-676d489eb556"
+            },
+            "decision_ref": "6d5a6487-324e-40a9-b9f0-676d489eb556",
+            "verification_refs": [
+              "8fa8db98-e507-4d90-891a-65bcde7f1dfa"
+            ],
+            "applicable_rules": [
+              {
+                "id": "root-2.2.1",
+                "title": "Adjacency"
+              },
+              {
+                "id": "root-4.2",
+                "title": "Move"
+              }
+            ],
+            "derived_facts": {},
+            "checks": {
+              "state_sufficient": false,
+              "evidence_verified": true
+            },
+            "missing_fields": [
+              "clearings.A.adjacent_to",
+              "clearings.A.presence.marquise.warriors"
+            ],
+            "clarification_questions": [
+              {
+                "field": "clearings.A.adjacent_to",
+                "question": "Which clearings are adjacent to A? State whether the list is complete if you know it."
+              },
+              {
+                "field": "clearings.A.presence.marquise.warriors",
+                "question": "How many marquise warriors are in clearing A? State whether this is a complete list if relevant."
+              }
+            ],
+            "explanation": "More confirmed facts are needed before this local move can be decided.",
+            "state_update": {
+              "accepted": true,
+              "state_revision": 1,
+              "sufficient": false,
+              "missing_fields": [
+                "clearings.A.presence",
+                "clearings.B.presence"
+              ],
+              "issues": []
+            },
+            "model": "deepseek-flash",
+            "provider": "openai",
+            "stop_reason": "completed",
+            "failure_reason": null,
+            "investigation": {
+              "id": "387ec7ed-f2cc-484c-b720-3ffebbe9c796",
+              "run_id": "cfbc18d6-4bcd-44c7-b0e4-2e1c98d318b7",
+              "run_count": 1,
+              "strategy": "fixed_workflow",
+              "strategy_version": "fixed-workflow-v1",
+              "resumed": false,
+              "model": "deepseek-flash",
+              "provider": "openai",
+              "budget": {
+                "max_duration_seconds": 60.0,
+                "max_iterations": 3,
+                "max_tool_calls": 8,
+                "max_total_tokens": 32768,
+                "configuration_status": "development_trial",
+                "source": "t14-example"
+              },
+              "usage": {
+                "iterations": 1,
+                "tool_calls": 0,
+                "tool_failures": 0,
+                "provider_calls": 0,
+                "input_tokens": 0,
+                "output_tokens": 0,
+                "total_tokens": 0,
+                "latency_ms": 38,
+                "cost_usd": null,
+                "usage_provenance": "controller_budget_ledger"
+              },
+              "remaining": {
+                "duration_seconds": 59.962,
+                "iterations": 2,
+                "tool_calls": 8,
+                "total_tokens": 32768
+              },
+              "run_usage": {
+                "iterations": 1,
+                "tool_calls": 0,
+                "tool_failures": 0,
+                "provider_calls": 0,
+                "input_tokens": 0,
+                "output_tokens": 0,
+                "total_tokens": 0,
+                "latency_ms": 38,
+                "cost_usd": null,
+                "usage_provenance": "controller_budget_ledger"
+              },
+              "stop_reason": "completed",
+              "failure_reason": null
+            }
+          },
+          "complete_result": {
+            "id": "5014ba98-b91f-4df6-8e10-10ca65bb2f88",
+            "case_id": "dfa70e35-14d7-44f1-ba94-5dfa153d7db7",
+            "run_id": "3ca11b79-cb9a-4ab9-b024-9abb5c652e5e",
+            "revision": 3,
+            "status": "LEGAL",
+            "reason": "MOVE_LEGAL",
+            "evidence": [
+              "root-2.2.1",
+              "root-2.5",
+              "root-4.2",
+              "root-4.2.1"
+            ],
+            "details": {
+              "scope": "local_move_conditions",
+              "scope_confirmation_ref": "d2fab933-224f-4de8-b4af-fc1d1e48dddf",
+              "scope_confirmation_revision": 3,
+              "validated_completeness_refs": [
+                "b9323e97-ec0b-445c-b72c-0422821a8dd7"
+              ],
+              "validated_completeness_revision": 3,
+              "not_checked": [
+                "full_turn_action_availability",
+                "full_decree_progress"
+              ],
+              "applicable_rules": [
+                {
+                  "id": "root-2.2.1",
+                  "title": "Adjacency"
+                },
+                {
+                  "id": "root-2.5",
+                  "title": "Rule"
+                },
+                {
+                  "id": "root-4.2",
+                  "title": "Move"
+                },
+                {
+                  "id": "root-4.2.1",
+                  "title": "You Must Rule"
+                }
+              ],
+              "derived_facts": {
+                "origin_ruler": {
+                  "status": "resolved",
+                  "value": "marquise",
+                  "reason_codes": [
+                    "RULER_UNIQUE_HIGHEST"
+                  ],
+                  "rule_ids": [
+                    "root-2.5"
+                  ],
+                  "missing_fields": []
+                }
+              },
+              "checks": {
+                "state_sufficient": true,
+                "evidence_verified": true
+              },
+              "explanation": "Marquise rules at least one endpoint and the checked local move conditions hold.",
+              "missing_fields": [],
+              "clarification_questions": [],
+              "decision_ref": "df77e4b0-b4e9-4ab8-b543-9938e142de29",
+              "verification_refs": [
+                "1dd4e92a-35b9-4519-85dc-ca07a8f83b0e"
+              ]
+            },
+            "state_revision": 3,
+            "verdict": "legal",
+            "ruleset_id": "root-law-2025-10",
+            "ruleset_version_ref": "candidate-1ad04e7a61205cbc",
+            "scope": "local_move_conditions",
+            "scope_confirmation_ref": "d2fab933-224f-4de8-b4af-fc1d1e48dddf",
+            "scope_confirmation_revision": 3,
+            "validated_completeness_refs": [
+              "b9323e97-ec0b-445c-b72c-0422821a8dd7"
+            ],
+            "validated_completeness_revision": 3,
+            "not_checked": [
+              "full_turn_action_availability",
+              "full_decree_progress"
+            ],
+            "decision": {
+              "status": "allow",
+              "reason_codes": [
+                "MOVE_RULES_ORIGIN"
+              ],
+              "rule_ids": [
+                "root-2.2.1",
+                "root-4.2",
+                "root-4.2.1",
+                "root-2.5"
+              ],
+              "derived_facts": {
+                "origin_ruler": {
+                  "status": "resolved",
+                  "value": "marquise",
+                  "reason_codes": [
+                    "RULER_UNIQUE_HIGHEST"
+                  ],
+                  "rule_ids": [
+                    "root-2.5"
+                  ],
+                  "missing_fields": []
+                },
+                "origin_warriors_available": 3
+              },
+              "missing_fields": [],
+              "id": "df77e4b0-b4e9-4ab8-b543-9938e142de29",
+              "case_id": "dfa70e35-14d7-44f1-ba94-5dfa153d7db7",
+              "run_id": "3ca11b79-cb9a-4ab9-b024-9abb5c652e5e",
+              "revision": 3
+            },
+            "verification": {
+              "id": "1dd4e92a-35b9-4519-85dc-ca07a8f83b0e",
+              "status": "passed",
+              "ruleset_id": "root-law-2025-10",
+              "ruleset_version_ref": "candidate-1ad04e7a61205cbc",
+              "rule_ids": [
+                "root-2.2.1",
+                "root-2.5",
+                "root-4.2",
+                "root-4.2.1"
+              ],
+              "evidence": [
+                "root-2.2.1",
+                "root-2.5",
+                "root-4.2",
+                "root-4.2.1"
+              ],
+              "checks": {
+                "state_sufficient": true,
+                "evidence_verified": true
+              },
+              "case_id": "dfa70e35-14d7-44f1-ba94-5dfa153d7db7",
+              "run_id": "3ca11b79-cb9a-4ab9-b024-9abb5c652e5e",
+              "revision": 3,
+              "decision_id": "df77e4b0-b4e9-4ab8-b543-9938e142de29"
+            },
+            "decision_ref": "df77e4b0-b4e9-4ab8-b543-9938e142de29",
+            "verification_refs": [
+              "1dd4e92a-35b9-4519-85dc-ca07a8f83b0e"
+            ],
+            "applicable_rules": [
+              {
+                "id": "root-2.2.1",
+                "title": "Adjacency"
+              },
+              {
+                "id": "root-2.5",
+                "title": "Rule"
+              },
+              {
+                "id": "root-4.2",
+                "title": "Move"
+              },
+              {
+                "id": "root-4.2.1",
+                "title": "You Must Rule"
+              }
+            ],
+            "derived_facts": {
+              "origin_ruler": {
+                "status": "resolved",
+                "value": "marquise",
+                "reason_codes": [
+                  "RULER_UNIQUE_HIGHEST"
+                ],
+                "rule_ids": [
+                  "root-2.5"
+                ],
+                "missing_fields": []
+              }
+            },
+            "checks": {
+              "state_sufficient": true,
+              "evidence_verified": true
+            },
+            "missing_fields": [],
+            "clarification_questions": [],
+            "explanation": "Marquise rules at least one endpoint and the checked local move conditions hold.",
+            "state_update": {
+              "accepted": true,
+              "state_revision": 3,
+              "sufficient": false,
+              "missing_fields": [
+                "clearings.B.presence"
+              ],
+              "issues": []
+            },
+            "model": "deepseek-flash",
+            "provider": "openai",
+            "stop_reason": "completed",
+            "failure_reason": null,
+            "investigation": {
+              "id": "387ec7ed-f2cc-484c-b720-3ffebbe9c796",
+              "run_id": "3ca11b79-cb9a-4ab9-b024-9abb5c652e5e",
+              "run_count": 3,
+              "strategy": "fixed_workflow",
+              "strategy_version": "fixed-workflow-v1",
+              "resumed": true,
+              "model": "deepseek-flash",
+              "provider": "openai",
+              "budget": {
+                "max_duration_seconds": 60.0,
+                "max_iterations": 3,
+                "max_tool_calls": 8,
+                "max_total_tokens": 32768,
+                "configuration_status": "development_trial",
+                "source": "t14-example"
+              },
+              "usage": {
+                "iterations": 3,
+                "tool_calls": 0,
+                "tool_failures": 0,
+                "provider_calls": 0,
+                "input_tokens": 0,
+                "output_tokens": 0,
+                "total_tokens": 0,
+                "latency_ms": 117,
+                "cost_usd": null,
+                "usage_provenance": "controller_budget_ledger"
+              },
+              "remaining": {
+                "duration_seconds": 59.883,
+                "iterations": 0,
+                "tool_calls": 8,
+                "total_tokens": 32768
+              },
+              "run_usage": {
+                "iterations": 1,
+                "tool_calls": 0,
+                "tool_failures": 0,
+                "provider_calls": 0,
+                "input_tokens": 0,
+                "output_tokens": 0,
+                "total_tokens": 0,
+                "latency_ms": 40,
+                "cost_usd": null,
+                "usage_provenance": "controller_budget_ledger"
+              },
+              "stop_reason": "completed",
+              "failure_reason": null
+            }
+          },
+          "fact_requests": [
+            {
+              "fields": [
+                "clearings.A.adjacent_to",
+                "clearings.A.presence.marquise.warriors"
+              ],
+              "text": null
+            },
+            {
+              "fields": [
+                "clearings.A.presence.eyrie.warriors",
+                "clearings.A.presence.eyrie.buildings",
+                "clearings.A.presence.marquise.buildings",
+                "clearings.B.presence"
+              ],
+              "text": null
+            }
+          ],
+          "fact_answers": [
+            {
+              "status": "answered",
+              "requested_fields": [
+                "clearings.A.adjacent_to",
+                "clearings.A.presence.marquise.warriors"
+              ],
+              "facts": {
+                "clearings.A.adjacent_to": [
+                  "B"
+                ],
+                "clearings.A.presence.marquise.warriors": 3
+              },
+              "unknown_fields": [],
+              "text": "A 只与 B 相邻。Marquise 在 A 有 3 个 warriors。",
+              "sources": [
+                "candidate:ordinary-legal-01"
+              ],
+              "completeness": {
+                "clearings.A.adjacent_to": true,
+                "clearings.A.presence.marquise.warriors": false
+              },
+              "completeness_scopes": {
+                "clearings.A.adjacent_to": null,
+                "clearings.A.presence.marquise.warriors": null
+              },
+              "round": 1
+            },
+            {
+              "status": "answered",
+              "requested_fields": [
+                "clearings.A.presence.eyrie.warriors",
+                "clearings.A.presence.eyrie.buildings",
+                "clearings.A.presence.marquise.buildings",
+                "clearings.B.presence"
+              ],
+              "facts": {
+                "clearings.A.presence.eyrie.warriors": 0,
+                "clearings.A.presence.eyrie.buildings": 0,
+                "clearings.A.presence.marquise.buildings": 0
+              },
+              "unknown_fields": [
+                "clearings.B.presence"
+              ],
+              "text": "Eyrie 在 A 有 0 个 warriors。Eyrie 在 A 有 0 个 buildings。Marquise 在 A 有 0 个 buildings。",
+              "sources": [
+                "candidate:ordinary-legal-01"
+              ],
+              "completeness": {
+                "clearings.A.presence.eyrie.warriors": false,
+                "clearings.A.presence.eyrie.buildings": false,
+                "clearings.A.presence.marquise.buildings": false
+              },
+              "completeness_scopes": {
+                "clearings.A.presence.eyrie.warriors": null,
+                "clearings.A.presence.eyrie.buildings": null,
+                "clearings.A.presence.marquise.buildings": null
+              },
+              "round": 2
+            }
+          ],
+          "clarification_rounds": 2,
+          "usage": {
+            "iterations": 3,
+            "tool_calls": 0,
+            "tool_failures": 0,
+            "provider_calls": 0,
+            "input_tokens": 0,
+            "output_tokens": 0,
+            "total_tokens": 0,
+            "latency_ms": 117,
+            "cost_usd": null,
+            "usage_provenance": "controller_budget_ledger"
+          },
+          "run_count": 3,
+          "initial_failure_reason": null,
+          "complete_failure_reason": null,
+          "failure_reason": null,
+          "stop_reason": "completed"
+        }
+      ],
+      "observations": {
+        "ordinary-legal-01": {
+          "observed_strategy": "fixed_workflow",
+          "observed_strategy_version": "fixed-workflow-v1",
+          "observed_route": "fixed_workflow",
+          "observed_route_source": "hand_authored",
+          "observed_template_version": "m0-fixed-template-v1",
+          "observed_llm_routing": false,
+          "observed_budget": {
+            "max_duration_seconds": 60.0,
+            "max_iterations": 3,
+            "max_tool_calls": 8,
+            "max_total_tokens": 32768,
+            "configuration_status": "development_trial",
+            "source": "t14-example"
+          },
+          "runtime_contract_available": true,
+          "usage_available": true,
+          "usage_provenance": "controller_budget_ledger",
+          "context": [
+            {
+              "id": "1804d9a4-7086-46d9-8154-2ed03ee59389",
+              "text": "本局只有 Marquise 与 Eyrie 两名玩家，且没有影响本次移动或统治的卡牌、地标或特殊效果。确认本次只裁决 Marquise 普通移动范围。Marquise 从 A 移动 1 个 warriors 到 B。",
+              "created_at": "2026-09-23T12:53:37.287754+00:00"
+            },
+            {
+              "id": "39aca968-3cd0-4235-8716-437d3e0e543b",
+              "text": "A 只与 B 相邻。Marquise 在 A 有 3 个 warriors。",
+              "created_at": "2026-09-23T12:53:37.424774+00:00"
+            },
+            {
+              "id": "3c8bfa34-09f2-4fb0-9e55-c31c122ad9ce",
+              "text": "Eyrie 在 A 有 0 个 warriors。Eyrie 在 A 有 0 个 buildings。Marquise 在 A 有 0 个 buildings。",
+              "created_at": "2026-09-23T12:53:37.563211+00:00"
+            }
+          ],
+          "tool_results": [],
+          "log_projection": [
+            {
+              "id": 1,
+              "run_id": "cfbc18d6-4bcd-44c7-b0e4-2e1c98d318b7",
+              "type": "message_received",
+              "payload": "{}",
+              "created_at": "2026-09-23T12:53:37.294818+00:00"
+            },
+            {
+              "id": 2,
+              "run_id": "cfbc18d6-4bcd-44c7-b0e4-2e1c98d318b7",
+              "type": "state_accepted",
+              "payload": "{\"state_revision\": 1, \"issues\": []}",
+              "created_at": "2026-09-23T12:53:37.313874+00:00",
+              "state_revision": 1,
+              "issues": []
+            },
+            {
+              "id": 3,
+              "run_id": "cfbc18d6-4bcd-44c7-b0e4-2e1c98d318b7",
+              "type": "investigation_started",
+              "payload": "{\"strategy\": \"fixed_workflow\", \"strategy_version\": \"fixed-workflow-v1\", \"resumed\": false, \"model\": \"deepseek-flash\", \"provider\": \"openai\", \"budget\": {\"max_duration_seconds\": 60.0, \"max_iterations\": 3, \"max_tool_calls\": 8, \"max_total_tokens\": 32768, \"configuration_status\": \"development_trial\", \"source\": \"t14-example\"}, \"cumulative_usage\": {\"iterations\": 0, \"tool_calls\": 0, \"tool_failures\": 0, \"provider_calls\": 0, \"input_tokens\": 0, \"output_tokens\": 0, \"total_tokens\": 0, \"latency_ms\": 0}}",
+              "created_at": "2026-09-23T12:53:37.334584+00:00",
+              "strategy": "fixed_workflow",
+              "strategy_version": "fixed-workflow-v1",
+              "resumed": false,
+              "model": "deepseek-flash",
+              "provider": "openai",
+              "budget": {
+                "max_duration_seconds": 60.0,
+                "max_iterations": 3,
+                "max_tool_calls": 8,
+                "max_total_tokens": 32768,
+                "configuration_status": "development_trial",
+                "source": "t14-example"
+              },
+              "cumulative_usage": {
+                "iterations": 0,
+                "tool_calls": 0,
+                "tool_failures": 0,
+                "provider_calls": 0,
+                "input_tokens": 0,
+                "output_tokens": 0,
+                "total_tokens": 0,
+                "latency_ms": 0
+              }
+            },
+            {
+              "id": 4,
+              "run_id": "cfbc18d6-4bcd-44c7-b0e4-2e1c98d318b7",
+              "type": "fixed_workflow_started",
+              "payload": "{\"workflow\": \"m0-root-move\", \"workflow_version\": \"fixed-workflow-v1\", \"template_version\": \"m0-fixed-template-v1\", \"route_source\": \"hand_authored\", \"llm_routing\": false}",
+              "created_at": "2026-09-23T12:53:37.342188+00:00",
+              "workflow": "m0-root-move",
+              "workflow_version": "fixed-workflow-v1",
+              "template_version": "m0-fixed-template-v1",
+              "route_source": "hand_authored",
+              "llm_routing": false
+            },
+            {
+              "id": 5,
+              "run_id": "cfbc18d6-4bcd-44c7-b0e4-2e1c98d318b7",
+              "type": "verdict",
+              "payload": "{\"verdict_id\": \"9c875593-0e26-4468-808b-53361ceaff9d\", \"status\": \"INSUFFICIENT_INFORMATION\"}",
+              "created_at": "2026-09-23T12:53:37.350041+00:00",
+              "verdict_id": "9c875593-0e26-4468-808b-53361ceaff9d",
+              "status": "INSUFFICIENT_INFORMATION"
+            },
+            {
+              "id": 6,
+              "run_id": "cfbc18d6-4bcd-44c7-b0e4-2e1c98d318b7",
+              "type": "clarification_requested",
+              "payload": "{\"missing_fields\": [\"clearings.A.adjacent_to\", \"clearings.A.presence.marquise.warriors\"], \"questions\": [{\"field\": \"clearings.A.adjacent_to\", \"question\": \"Which clearings are adjacent to A? State whether the list is complete if you know it.\"}, {\"field\": \"clearings.A.presence.marquise.warriors\", \"question\": \"How many marquise warriors are in clearing A? State whether this is a complete list if relevant.\"}]}",
+              "created_at": "2026-09-23T12:53:37.357223+00:00",
+              "missing_fields": [
+                "clearings.A.adjacent_to",
+                "clearings.A.presence.marquise.warriors"
+              ],
+              "questions": [
+                {
+                  "field": "clearings.A.adjacent_to",
+                  "question": "Which clearings are adjacent to A? State whether the list is complete if you know it."
+                },
+                {
+                  "field": "clearings.A.presence.marquise.warriors",
+                  "question": "How many marquise warriors are in clearing A? State whether this is a complete list if relevant."
+                }
+              ]
+            },
+            {
+              "id": 7,
+              "run_id": "cfbc18d6-4bcd-44c7-b0e4-2e1c98d318b7",
+              "type": "decision_computed",
+              "payload": "{\"status\": \"unknown\", \"reason_codes\": [\"MOVE_STATE_MISSING\"], \"rule_ids\": [\"root-2.2.1\", \"root-4.2\"]}",
+              "created_at": "2026-09-23T12:53:37.364772+00:00",
+              "status": "unknown",
+              "reason_codes": [
+                "MOVE_STATE_MISSING"
+              ],
+              "rule_ids": [
+                "root-2.2.1",
+                "root-4.2"
+              ]
+            },
+            {
+              "id": 8,
+              "run_id": "cfbc18d6-4bcd-44c7-b0e4-2e1c98d318b7",
+              "type": "verification_finished",
+              "payload": "{\"status\": \"passed\", \"rule_ids\": [\"root-2.2.1\", \"root-4.2\"]}",
+              "created_at": "2026-09-23T12:53:37.372203+00:00",
+              "status": "passed",
+              "rule_ids": [
+                "root-2.2.1",
+                "root-4.2"
+              ]
+            },
+            {
+              "id": 9,
+              "run_id": "cfbc18d6-4bcd-44c7-b0e4-2e1c98d318b7",
+              "type": "investigation_finished",
+              "payload": "{\"strategy\": \"fixed_workflow\", \"strategy_version\": \"fixed-workflow-v1\", \"model\": \"deepseek-flash\", \"provider\": \"openai\", \"stop_reason\": \"completed\", \"failure_reason\": null, \"budget_dimension\": null, \"usage\": {\"iterations\": 1, \"tool_calls\": 0, \"tool_failures\": 0, \"provider_calls\": 0, \"input_tokens\": 0, \"output_tokens\": 0, \"total_tokens\": 0, \"latency_ms\": 38}}",
+              "created_at": "2026-09-23T12:53:37.396439+00:00",
+              "strategy": "fixed_workflow",
+              "strategy_version": "fixed-workflow-v1",
+              "model": "deepseek-flash",
+              "provider": "openai",
+              "stop_reason": "completed",
+              "failure_reason": null,
+              "budget_dimension": null,
+              "usage": {
+                "iterations": 1,
+                "tool_calls": 0,
+                "tool_failures": 0,
+                "provider_calls": 0,
+                "input_tokens": 0,
+                "output_tokens": 0,
+                "total_tokens": 0,
+                "latency_ms": 38
+              }
+            },
+            {
+              "id": 10,
+              "run_id": "5c3e36e9-ddeb-4c71-a405-07e0b3fe8f46",
+              "type": "message_received",
+              "payload": "{}",
+              "created_at": "2026-09-23T12:53:37.432372+00:00"
+            },
+            {
+              "id": 11,
+              "run_id": "5c3e36e9-ddeb-4c71-a405-07e0b3fe8f46",
+              "type": "clarification_resumed",
+              "payload": "{\"previous_verdict_id\": \"9c875593-0e26-4468-808b-53361ceaff9d\", \"state_revision\": 1, \"source_message_id\": \"39aca968-3cd0-4235-8716-437d3e0e543b\"}",
+              "created_at": "2026-09-23T12:53:37.439542+00:00",
+              "previous_verdict_id": "9c875593-0e26-4468-808b-53361ceaff9d",
+              "state_revision": 1,
+              "source_message_id": "39aca968-3cd0-4235-8716-437d3e0e543b"
+            },
+            {
+              "id": 12,
+              "run_id": "5c3e36e9-ddeb-4c71-a405-07e0b3fe8f46",
+              "type": "state_accepted",
+              "payload": "{\"state_revision\": 2, \"issues\": []}",
+              "created_at": "2026-09-23T12:53:37.459138+00:00",
+              "state_revision": 2,
+              "issues": []
+            },
+            {
+              "id": 13,
+              "run_id": "5c3e36e9-ddeb-4c71-a405-07e0b3fe8f46",
+              "type": "investigation_started",
+              "payload": "{\"strategy\": \"fixed_workflow\", \"strategy_version\": \"fixed-workflow-v1\", \"resumed\": true, \"model\": \"deepseek-flash\", \"provider\": \"openai\", \"budget\": {\"max_duration_seconds\": 60.0, \"max_iterations\": 3, \"max_tool_calls\": 8, \"max_total_tokens\": 32768, \"configuration_status\": \"development_trial\", \"source\": \"t14-example\"}, \"cumulative_usage\": {\"iterations\": 1, \"tool_calls\": 0, \"tool_failures\": 0, \"provider_calls\": 0, \"input_tokens\": 0, \"output_tokens\": 0, \"total_tokens\": 0, \"latency_ms\": 38}}",
+              "created_at": "2026-09-23T12:53:37.473396+00:00",
+              "strategy": "fixed_workflow",
+              "strategy_version": "fixed-workflow-v1",
+              "resumed": true,
+              "model": "deepseek-flash",
+              "provider": "openai",
+              "budget": {
+                "max_duration_seconds": 60.0,
+                "max_iterations": 3,
+                "max_tool_calls": 8,
+                "max_total_tokens": 32768,
+                "configuration_status": "development_trial",
+                "source": "t14-example"
+              },
+              "cumulative_usage": {
+                "iterations": 1,
+                "tool_calls": 0,
+                "tool_failures": 0,
+                "provider_calls": 0,
+                "input_tokens": 0,
+                "output_tokens": 0,
+                "total_tokens": 0,
+                "latency_ms": 38
+              }
+            },
+            {
+              "id": 14,
+              "run_id": "5c3e36e9-ddeb-4c71-a405-07e0b3fe8f46",
+              "type": "fixed_workflow_started",
+              "payload": "{\"workflow\": \"m0-root-move\", \"workflow_version\": \"fixed-workflow-v1\", \"template_version\": \"m0-fixed-template-v1\", \"route_source\": \"hand_authored\", \"llm_routing\": false}",
+              "created_at": "2026-09-23T12:53:37.481862+00:00",
+              "workflow": "m0-root-move",
+              "workflow_version": "fixed-workflow-v1",
+              "template_version": "m0-fixed-template-v1",
+              "route_source": "hand_authored",
+              "llm_routing": false
+            },
+            {
+              "id": 15,
+              "run_id": "5c3e36e9-ddeb-4c71-a405-07e0b3fe8f46",
+              "type": "verdict",
+              "payload": "{\"verdict_id\": \"7a587391-d300-4bcb-91ea-bcbc6a92d6ff\", \"status\": \"INSUFFICIENT_INFORMATION\"}",
+              "created_at": "2026-09-23T12:53:37.489749+00:00",
+              "verdict_id": "7a587391-d300-4bcb-91ea-bcbc6a92d6ff",
+              "status": "INSUFFICIENT_INFORMATION"
+            },
+            {
+              "id": 16,
+              "run_id": "5c3e36e9-ddeb-4c71-a405-07e0b3fe8f46",
+              "type": "clarification_requested",
+              "payload": "{\"missing_fields\": [\"clearings.A.presence.eyrie.warriors\", \"clearings.A.presence.eyrie.buildings\", \"clearings.A.presence.marquise.buildings\", \"clearings.B.presence\"], \"questions\": [{\"field\": \"clearings.A.presence.eyrie.warriors\", \"question\": \"How many eyrie warriors are in clearing A? State whether this is a complete list if relevant.\"}, {\"field\": \"clearings.A.presence.eyrie.buildings\", \"question\": \"How many eyrie buildings are in clearing A? State whether this is a complete list if relevant.\"}, {\"field\": \"clearings.A.presence.marquise.buildings\", \"question\": \"How many marquise buildings are in clearing A? State whether this is a complete list if relevant.\"}, {\"field\": \"clearings.B.presence\", \"question\": \"Please provide the confirmed value for clearings.B.presence.\"}]}",
+              "created_at": "2026-09-23T12:53:37.497818+00:00",
+              "missing_fields": [
+                "clearings.A.presence.eyrie.warriors",
+                "clearings.A.presence.eyrie.buildings",
+                "clearings.A.presence.marquise.buildings",
+                "clearings.B.presence"
+              ],
+              "questions": [
+                {
+                  "field": "clearings.A.presence.eyrie.warriors",
+                  "question": "How many eyrie warriors are in clearing A? State whether this is a complete list if relevant."
+                },
+                {
+                  "field": "clearings.A.presence.eyrie.buildings",
+                  "question": "How many eyrie buildings are in clearing A? State whether this is a complete list if relevant."
+                },
+                {
+                  "field": "clearings.A.presence.marquise.buildings",
+                  "question": "How many marquise buildings are in clearing A? State whether this is a complete list if relevant."
+                },
+                {
+                  "field": "clearings.B.presence",
+                  "question": "Please provide the confirmed value for clearings.B.presence."
+                }
+              ]
+            },
+            {
+              "id": 17,
+              "run_id": "5c3e36e9-ddeb-4c71-a405-07e0b3fe8f46",
+              "type": "decision_computed",
+              "payload": "{\"status\": \"unknown\", \"reason_codes\": [\"MOVE_RULE_STATE_MISSING\"], \"rule_ids\": [\"root-2.2.1\", \"root-4.2\", \"root-4.2.1\", \"root-2.5\"]}",
+              "created_at": "2026-09-23T12:53:37.505229+00:00",
+              "status": "unknown",
+              "reason_codes": [
+                "MOVE_RULE_STATE_MISSING"
+              ],
+              "rule_ids": [
+                "root-2.2.1",
+                "root-4.2",
+                "root-4.2.1",
+                "root-2.5"
+              ]
+            },
+            {
+              "id": 18,
+              "run_id": "5c3e36e9-ddeb-4c71-a405-07e0b3fe8f46",
+              "type": "verification_finished",
+              "payload": "{\"status\": \"passed\", \"rule_ids\": [\"root-2.2.1\", \"root-2.5\", \"root-4.2\", \"root-4.2.1\"]}",
+              "created_at": "2026-09-23T12:53:37.512475+00:00",
+              "status": "passed",
+              "rule_ids": [
+                "root-2.2.1",
+                "root-2.5",
+                "root-4.2",
+                "root-4.2.1"
+              ]
+            },
+            {
+              "id": 19,
+              "run_id": "5c3e36e9-ddeb-4c71-a405-07e0b3fe8f46",
+              "type": "investigation_finished",
+              "payload": "{\"strategy\": \"fixed_workflow\", \"strategy_version\": \"fixed-workflow-v1\", \"model\": \"deepseek-flash\", \"provider\": \"openai\", \"stop_reason\": \"completed\", \"failure_reason\": null, \"budget_dimension\": null, \"usage\": {\"iterations\": 1, \"tool_calls\": 0, \"tool_failures\": 0, \"provider_calls\": 0, \"input_tokens\": 0, \"output_tokens\": 0, \"total_tokens\": 0, \"latency_ms\": 39}}",
+              "created_at": "2026-09-23T12:53:37.534637+00:00",
+              "strategy": "fixed_workflow",
+              "strategy_version": "fixed-workflow-v1",
+              "model": "deepseek-flash",
+              "provider": "openai",
+              "stop_reason": "completed",
+              "failure_reason": null,
+              "budget_dimension": null,
+              "usage": {
+                "iterations": 1,
+                "tool_calls": 0,
+                "tool_failures": 0,
+                "provider_calls": 0,
+                "input_tokens": 0,
+                "output_tokens": 0,
+                "total_tokens": 0,
+                "latency_ms": 39
+              }
+            },
+            {
+              "id": 20,
+              "run_id": "3ca11b79-cb9a-4ab9-b024-9abb5c652e5e",
+              "type": "message_received",
+              "payload": "{}",
+              "created_at": "2026-09-23T12:53:37.570318+00:00"
+            },
+            {
+              "id": 21,
+              "run_id": "3ca11b79-cb9a-4ab9-b024-9abb5c652e5e",
+              "type": "clarification_resumed",
+              "payload": "{\"previous_verdict_id\": \"7a587391-d300-4bcb-91ea-bcbc6a92d6ff\", \"state_revision\": 2, \"source_message_id\": \"3c8bfa34-09f2-4fb0-9e55-c31c122ad9ce\"}",
+              "created_at": "2026-09-23T12:53:37.577215+00:00",
+              "previous_verdict_id": "7a587391-d300-4bcb-91ea-bcbc6a92d6ff",
+              "state_revision": 2,
+              "source_message_id": "3c8bfa34-09f2-4fb0-9e55-c31c122ad9ce"
+            },
+            {
+              "id": 22,
+              "run_id": "3ca11b79-cb9a-4ab9-b024-9abb5c652e5e",
+              "type": "state_accepted",
+              "payload": "{\"state_revision\": 3, \"issues\": []}",
+              "created_at": "2026-09-23T12:53:37.597602+00:00",
+              "state_revision": 3,
+              "issues": []
+            },
+            {
+              "id": 23,
+              "run_id": "3ca11b79-cb9a-4ab9-b024-9abb5c652e5e",
+              "type": "investigation_started",
+              "payload": "{\"strategy\": \"fixed_workflow\", \"strategy_version\": \"fixed-workflow-v1\", \"resumed\": true, \"model\": \"deepseek-flash\", \"provider\": \"openai\", \"budget\": {\"max_duration_seconds\": 60.0, \"max_iterations\": 3, \"max_tool_calls\": 8, \"max_total_tokens\": 32768, \"configuration_status\": \"development_trial\", \"source\": \"t14-example\"}, \"cumulative_usage\": {\"iterations\": 2, \"tool_calls\": 0, \"tool_failures\": 0, \"provider_calls\": 0, \"input_tokens\": 0, \"output_tokens\": 0, \"total_tokens\": 0, \"latency_ms\": 77}}",
+              "created_at": "2026-09-23T12:53:37.613259+00:00",
+              "strategy": "fixed_workflow",
+              "strategy_version": "fixed-workflow-v1",
+              "resumed": true,
+              "model": "deepseek-flash",
+              "provider": "openai",
+              "budget": {
+                "max_duration_seconds": 60.0,
+                "max_iterations": 3,
+                "max_tool_calls": 8,
+                "max_total_tokens": 32768,
+                "configuration_status": "development_trial",
+                "source": "t14-example"
+              },
+              "cumulative_usage": {
+                "iterations": 2,
+                "tool_calls": 0,
+                "tool_failures": 0,
+                "provider_calls": 0,
+                "input_tokens": 0,
+                "output_tokens": 0,
+                "total_tokens": 0,
+                "latency_ms": 77
+              }
+            },
+            {
+              "id": 24,
+              "run_id": "3ca11b79-cb9a-4ab9-b024-9abb5c652e5e",
+              "type": "fixed_workflow_started",
+              "payload": "{\"workflow\": \"m0-root-move\", \"workflow_version\": \"fixed-workflow-v1\", \"template_version\": \"m0-fixed-template-v1\", \"route_source\": \"hand_authored\", \"llm_routing\": false}",
+              "created_at": "2026-09-23T12:53:37.621528+00:00",
+              "workflow": "m0-root-move",
+              "workflow_version": "fixed-workflow-v1",
+              "template_version": "m0-fixed-template-v1",
+              "route_source": "hand_authored",
+              "llm_routing": false
+            },
+            {
+              "id": 25,
+              "run_id": "3ca11b79-cb9a-4ab9-b024-9abb5c652e5e",
+              "type": "verdict",
+              "payload": "{\"verdict_id\": \"5014ba98-b91f-4df6-8e10-10ca65bb2f88\", \"status\": \"LEGAL\"}",
+              "created_at": "2026-09-23T12:53:37.629834+00:00",
+              "verdict_id": "5014ba98-b91f-4df6-8e10-10ca65bb2f88",
+              "status": "LEGAL"
+            },
+            {
+              "id": 26,
+              "run_id": "3ca11b79-cb9a-4ab9-b024-9abb5c652e5e",
+              "type": "clarification_resumed",
+              "payload": "{\"resolved_fields\": []}",
+              "created_at": "2026-09-23T12:53:37.640012+00:00",
+              "resolved_fields": []
+            },
+            {
+              "id": 27,
+              "run_id": "3ca11b79-cb9a-4ab9-b024-9abb5c652e5e",
+              "type": "decision_computed",
+              "payload": "{\"status\": \"allow\", \"reason_codes\": [\"MOVE_RULES_ORIGIN\"], \"rule_ids\": [\"root-2.2.1\", \"root-4.2\", \"root-4.2.1\", \"root-2.5\"]}",
+              "created_at": "2026-09-23T12:53:37.647385+00:00",
+              "status": "allow",
+              "reason_codes": [
+                "MOVE_RULES_ORIGIN"
+              ],
+              "rule_ids": [
+                "root-2.2.1",
+                "root-4.2",
+                "root-4.2.1",
+                "root-2.5"
+              ]
+            },
+            {
+              "id": 28,
+              "run_id": "3ca11b79-cb9a-4ab9-b024-9abb5c652e5e",
+              "type": "verification_finished",
+              "payload": "{\"status\": \"passed\", \"rule_ids\": [\"root-2.2.1\", \"root-2.5\", \"root-4.2\", \"root-4.2.1\"]}",
+              "created_at": "2026-09-23T12:53:37.654169+00:00",
+              "status": "passed",
+              "rule_ids": [
+                "root-2.2.1",
+                "root-2.5",
+                "root-4.2",
+                "root-4.2.1"
+              ]
+            },
+            {
+              "id": 29,
+              "run_id": "3ca11b79-cb9a-4ab9-b024-9abb5c652e5e",
+              "type": "investigation_finished",
+              "payload": "{\"strategy\": \"fixed_workflow\", \"strategy_version\": \"fixed-workflow-v1\", \"model\": \"deepseek-flash\", \"provider\": \"openai\", \"stop_reason\": \"completed\", \"failure_reason\": null, \"budget_dimension\": null, \"usage\": {\"iterations\": 1, \"tool_calls\": 0, \"tool_failures\": 0, \"provider_calls\": 0, \"input_tokens\": 0, \"output_tokens\": 0, \"total_tokens\": 0, \"latency_ms\": 40}}",
+              "created_at": "2026-09-23T12:53:37.675989+00:00",
+              "strategy": "fixed_workflow",
+              "strategy_version": "fixed-workflow-v1",
+              "model": "deepseek-flash",
+              "provider": "openai",
+              "stop_reason": "completed",
+              "failure_reason": null,
+              "budget_dimension": null,
+              "usage": {
+                "iterations": 1,
+                "tool_calls": 0,
+                "tool_failures": 0,
+                "provider_calls": 0,
+                "input_tokens": 0,
+                "output_tokens": 0,
+                "total_tokens": 0,
+                "latency_ms": 40
+              }
+            }
+          ]
+        }
+      },
+      "artifact_signature": null
+    }
+  },
+  "pairs": [
+    {
+      "case_id": "ordinary-legal-01",
+      "family_id": "ordinary-legal-01",
+      "category": "ordinary",
+      "dynamic": {
+        "case_id": "ordinary-legal-01",
+        "family_id": "ordinary-legal-01",
+        "category": "ordinary",
+        "initial_result": {
+          "id": "01dfc844-3dc7-4e3d-8e78-3ff4425eb68f",
+          "case_id": "22e293a7-96db-47b2-8ee7-62358d264c1a",
+          "run_id": "861a240b-fefb-42a3-81bf-cc8f9ba7622e",
+          "revision": 1,
+          "status": "UNRESOLVED",
+          "reason": "BUDGET_EXHAUSTED",
+          "evidence": [],
+          "details": {
+            "public_reason": "The investigation budget was exhausted before a reliable result."
+          },
+          "model": "deepseek-flash",
+          "provider": "openai",
+          "stop_reason": "budget_exhausted",
+          "failure_reason": "BUDGET_EXHAUSTED",
+          "investigation": {
+            "id": "63da9b26-1ad4-4d9b-aad4-3027872abca0",
+            "run_id": "861a240b-fefb-42a3-81bf-cc8f9ba7622e",
+            "run_count": 1,
+            "strategy": "dynamic_agent",
+            "strategy_version": "dynamic-agent-v1",
+            "resumed": false,
+            "model": "deepseek-flash",
+            "provider": "openai",
+            "budget": {
+              "max_duration_seconds": 60.0,
+              "max_iterations": 3,
+              "max_tool_calls": 8,
+              "max_total_tokens": 32768,
+              "configuration_status": "development_trial",
+              "source": "t14-example"
+            },
+            "usage": {
+              "iterations": 3,
+              "tool_calls": 6,
+              "tool_failures": 0,
+              "provider_calls": 0,
+              "input_tokens": 6147,
+              "output_tokens": 990,
+              "total_tokens": 7137,
+              "latency_ms": 7208,
+              "cost_usd": null,
+              "usage_provenance": "controller_budget_ledger"
+            },
+            "remaining": {
+              "duration_seconds": 52.792,
+              "iterations": 0,
+              "tool_calls": 2,
+              "total_tokens": 25631
+            },
+            "run_usage": {
+              "iterations": 3,
+              "tool_calls": 6,
+              "tool_failures": 0,
+              "provider_calls": 0,
+              "input_tokens": 6147,
+              "output_tokens": 990,
+              "total_tokens": 7137,
+              "latency_ms": 7208,
+              "cost_usd": null,
+              "usage_provenance": "controller_budget_ledger"
+            },
+            "stop_reason": "budget_exhausted",
+            "failure_reason": "BUDGET_EXHAUSTED",
+            "budget_dimension": "iterations"
+          },
+          "budget_dimension": "iterations",
+          "state_update": {
+            "accepted": true,
+            "state_revision": 1,
+            "sufficient": false,
+            "missing_fields": [
+              "clearings.A.presence",
+              "clearings.B.presence"
+            ],
+            "issues": []
+          }
+        },
+        "complete_result": {
+          "id": "01dfc844-3dc7-4e3d-8e78-3ff4425eb68f",
+          "case_id": "22e293a7-96db-47b2-8ee7-62358d264c1a",
+          "run_id": "861a240b-fefb-42a3-81bf-cc8f9ba7622e",
+          "revision": 1,
+          "status": "UNRESOLVED",
+          "reason": "BUDGET_EXHAUSTED",
+          "evidence": [],
+          "details": {
+            "public_reason": "The investigation budget was exhausted before a reliable result."
+          },
+          "model": "deepseek-flash",
+          "provider": "openai",
+          "stop_reason": "budget_exhausted",
+          "failure_reason": "BUDGET_EXHAUSTED",
+          "investigation": {
+            "id": "63da9b26-1ad4-4d9b-aad4-3027872abca0",
+            "run_id": "861a240b-fefb-42a3-81bf-cc8f9ba7622e",
+            "run_count": 1,
+            "strategy": "dynamic_agent",
+            "strategy_version": "dynamic-agent-v1",
+            "resumed": false,
+            "model": "deepseek-flash",
+            "provider": "openai",
+            "budget": {
+              "max_duration_seconds": 60.0,
+              "max_iterations": 3,
+              "max_tool_calls": 8,
+              "max_total_tokens": 32768,
+              "configuration_status": "development_trial",
+              "source": "t14-example"
+            },
+            "usage": {
+              "iterations": 3,
+              "tool_calls": 6,
+              "tool_failures": 0,
+              "provider_calls": 0,
+              "input_tokens": 6147,
+              "output_tokens": 990,
+              "total_tokens": 7137,
+              "latency_ms": 7208,
+              "cost_usd": null,
+              "usage_provenance": "controller_budget_ledger"
+            },
+            "remaining": {
+              "duration_seconds": 52.792,
+              "iterations": 0,
+              "tool_calls": 2,
+              "total_tokens": 25631
+            },
+            "run_usage": {
+              "iterations": 3,
+              "tool_calls": 6,
+              "tool_failures": 0,
+              "provider_calls": 0,
+              "input_tokens": 6147,
+              "output_tokens": 990,
+              "total_tokens": 7137,
+              "latency_ms": 7208,
+              "cost_usd": null,
+              "usage_provenance": "controller_budget_ledger"
+            },
+            "stop_reason": "budget_exhausted",
+            "failure_reason": "BUDGET_EXHAUSTED",
+            "budget_dimension": "iterations"
+          },
+          "budget_dimension": "iterations",
+          "state_update": {
+            "accepted": true,
+            "state_revision": 1,
+            "sufficient": false,
+            "missing_fields": [
+              "clearings.A.presence",
+              "clearings.B.presence"
+            ],
+            "issues": []
+          }
+        },
+        "fact_requests": [],
+        "fact_answers": [],
+        "clarification_rounds": 0,
+        "usage": {
+          "iterations": 3,
+          "tool_calls": 6,
+          "tool_failures": 0,
+          "provider_calls": 0,
+          "input_tokens": 6147,
+          "output_tokens": 990,
+          "total_tokens": 7137,
+          "latency_ms": 7208,
+          "cost_usd": null,
+          "usage_provenance": "controller_budget_ledger"
+        },
+        "run_count": 1,
+        "initial_failure_reason": "BUDGET_EXHAUSTED",
+        "complete_failure_reason": "BUDGET_EXHAUSTED",
+        "failure_reason": "BUDGET_EXHAUSTED",
+        "stop_reason": "budget_exhausted"
+      },
+      "fixed": {
+        "case_id": "ordinary-legal-01",
+        "family_id": "ordinary-legal-01",
+        "category": "ordinary",
+        "initial_result": {
+          "id": "9c875593-0e26-4468-808b-53361ceaff9d",
+          "case_id": "dfa70e35-14d7-44f1-ba94-5dfa153d7db7",
+          "run_id": "cfbc18d6-4bcd-44c7-b0e4-2e1c98d318b7",
+          "revision": 1,
+          "status": "INSUFFICIENT_INFORMATION",
+          "reason": "INSUFFICIENT_INFORMATION",
+          "evidence": [
+            "root-2.2.1",
+            "root-4.2"
+          ],
+          "details": {
+            "scope": "local_move_conditions",
+            "scope_confirmation_ref": "d2fab933-224f-4de8-b4af-fc1d1e48dddf",
+            "scope_confirmation_revision": 1,
+            "validated_completeness_refs": [],
+            "validated_completeness_revision": 1,
+            "not_checked": [
+              "full_turn_action_availability",
+              "full_decree_progress"
+            ],
+            "applicable_rules": [
+              {
+                "id": "root-2.2.1",
+                "title": "Adjacency"
+              },
+              {
+                "id": "root-4.2",
+                "title": "Move"
+              }
+            ],
+            "derived_facts": {},
+            "checks": {
+              "state_sufficient": false,
+              "evidence_verified": true
+            },
+            "explanation": "More confirmed facts are needed before this local move can be decided.",
+            "missing_fields": [
+              "clearings.A.adjacent_to",
+              "clearings.A.presence.marquise.warriors"
+            ],
+            "clarification_questions": [
+              {
+                "field": "clearings.A.adjacent_to",
+                "question": "Which clearings are adjacent to A? State whether the list is complete if you know it."
+              },
+              {
+                "field": "clearings.A.presence.marquise.warriors",
+                "question": "How many marquise warriors are in clearing A? State whether this is a complete list if relevant."
+              }
+            ],
+            "decision_ref": "6d5a6487-324e-40a9-b9f0-676d489eb556",
+            "verification_refs": [
+              "8fa8db98-e507-4d90-891a-65bcde7f1dfa"
+            ]
+          },
+          "state_revision": 1,
+          "verdict": "insufficient_information",
+          "ruleset_id": "root-law-2025-10",
+          "ruleset_version_ref": "candidate-1ad04e7a61205cbc",
+          "scope": "local_move_conditions",
+          "scope_confirmation_ref": "d2fab933-224f-4de8-b4af-fc1d1e48dddf",
+          "scope_confirmation_revision": 1,
+          "validated_completeness_refs": [],
+          "validated_completeness_revision": 1,
+          "not_checked": [
+            "full_turn_action_availability",
+            "full_decree_progress"
+          ],
+          "decision": {
+            "status": "unknown",
+            "reason_codes": [
+              "MOVE_STATE_MISSING"
+            ],
+            "rule_ids": [
+              "root-2.2.1",
+              "root-4.2"
+            ],
+            "derived_facts": {},
+            "missing_fields": [
+              "clearings.A.adjacent_to",
+              "clearings.A.presence.marquise.warriors"
+            ],
+            "id": "6d5a6487-324e-40a9-b9f0-676d489eb556",
+            "case_id": "dfa70e35-14d7-44f1-ba94-5dfa153d7db7",
+            "run_id": "cfbc18d6-4bcd-44c7-b0e4-2e1c98d318b7",
+            "revision": 1
+          },
+          "verification": {
+            "id": "8fa8db98-e507-4d90-891a-65bcde7f1dfa",
+            "status": "passed",
+            "ruleset_id": "root-law-2025-10",
+            "ruleset_version_ref": "candidate-1ad04e7a61205cbc",
+            "rule_ids": [
+              "root-2.2.1",
+              "root-4.2"
+            ],
+            "evidence": [
+              "root-2.2.1",
+              "root-4.2"
+            ],
+            "checks": {
+              "state_sufficient": false,
+              "evidence_verified": true
+            },
+            "case_id": "dfa70e35-14d7-44f1-ba94-5dfa153d7db7",
+            "run_id": "cfbc18d6-4bcd-44c7-b0e4-2e1c98d318b7",
+            "revision": 1,
+            "decision_id": "6d5a6487-324e-40a9-b9f0-676d489eb556"
+          },
+          "decision_ref": "6d5a6487-324e-40a9-b9f0-676d489eb556",
+          "verification_refs": [
+            "8fa8db98-e507-4d90-891a-65bcde7f1dfa"
+          ],
+          "applicable_rules": [
+            {
+              "id": "root-2.2.1",
+              "title": "Adjacency"
+            },
+            {
+              "id": "root-4.2",
+              "title": "Move"
+            }
+          ],
+          "derived_facts": {},
+          "checks": {
+            "state_sufficient": false,
+            "evidence_verified": true
+          },
+          "missing_fields": [
+            "clearings.A.adjacent_to",
+            "clearings.A.presence.marquise.warriors"
+          ],
+          "clarification_questions": [
+            {
+              "field": "clearings.A.adjacent_to",
+              "question": "Which clearings are adjacent to A? State whether the list is complete if you know it."
+            },
+            {
+              "field": "clearings.A.presence.marquise.warriors",
+              "question": "How many marquise warriors are in clearing A? State whether this is a complete list if relevant."
+            }
+          ],
+          "explanation": "More confirmed facts are needed before this local move can be decided.",
+          "state_update": {
+            "accepted": true,
+            "state_revision": 1,
+            "sufficient": false,
+            "missing_fields": [
+              "clearings.A.presence",
+              "clearings.B.presence"
+            ],
+            "issues": []
+          },
+          "model": "deepseek-flash",
+          "provider": "openai",
+          "stop_reason": "completed",
+          "failure_reason": null,
+          "investigation": {
+            "id": "387ec7ed-f2cc-484c-b720-3ffebbe9c796",
+            "run_id": "cfbc18d6-4bcd-44c7-b0e4-2e1c98d318b7",
+            "run_count": 1,
+            "strategy": "fixed_workflow",
+            "strategy_version": "fixed-workflow-v1",
+            "resumed": false,
+            "model": "deepseek-flash",
+            "provider": "openai",
+            "budget": {
+              "max_duration_seconds": 60.0,
+              "max_iterations": 3,
+              "max_tool_calls": 8,
+              "max_total_tokens": 32768,
+              "configuration_status": "development_trial",
+              "source": "t14-example"
+            },
+            "usage": {
+              "iterations": 1,
+              "tool_calls": 0,
+              "tool_failures": 0,
+              "provider_calls": 0,
+              "input_tokens": 0,
+              "output_tokens": 0,
+              "total_tokens": 0,
+              "latency_ms": 38,
+              "cost_usd": null,
+              "usage_provenance": "controller_budget_ledger"
+            },
+            "remaining": {
+              "duration_seconds": 59.962,
+              "iterations": 2,
+              "tool_calls": 8,
+              "total_tokens": 32768
+            },
+            "run_usage": {
+              "iterations": 1,
+              "tool_calls": 0,
+              "tool_failures": 0,
+              "provider_calls": 0,
+              "input_tokens": 0,
+              "output_tokens": 0,
+              "total_tokens": 0,
+              "latency_ms": 38,
+              "cost_usd": null,
+              "usage_provenance": "controller_budget_ledger"
+            },
+            "stop_reason": "completed",
+            "failure_reason": null
+          }
+        },
+        "complete_result": {
+          "id": "5014ba98-b91f-4df6-8e10-10ca65bb2f88",
+          "case_id": "dfa70e35-14d7-44f1-ba94-5dfa153d7db7",
+          "run_id": "3ca11b79-cb9a-4ab9-b024-9abb5c652e5e",
+          "revision": 3,
+          "status": "LEGAL",
+          "reason": "MOVE_LEGAL",
+          "evidence": [
+            "root-2.2.1",
+            "root-2.5",
+            "root-4.2",
+            "root-4.2.1"
+          ],
+          "details": {
+            "scope": "local_move_conditions",
+            "scope_confirmation_ref": "d2fab933-224f-4de8-b4af-fc1d1e48dddf",
+            "scope_confirmation_revision": 3,
+            "validated_completeness_refs": [
+              "b9323e97-ec0b-445c-b72c-0422821a8dd7"
+            ],
+            "validated_completeness_revision": 3,
+            "not_checked": [
+              "full_turn_action_availability",
+              "full_decree_progress"
+            ],
+            "applicable_rules": [
+              {
+                "id": "root-2.2.1",
+                "title": "Adjacency"
+              },
+              {
+                "id": "root-2.5",
+                "title": "Rule"
+              },
+              {
+                "id": "root-4.2",
+                "title": "Move"
+              },
+              {
+                "id": "root-4.2.1",
+                "title": "You Must Rule"
+              }
+            ],
+            "derived_facts": {
+              "origin_ruler": {
+                "status": "resolved",
+                "value": "marquise",
+                "reason_codes": [
+                  "RULER_UNIQUE_HIGHEST"
+                ],
+                "rule_ids": [
+                  "root-2.5"
+                ],
+                "missing_fields": []
+              }
+            },
+            "checks": {
+              "state_sufficient": true,
+              "evidence_verified": true
+            },
+            "explanation": "Marquise rules at least one endpoint and the checked local move conditions hold.",
+            "missing_fields": [],
+            "clarification_questions": [],
+            "decision_ref": "df77e4b0-b4e9-4ab8-b543-9938e142de29",
+            "verification_refs": [
+              "1dd4e92a-35b9-4519-85dc-ca07a8f83b0e"
+            ]
+          },
+          "state_revision": 3,
+          "verdict": "legal",
+          "ruleset_id": "root-law-2025-10",
+          "ruleset_version_ref": "candidate-1ad04e7a61205cbc",
+          "scope": "local_move_conditions",
+          "scope_confirmation_ref": "d2fab933-224f-4de8-b4af-fc1d1e48dddf",
+          "scope_confirmation_revision": 3,
+          "validated_completeness_refs": [
+            "b9323e97-ec0b-445c-b72c-0422821a8dd7"
+          ],
+          "validated_completeness_revision": 3,
+          "not_checked": [
+            "full_turn_action_availability",
+            "full_decree_progress"
+          ],
+          "decision": {
+            "status": "allow",
+            "reason_codes": [
+              "MOVE_RULES_ORIGIN"
+            ],
+            "rule_ids": [
+              "root-2.2.1",
+              "root-4.2",
+              "root-4.2.1",
+              "root-2.5"
+            ],
+            "derived_facts": {
+              "origin_ruler": {
+                "status": "resolved",
+                "value": "marquise",
+                "reason_codes": [
+                  "RULER_UNIQUE_HIGHEST"
+                ],
+                "rule_ids": [
+                  "root-2.5"
+                ],
+                "missing_fields": []
+              },
+              "origin_warriors_available": 3
+            },
+            "missing_fields": [],
+            "id": "df77e4b0-b4e9-4ab8-b543-9938e142de29",
+            "case_id": "dfa70e35-14d7-44f1-ba94-5dfa153d7db7",
+            "run_id": "3ca11b79-cb9a-4ab9-b024-9abb5c652e5e",
+            "revision": 3
+          },
+          "verification": {
+            "id": "1dd4e92a-35b9-4519-85dc-ca07a8f83b0e",
+            "status": "passed",
+            "ruleset_id": "root-law-2025-10",
+            "ruleset_version_ref": "candidate-1ad04e7a61205cbc",
+            "rule_ids": [
+              "root-2.2.1",
+              "root-2.5",
+              "root-4.2",
+              "root-4.2.1"
+            ],
+            "evidence": [
+              "root-2.2.1",
+              "root-2.5",
+              "root-4.2",
+              "root-4.2.1"
+            ],
+            "checks": {
+              "state_sufficient": true,
+              "evidence_verified": true
+            },
+            "case_id": "dfa70e35-14d7-44f1-ba94-5dfa153d7db7",
+            "run_id": "3ca11b79-cb9a-4ab9-b024-9abb5c652e5e",
+            "revision": 3,
+            "decision_id": "df77e4b0-b4e9-4ab8-b543-9938e142de29"
+          },
+          "decision_ref": "df77e4b0-b4e9-4ab8-b543-9938e142de29",
+          "verification_refs": [
+            "1dd4e92a-35b9-4519-85dc-ca07a8f83b0e"
+          ],
+          "applicable_rules": [
+            {
+              "id": "root-2.2.1",
+              "title": "Adjacency"
+            },
+            {
+              "id": "root-2.5",
+              "title": "Rule"
+            },
+            {
+              "id": "root-4.2",
+              "title": "Move"
+            },
+            {
+              "id": "root-4.2.1",
+              "title": "You Must Rule"
+            }
+          ],
+          "derived_facts": {
+            "origin_ruler": {
+              "status": "resolved",
+              "value": "marquise",
+              "reason_codes": [
+                "RULER_UNIQUE_HIGHEST"
+              ],
+              "rule_ids": [
+                "root-2.5"
+              ],
+              "missing_fields": []
+            }
+          },
+          "checks": {
+            "state_sufficient": true,
+            "evidence_verified": true
+          },
+          "missing_fields": [],
+          "clarification_questions": [],
+          "explanation": "Marquise rules at least one endpoint and the checked local move conditions hold.",
+          "state_update": {
+            "accepted": true,
+            "state_revision": 3,
+            "sufficient": false,
+            "missing_fields": [
+              "clearings.B.presence"
+            ],
+            "issues": []
+          },
+          "model": "deepseek-flash",
+          "provider": "openai",
+          "stop_reason": "completed",
+          "failure_reason": null,
+          "investigation": {
+            "id": "387ec7ed-f2cc-484c-b720-3ffebbe9c796",
+            "run_id": "3ca11b79-cb9a-4ab9-b024-9abb5c652e5e",
+            "run_count": 3,
+            "strategy": "fixed_workflow",
+            "strategy_version": "fixed-workflow-v1",
+            "resumed": true,
+            "model": "deepseek-flash",
+            "provider": "openai",
+            "budget": {
+              "max_duration_seconds": 60.0,
+              "max_iterations": 3,
+              "max_tool_calls": 8,
+              "max_total_tokens": 32768,
+              "configuration_status": "development_trial",
+              "source": "t14-example"
+            },
+            "usage": {
+              "iterations": 3,
+              "tool_calls": 0,
+              "tool_failures": 0,
+              "provider_calls": 0,
+              "input_tokens": 0,
+              "output_tokens": 0,
+              "total_tokens": 0,
+              "latency_ms": 117,
+              "cost_usd": null,
+              "usage_provenance": "controller_budget_ledger"
+            },
+            "remaining": {
+              "duration_seconds": 59.883,
+              "iterations": 0,
+              "tool_calls": 8,
+              "total_tokens": 32768
+            },
+            "run_usage": {
+              "iterations": 1,
+              "tool_calls": 0,
+              "tool_failures": 0,
+              "provider_calls": 0,
+              "input_tokens": 0,
+              "output_tokens": 0,
+              "total_tokens": 0,
+              "latency_ms": 40,
+              "cost_usd": null,
+              "usage_provenance": "controller_budget_ledger"
+            },
+            "stop_reason": "completed",
+            "failure_reason": null
+          }
+        },
+        "fact_requests": [
+          {
+            "fields": [
+              "clearings.A.adjacent_to",
+              "clearings.A.presence.marquise.warriors"
+            ],
+            "text": null
+          },
+          {
+            "fields": [
+              "clearings.A.presence.eyrie.warriors",
+              "clearings.A.presence.eyrie.buildings",
+              "clearings.A.presence.marquise.buildings",
+              "clearings.B.presence"
+            ],
+            "text": null
+          }
+        ],
+        "fact_answers": [
+          {
+            "status": "answered",
+            "requested_fields": [
+              "clearings.A.adjacent_to",
+              "clearings.A.presence.marquise.warriors"
+            ],
+            "facts": {
+              "clearings.A.adjacent_to": [
+                "B"
+              ],
+              "clearings.A.presence.marquise.warriors": 3
+            },
+            "unknown_fields": [],
+            "text": "A 只与 B 相邻。Marquise 在 A 有 3 个 warriors。",
+            "sources": [
+              "candidate:ordinary-legal-01"
+            ],
+            "completeness": {
+              "clearings.A.adjacent_to": true,
+              "clearings.A.presence.marquise.warriors": false
+            },
+            "completeness_scopes": {
+              "clearings.A.adjacent_to": null,
+              "clearings.A.presence.marquise.warriors": null
+            },
+            "round": 1
+          },
+          {
+            "status": "answered",
+            "requested_fields": [
+              "clearings.A.presence.eyrie.warriors",
+              "clearings.A.presence.eyrie.buildings",
+              "clearings.A.presence.marquise.buildings",
+              "clearings.B.presence"
+            ],
+            "facts": {
+              "clearings.A.presence.eyrie.warriors": 0,
+              "clearings.A.presence.eyrie.buildings": 0,
+              "clearings.A.presence.marquise.buildings": 0
+            },
+            "unknown_fields": [
+              "clearings.B.presence"
+            ],
+            "text": "Eyrie 在 A 有 0 个 warriors。Eyrie 在 A 有 0 个 buildings。Marquise 在 A 有 0 个 buildings。",
+            "sources": [
+              "candidate:ordinary-legal-01"
+            ],
+            "completeness": {
+              "clearings.A.presence.eyrie.warriors": false,
+              "clearings.A.presence.eyrie.buildings": false,
+              "clearings.A.presence.marquise.buildings": false
+            },
+            "completeness_scopes": {
+              "clearings.A.presence.eyrie.warriors": null,
+              "clearings.A.presence.eyrie.buildings": null,
+              "clearings.A.presence.marquise.buildings": null
+            },
+            "round": 2
+          }
+        ],
+        "clarification_rounds": 2,
+        "usage": {
+          "iterations": 3,
+          "tool_calls": 0,
+          "tool_failures": 0,
+          "provider_calls": 0,
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "total_tokens": 0,
+          "latency_ms": 117,
+          "cost_usd": null,
+          "usage_provenance": "controller_budget_ledger"
+        },
+        "run_count": 3,
+        "initial_failure_reason": null,
+        "complete_failure_reason": null,
+        "failure_reason": null,
+        "stop_reason": "completed"
+      },
+      "audit": {
+        "valid": true,
+        "shared_input_hash": "80643b1a849e04951c849119c955132737bc5c4ada633edb633c3260cc1ab3a5",
+        "dynamic": {
+          "strategy": "dynamic_agent",
+          "observed_strategy": "dynamic_agent",
+          "observed_strategy_version": "dynamic-agent-v1",
+          "observed_route": "dynamic_agent",
+          "observed_route_source": null,
+          "observed_template_version": null,
+          "observed_llm_routing": null,
+          "observed_budget": {
+            "max_duration_seconds": 60.0,
+            "max_iterations": 3,
+            "max_tool_calls": 8,
+            "max_total_tokens": 32768,
+            "configuration_status": "development_trial",
+            "source": "t14-example"
+          },
+          "runtime_contract_available": true,
+          "usage_available": true,
+          "usage_provenance": "controller_budget_ledger",
+          "observation_available": true,
+          "valid": true,
+          "context_hash": "dae54fdbde35460379fb67dd89100d79df7e0bc0bf98f8f8ed29e2ecc005f7b7",
+          "context": [
+            {
+              "id": "1a6abc15-105b-452c-ab55-02bd87bd5cc0",
+              "text": "本局只有 Marquise 与 Eyrie 两名玩家，且没有影响本次移动或统治的卡牌、地标或特殊效果。确认本次只裁决 Marquise 普通移动范围。Marquise 从 A 移动 1 个 warriors 到 B。",
+              "created_at": "2026-09-23T12:53:29.889725+00:00"
+            }
+          ],
+          "tool_results": [
+            {
+              "id": 10,
+              "run_id": "861a240b-fefb-42a3-81bf-cc8f9ba7622e",
+              "type": "tool_call",
+              "payload": "{\"name\": \"inspect_case\", \"status\": \"ok\", \"detail\": \"{\\\"case_id\\\":\\\"22e293a7-96db-47b2-8ee7-62358d264c1a\\\",\\\"state_revision\\\":1,\\\"strategy\\\":\\\"dynamic_agent\\\",\\\"confirmed_state\\\":{\\\"acti...\", \"call_id\": \"call_00_wW2yFudFRNq9ARof04hY5044\", \"arguments_hash\": \"44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a\", \"duration_ms\": 29, \"result_size\": 123}",
+              "created_at": "2026-09-23T12:53:37.132716+00:00",
+              "name": "inspect_case",
+              "status": "ok",
+              "detail": "{\"case_id\":\"22e293a7-96db-47b2-8ee7-62358d264c1a\",\"state_revision\":1,\"strategy\":\"dynamic_agent\",\"confirmed_state\":{\"acti...",
+              "call_id": "call_00_wW2yFudFRNq9ARof04hY5044",
+              "arguments_hash": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+              "duration_ms": 29,
+              "result_size": 123
+            },
+            {
+              "id": 11,
+              "run_id": "861a240b-fefb-42a3-81bf-cc8f9ba7622e",
+              "type": "tool_call",
+              "payload": "{\"name\": \"search_rules\", \"status\": \"ok\", \"detail\": \"{\\\"mode\\\":\\\"support\\\",\\\"ruleset_id\\\":\\\"root-law-2025-10\\\",\\\"results\\\":[]}\", \"call_id\": \"call_00_j6Cyq16dqob0OPFo9H3a4043\", \"arguments_hash\": \"53ee093c649de3b5cbc620c913ed15ec28ba690f56978b37b0f87c402b08f9b4\", \"duration_ms\": 7, \"result_size\": 63}",
+              "created_at": "2026-09-23T12:53:37.140063+00:00",
+              "name": "search_rules",
+              "status": "ok",
+              "detail": "{\"mode\":\"support\",\"ruleset_id\":\"root-law-2025-10\",\"results\":[]}",
+              "call_id": "call_00_j6Cyq16dqob0OPFo9H3a4043",
+              "arguments_hash": "53ee093c649de3b5cbc620c913ed15ec28ba690f56978b37b0f87c402b08f9b4",
+              "duration_ms": 7,
+              "result_size": 63
+            },
+            {
+              "id": 12,
+              "run_id": "861a240b-fefb-42a3-81bf-cc8f9ba7622e",
+              "type": "tool_call",
+              "payload": "{\"name\": \"search_rules\", \"status\": \"ok\", \"detail\": \"{\\\"mode\\\":\\\"clarification\\\",\\\"ruleset_id\\\":\\\"root-law-2025-10\\\",\\\"results\\\":[]}\", \"call_id\": \"call_01_PYxPqaEI6tEBX4kL6Z803365\", \"arguments_hash\": \"0ec4971d382c3990546e6084ad89837256bfaff69917d270221c1814714c311d\", \"duration_ms\": 7, \"result_size\": 69}",
+              "created_at": "2026-09-23T12:53:37.147297+00:00",
+              "name": "search_rules",
+              "status": "ok",
+              "detail": "{\"mode\":\"clarification\",\"ruleset_id\":\"root-law-2025-10\",\"results\":[]}",
+              "call_id": "call_01_PYxPqaEI6tEBX4kL6Z803365",
+              "arguments_hash": "0ec4971d382c3990546e6084ad89837256bfaff69917d270221c1814714c311d",
+              "duration_ms": 7,
+              "result_size": 69
+            },
+            {
+              "id": 13,
+              "run_id": "861a240b-fefb-42a3-81bf-cc8f9ba7622e",
+              "type": "tool_call",
+              "payload": "{\"name\": \"search_rules\", \"status\": \"ok\", \"detail\": \"{\\\"mode\\\":\\\"support\\\",\\\"ruleset_id\\\":\\\"root-law-2025-10\\\",\\\"results\\\":[]}\", \"call_id\": \"call_00_0HpTr6wmV4IicV8DCLgK2104\", \"arguments_hash\": \"5f667c8a7c43381aa96dc921b038df14661c0b11a66d9528b31d2099e0e04bf9\", \"duration_ms\": 8, \"result_size\": 63}",
+              "created_at": "2026-09-23T12:53:37.154464+00:00",
+              "name": "search_rules",
+              "status": "ok",
+              "detail": "{\"mode\":\"support\",\"ruleset_id\":\"root-law-2025-10\",\"results\":[]}",
+              "call_id": "call_00_0HpTr6wmV4IicV8DCLgK2104",
+              "arguments_hash": "5f667c8a7c43381aa96dc921b038df14661c0b11a66d9528b31d2099e0e04bf9",
+              "duration_ms": 8,
+              "result_size": 63
+            },
+            {
+              "id": 14,
+              "run_id": "861a240b-fefb-42a3-81bf-cc8f9ba7622e",
+              "type": "tool_call",
+              "payload": "{\"name\": \"search_rules\", \"status\": \"ok\", \"detail\": \"{\\\"mode\\\":\\\"clarification\\\",\\\"ruleset_id\\\":\\\"root-law-2025-10\\\",\\\"results\\\":[]}\", \"call_id\": \"call_01_qLRaixpVsRqa7d3nuSKO7702\", \"arguments_hash\": \"f300591004cdc9ab4bab8385ba26de6a139301934d8d121dbac7bff4c7c57d95\", \"duration_ms\": 7, \"result_size\": 69}",
+              "created_at": "2026-09-23T12:53:37.163078+00:00",
+              "name": "search_rules",
+              "status": "ok",
+              "detail": "{\"mode\":\"clarification\",\"ruleset_id\":\"root-law-2025-10\",\"results\":[]}",
+              "call_id": "call_01_qLRaixpVsRqa7d3nuSKO7702",
+              "arguments_hash": "f300591004cdc9ab4bab8385ba26de6a139301934d8d121dbac7bff4c7c57d95",
+              "duration_ms": 7,
+              "result_size": 69
+            },
+            {
+              "id": 15,
+              "run_id": "861a240b-fefb-42a3-81bf-cc8f9ba7622e",
+              "type": "tool_call",
+              "payload": "{\"name\": \"search_rules\", \"status\": \"ok\", \"detail\": \"{\\\"mode\\\":\\\"challenge\\\",\\\"ruleset_id\\\":\\\"root-law-2025-10\\\",\\\"results\\\":[]}\", \"call_id\": \"call_02_3M2A8bjbu6hy2njoRGyN5159\", \"arguments_hash\": \"957ae5ecf8743d8a0ac08b7c9940c0e8e621e542893ca7bdc53cfc62f45e7fd0\", \"duration_ms\": 7, \"result_size\": 65}",
+              "created_at": "2026-09-23T12:53:37.170954+00:00",
+              "name": "search_rules",
+              "status": "ok",
+              "detail": "{\"mode\":\"challenge\",\"ruleset_id\":\"root-law-2025-10\",\"results\":[]}",
+              "call_id": "call_02_3M2A8bjbu6hy2njoRGyN5159",
+              "arguments_hash": "957ae5ecf8743d8a0ac08b7c9940c0e8e621e542893ca7bdc53cfc62f45e7fd0",
+              "duration_ms": 7,
+              "result_size": 65
+            }
+          ],
+          "log_projection": [
+            {
+              "id": 1,
+              "run_id": "861a240b-fefb-42a3-81bf-cc8f9ba7622e",
+              "type": "message_received",
+              "payload": "{}",
+              "created_at": "2026-09-23T12:53:29.896629+00:00"
+            },
+            {
+              "id": 2,
+              "run_id": "861a240b-fefb-42a3-81bf-cc8f9ba7622e",
+              "type": "state_accepted",
+              "payload": "{\"state_revision\": 1, \"issues\": []}",
+              "created_at": "2026-09-23T12:53:29.947788+00:00",
+              "state_revision": 1,
+              "issues": []
+            },
+            {
+              "id": 3,
+              "run_id": "861a240b-fefb-42a3-81bf-cc8f9ba7622e",
+              "type": "investigation_started",
+              "payload": "{\"strategy\": \"dynamic_agent\", \"strategy_version\": \"dynamic-agent-v1\", \"resumed\": false, \"model\": \"deepseek-flash\", \"provider\": \"openai\", \"budget\": {\"max_duration_seconds\": 60.0, \"max_iterations\": 3, \"max_tool_calls\": 8, \"max_total_tokens\": 32768, \"configuration_status\": \"development_trial\", \"source\": \"t14-example\"}, \"cumulative_usage\": {\"iterations\": 0, \"tool_calls\": 0, \"tool_failures\": 0, \"provider_calls\": 0, \"input_tokens\": 0, \"output_tokens\": 0, \"total_tokens\": 0, \"latency_ms\": 0}}",
+              "created_at": "2026-09-23T12:53:29.973977+00:00",
+              "strategy": "dynamic_agent",
+              "strategy_version": "dynamic-agent-v1",
+              "resumed": false,
+              "model": "deepseek-flash",
+              "provider": "openai",
+              "budget": {
+                "max_duration_seconds": 60.0,
+                "max_iterations": 3,
+                "max_tool_calls": 8,
+                "max_total_tokens": 32768,
+                "configuration_status": "development_trial",
+                "source": "t14-example"
+              },
+              "cumulative_usage": {
+                "iterations": 0,
+                "tool_calls": 0,
+                "tool_failures": 0,
+                "provider_calls": 0,
+                "input_tokens": 0,
+                "output_tokens": 0,
+                "total_tokens": 0,
+                "latency_ms": 0
+              }
+            },
+            {
+              "id": 4,
+              "run_id": "861a240b-fefb-42a3-81bf-cc8f9ba7622e",
+              "type": "case_inspected",
+              "payload": "{\"state_revision\": 1}",
+              "created_at": "2026-09-23T12:53:32.559568+00:00",
+              "state_revision": 1
+            },
+            {
+              "id": 5,
+              "run_id": "861a240b-fefb-42a3-81bf-cc8f9ba7622e",
+              "type": "rule_searched",
+              "payload": "{\"query\": \"Marquise warriors move range adjacent clearing normal move\", \"mode\": \"support\", \"faction\": null, \"action\": null, \"ruleset_id\": \"root-law-2025-10\", \"result_count\": 0, \"rule_ids\": []}",
+              "created_at": "2026-09-23T12:53:35.671326+00:00",
+              "query": "Marquise warriors move range adjacent clearing normal move",
+              "mode": "support",
+              "faction": null,
+              "action": null,
+              "ruleset_id": "root-law-2025-10",
+              "result_count": 0,
+              "rule_ids": []
+            },
+            {
+              "id": 6,
+              "run_id": "861a240b-fefb-42a3-81bf-cc8f9ba7622e",
+              "type": "rule_searched",
+              "payload": "{\"query\": \"Marquise move warriors from one clearing to adjacent clearing\", \"mode\": \"clarification\", \"faction\": null, \"action\": null, \"ruleset_id\": \"root-law-2025-10\", \"result_count\": 0, \"rule_ids\": []}",
+              "created_at": "2026-09-23T12:53:35.678899+00:00",
+              "query": "Marquise move warriors from one clearing to adjacent clearing",
+              "mode": "clarification",
+              "faction": null,
+              "action": null,
+              "ruleset_id": "root-law-2025-10",
+              "result_count": 0,
+              "rule_ids": []
+            },
+            {
+              "id": 7,
+              "run_id": "861a240b-fefb-42a3-81bf-cc8f9ba7622e",
+              "type": "rule_searched",
+              "payload": "{\"query\": \"move warriors adjacent clearing\", \"mode\": \"support\", \"faction\": \"marquise\", \"action\": \"move\", \"ruleset_id\": \"root-law-2025-10\", \"result_count\": 0, \"rule_ids\": []}",
+              "created_at": "2026-09-23T12:53:37.105352+00:00",
+              "query": "move warriors adjacent clearing",
+              "mode": "support",
+              "faction": "marquise",
+              "action": "move",
+              "ruleset_id": "root-law-2025-10",
+              "result_count": 0,
+              "rule_ids": []
+            },
+            {
+              "id": 8,
+              "run_id": "861a240b-fefb-42a3-81bf-cc8f9ba7622e",
+              "type": "rule_searched",
+              "payload": "{\"query\": \"local warrior move scope legal range\", \"mode\": \"clarification\", \"faction\": null, \"action\": \"move\", \"ruleset_id\": \"root-law-2025-10\", \"result_count\": 0, \"rule_ids\": []}",
+              "created_at": "2026-09-23T12:53:37.113130+00:00",
+              "query": "local warrior move scope legal range",
+              "mode": "clarification",
+              "faction": null,
+              "action": "move",
+              "ruleset_id": "root-law-2025-10",
+              "result_count": 0,
+              "rule_ids": []
+            },
+            {
+              "id": 9,
+              "run_id": "861a240b-fefb-42a3-81bf-cc8f9ba7622e",
+              "type": "rule_searched",
+              "payload": "{\"query\": \"move restriction origin destination presence adjacency\", \"mode\": \"challenge\", \"faction\": null, \"action\": \"move\", \"ruleset_id\": \"root-law-2025-10\", \"result_count\": 0, \"rule_ids\": []}",
+              "created_at": "2026-09-23T12:53:37.120716+00:00",
+              "query": "move restriction origin destination presence adjacency",
+              "mode": "challenge",
+              "faction": null,
+              "action": "move",
+              "ruleset_id": "root-law-2025-10",
+              "result_count": 0,
+              "rule_ids": []
+            },
+            {
+              "id": 10,
+              "run_id": "861a240b-fefb-42a3-81bf-cc8f9ba7622e",
+              "type": "tool_call",
+              "payload": "{\"name\": \"inspect_case\", \"status\": \"ok\", \"detail\": \"{\\\"case_id\\\":\\\"22e293a7-96db-47b2-8ee7-62358d264c1a\\\",\\\"state_revision\\\":1,\\\"strategy\\\":\\\"dynamic_agent\\\",\\\"confirmed_state\\\":{\\\"acti...\", \"call_id\": \"call_00_wW2yFudFRNq9ARof04hY5044\", \"arguments_hash\": \"44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a\", \"duration_ms\": 29, \"result_size\": 123}",
+              "created_at": "2026-09-23T12:53:37.132716+00:00",
+              "name": "inspect_case",
+              "status": "ok",
+              "detail": "{\"case_id\":\"22e293a7-96db-47b2-8ee7-62358d264c1a\",\"state_revision\":1,\"strategy\":\"dynamic_agent\",\"confirmed_state\":{\"acti...",
+              "call_id": "call_00_wW2yFudFRNq9ARof04hY5044",
+              "arguments_hash": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+              "duration_ms": 29,
+              "result_size": 123
+            },
+            {
+              "id": 11,
+              "run_id": "861a240b-fefb-42a3-81bf-cc8f9ba7622e",
+              "type": "tool_call",
+              "payload": "{\"name\": \"search_rules\", \"status\": \"ok\", \"detail\": \"{\\\"mode\\\":\\\"support\\\",\\\"ruleset_id\\\":\\\"root-law-2025-10\\\",\\\"results\\\":[]}\", \"call_id\": \"call_00_j6Cyq16dqob0OPFo9H3a4043\", \"arguments_hash\": \"53ee093c649de3b5cbc620c913ed15ec28ba690f56978b37b0f87c402b08f9b4\", \"duration_ms\": 7, \"result_size\": 63}",
+              "created_at": "2026-09-23T12:53:37.140063+00:00",
+              "name": "search_rules",
+              "status": "ok",
+              "detail": "{\"mode\":\"support\",\"ruleset_id\":\"root-law-2025-10\",\"results\":[]}",
+              "call_id": "call_00_j6Cyq16dqob0OPFo9H3a4043",
+              "arguments_hash": "53ee093c649de3b5cbc620c913ed15ec28ba690f56978b37b0f87c402b08f9b4",
+              "duration_ms": 7,
+              "result_size": 63
+            },
+            {
+              "id": 12,
+              "run_id": "861a240b-fefb-42a3-81bf-cc8f9ba7622e",
+              "type": "tool_call",
+              "payload": "{\"name\": \"search_rules\", \"status\": \"ok\", \"detail\": \"{\\\"mode\\\":\\\"clarification\\\",\\\"ruleset_id\\\":\\\"root-law-2025-10\\\",\\\"results\\\":[]}\", \"call_id\": \"call_01_PYxPqaEI6tEBX4kL6Z803365\", \"arguments_hash\": \"0ec4971d382c3990546e6084ad89837256bfaff69917d270221c1814714c311d\", \"duration_ms\": 7, \"result_size\": 69}",
+              "created_at": "2026-09-23T12:53:37.147297+00:00",
+              "name": "search_rules",
+              "status": "ok",
+              "detail": "{\"mode\":\"clarification\",\"ruleset_id\":\"root-law-2025-10\",\"results\":[]}",
+              "call_id": "call_01_PYxPqaEI6tEBX4kL6Z803365",
+              "arguments_hash": "0ec4971d382c3990546e6084ad89837256bfaff69917d270221c1814714c311d",
+              "duration_ms": 7,
+              "result_size": 69
+            },
+            {
+              "id": 13,
+              "run_id": "861a240b-fefb-42a3-81bf-cc8f9ba7622e",
+              "type": "tool_call",
+              "payload": "{\"name\": \"search_rules\", \"status\": \"ok\", \"detail\": \"{\\\"mode\\\":\\\"support\\\",\\\"ruleset_id\\\":\\\"root-law-2025-10\\\",\\\"results\\\":[]}\", \"call_id\": \"call_00_0HpTr6wmV4IicV8DCLgK2104\", \"arguments_hash\": \"5f667c8a7c43381aa96dc921b038df14661c0b11a66d9528b31d2099e0e04bf9\", \"duration_ms\": 8, \"result_size\": 63}",
+              "created_at": "2026-09-23T12:53:37.154464+00:00",
+              "name": "search_rules",
+              "status": "ok",
+              "detail": "{\"mode\":\"support\",\"ruleset_id\":\"root-law-2025-10\",\"results\":[]}",
+              "call_id": "call_00_0HpTr6wmV4IicV8DCLgK2104",
+              "arguments_hash": "5f667c8a7c43381aa96dc921b038df14661c0b11a66d9528b31d2099e0e04bf9",
+              "duration_ms": 8,
+              "result_size": 63
+            },
+            {
+              "id": 14,
+              "run_id": "861a240b-fefb-42a3-81bf-cc8f9ba7622e",
+              "type": "tool_call",
+              "payload": "{\"name\": \"search_rules\", \"status\": \"ok\", \"detail\": \"{\\\"mode\\\":\\\"clarification\\\",\\\"ruleset_id\\\":\\\"root-law-2025-10\\\",\\\"results\\\":[]}\", \"call_id\": \"call_01_qLRaixpVsRqa7d3nuSKO7702\", \"arguments_hash\": \"f300591004cdc9ab4bab8385ba26de6a139301934d8d121dbac7bff4c7c57d95\", \"duration_ms\": 7, \"result_size\": 69}",
+              "created_at": "2026-09-23T12:53:37.163078+00:00",
+              "name": "search_rules",
+              "status": "ok",
+              "detail": "{\"mode\":\"clarification\",\"ruleset_id\":\"root-law-2025-10\",\"results\":[]}",
+              "call_id": "call_01_qLRaixpVsRqa7d3nuSKO7702",
+              "arguments_hash": "f300591004cdc9ab4bab8385ba26de6a139301934d8d121dbac7bff4c7c57d95",
+              "duration_ms": 7,
+              "result_size": 69
+            },
+            {
+              "id": 15,
+              "run_id": "861a240b-fefb-42a3-81bf-cc8f9ba7622e",
+              "type": "tool_call",
+              "payload": "{\"name\": \"search_rules\", \"status\": \"ok\", \"detail\": \"{\\\"mode\\\":\\\"challenge\\\",\\\"ruleset_id\\\":\\\"root-law-2025-10\\\",\\\"results\\\":[]}\", \"call_id\": \"call_02_3M2A8bjbu6hy2njoRGyN5159\", \"arguments_hash\": \"957ae5ecf8743d8a0ac08b7c9940c0e8e621e542893ca7bdc53cfc62f45e7fd0\", \"duration_ms\": 7, \"result_size\": 65}",
+              "created_at": "2026-09-23T12:53:37.170954+00:00",
+              "name": "search_rules",
+              "status": "ok",
+              "detail": "{\"mode\":\"challenge\",\"ruleset_id\":\"root-law-2025-10\",\"results\":[]}",
+              "call_id": "call_02_3M2A8bjbu6hy2njoRGyN5159",
+              "arguments_hash": "957ae5ecf8743d8a0ac08b7c9940c0e8e621e542893ca7bdc53cfc62f45e7fd0",
+              "duration_ms": 7,
+              "result_size": 65
+            },
+            {
+              "id": 16,
+              "run_id": "861a240b-fefb-42a3-81bf-cc8f9ba7622e",
+              "type": "verdict",
+              "payload": "{\"verdict_id\": \"01dfc844-3dc7-4e3d-8e78-3ff4425eb68f\", \"status\": \"UNRESOLVED\"}",
+              "created_at": "2026-09-23T12:53:37.183731+00:00",
+              "verdict_id": "01dfc844-3dc7-4e3d-8e78-3ff4425eb68f",
+              "status": "UNRESOLVED"
+            },
+            {
+              "id": 17,
+              "run_id": "861a240b-fefb-42a3-81bf-cc8f9ba7622e",
+              "type": "investigation_finished",
+              "payload": "{\"strategy\": \"dynamic_agent\", \"strategy_version\": \"dynamic-agent-v1\", \"model\": \"deepseek-flash\", \"provider\": \"openai\", \"stop_reason\": \"budget_exhausted\", \"failure_reason\": \"BUDGET_EXHAUSTED\", \"budget_dimension\": \"iterations\", \"usage\": {\"iterations\": 3, \"tool_calls\": 6, \"tool_failures\": 0, \"provider_calls\": 0, \"input_tokens\": 6147, \"output_tokens\": 990, \"total_tokens\": 7137, \"latency_ms\": 7208}}",
+              "created_at": "2026-09-23T12:53:37.207225+00:00",
+              "strategy": "dynamic_agent",
+              "strategy_version": "dynamic-agent-v1",
+              "model": "deepseek-flash",
+              "provider": "openai",
+              "stop_reason": "budget_exhausted",
+              "failure_reason": "BUDGET_EXHAUSTED",
+              "budget_dimension": "iterations",
+              "usage": {
+                "iterations": 3,
+                "tool_calls": 6,
+                "tool_failures": 0,
+                "provider_calls": 0,
+                "input_tokens": 6147,
+                "output_tokens": 990,
+                "total_tokens": 7137,
+                "latency_ms": 7208
+              }
+            }
+          ],
+          "tool_call_count": 6,
+          "findings": []
+        },
+        "fixed": {
+          "strategy": "fixed_workflow",
+          "observed_strategy": "fixed_workflow",
+          "observed_strategy_version": "fixed-workflow-v1",
+          "observed_route": "fixed_workflow",
+          "observed_route_source": "hand_authored",
+          "observed_template_version": "m0-fixed-template-v1",
+          "observed_llm_routing": false,
+          "observed_budget": {
+            "max_duration_seconds": 60.0,
+            "max_iterations": 3,
+            "max_tool_calls": 8,
+            "max_total_tokens": 32768,
+            "configuration_status": "development_trial",
+            "source": "t14-example"
+          },
+          "runtime_contract_available": true,
+          "usage_available": true,
+          "usage_provenance": "controller_budget_ledger",
+          "observation_available": true,
+          "valid": true,
+          "context_hash": "85d0e6b00fd2fb028341607b6f387a77885dd3c96fdefb4c4955a6e100c2c52f",
+          "context": [
+            {
+              "id": "1804d9a4-7086-46d9-8154-2ed03ee59389",
+              "text": "本局只有 Marquise 与 Eyrie 两名玩家，且没有影响本次移动或统治的卡牌、地标或特殊效果。确认本次只裁决 Marquise 普通移动范围。Marquise 从 A 移动 1 个 warriors 到 B。",
+              "created_at": "2026-09-23T12:53:37.287754+00:00"
+            },
+            {
+              "id": "39aca968-3cd0-4235-8716-437d3e0e543b",
+              "text": "A 只与 B 相邻。Marquise 在 A 有 3 个 warriors。",
+              "created_at": "2026-09-23T12:53:37.424774+00:00"
+            },
+            {
+              "id": "3c8bfa34-09f2-4fb0-9e55-c31c122ad9ce",
+              "text": "Eyrie 在 A 有 0 个 warriors。Eyrie 在 A 有 0 个 buildings。Marquise 在 A 有 0 个 buildings。",
+              "created_at": "2026-09-23T12:53:37.563211+00:00"
+            }
+          ],
+          "tool_results": [],
+          "log_projection": [
+            {
+              "id": 1,
+              "run_id": "cfbc18d6-4bcd-44c7-b0e4-2e1c98d318b7",
+              "type": "message_received",
+              "payload": "{}",
+              "created_at": "2026-09-23T12:53:37.294818+00:00"
+            },
+            {
+              "id": 2,
+              "run_id": "cfbc18d6-4bcd-44c7-b0e4-2e1c98d318b7",
+              "type": "state_accepted",
+              "payload": "{\"state_revision\": 1, \"issues\": []}",
+              "created_at": "2026-09-23T12:53:37.313874+00:00",
+              "state_revision": 1,
+              "issues": []
+            },
+            {
+              "id": 3,
+              "run_id": "cfbc18d6-4bcd-44c7-b0e4-2e1c98d318b7",
+              "type": "investigation_started",
+              "payload": "{\"strategy\": \"fixed_workflow\", \"strategy_version\": \"fixed-workflow-v1\", \"resumed\": false, \"model\": \"deepseek-flash\", \"provider\": \"openai\", \"budget\": {\"max_duration_seconds\": 60.0, \"max_iterations\": 3, \"max_tool_calls\": 8, \"max_total_tokens\": 32768, \"configuration_status\": \"development_trial\", \"source\": \"t14-example\"}, \"cumulative_usage\": {\"iterations\": 0, \"tool_calls\": 0, \"tool_failures\": 0, \"provider_calls\": 0, \"input_tokens\": 0, \"output_tokens\": 0, \"total_tokens\": 0, \"latency_ms\": 0}}",
+              "created_at": "2026-09-23T12:53:37.334584+00:00",
+              "strategy": "fixed_workflow",
+              "strategy_version": "fixed-workflow-v1",
+              "resumed": false,
+              "model": "deepseek-flash",
+              "provider": "openai",
+              "budget": {
+                "max_duration_seconds": 60.0,
+                "max_iterations": 3,
+                "max_tool_calls": 8,
+                "max_total_tokens": 32768,
+                "configuration_status": "development_trial",
+                "source": "t14-example"
+              },
+              "cumulative_usage": {
+                "iterations": 0,
+                "tool_calls": 0,
+                "tool_failures": 0,
+                "provider_calls": 0,
+                "input_tokens": 0,
+                "output_tokens": 0,
+                "total_tokens": 0,
+                "latency_ms": 0
+              }
+            },
+            {
+              "id": 4,
+              "run_id": "cfbc18d6-4bcd-44c7-b0e4-2e1c98d318b7",
+              "type": "fixed_workflow_started",
+              "payload": "{\"workflow\": \"m0-root-move\", \"workflow_version\": \"fixed-workflow-v1\", \"template_version\": \"m0-fixed-template-v1\", \"route_source\": \"hand_authored\", \"llm_routing\": false}",
+              "created_at": "2026-09-23T12:53:37.342188+00:00",
+              "workflow": "m0-root-move",
+              "workflow_version": "fixed-workflow-v1",
+              "template_version": "m0-fixed-template-v1",
+              "route_source": "hand_authored",
+              "llm_routing": false
+            },
+            {
+              "id": 5,
+              "run_id": "cfbc18d6-4bcd-44c7-b0e4-2e1c98d318b7",
+              "type": "verdict",
+              "payload": "{\"verdict_id\": \"9c875593-0e26-4468-808b-53361ceaff9d\", \"status\": \"INSUFFICIENT_INFORMATION\"}",
+              "created_at": "2026-09-23T12:53:37.350041+00:00",
+              "verdict_id": "9c875593-0e26-4468-808b-53361ceaff9d",
+              "status": "INSUFFICIENT_INFORMATION"
+            },
+            {
+              "id": 6,
+              "run_id": "cfbc18d6-4bcd-44c7-b0e4-2e1c98d318b7",
+              "type": "clarification_requested",
+              "payload": "{\"missing_fields\": [\"clearings.A.adjacent_to\", \"clearings.A.presence.marquise.warriors\"], \"questions\": [{\"field\": \"clearings.A.adjacent_to\", \"question\": \"Which clearings are adjacent to A? State whether the list is complete if you know it.\"}, {\"field\": \"clearings.A.presence.marquise.warriors\", \"question\": \"How many marquise warriors are in clearing A? State whether this is a complete list if relevant.\"}]}",
+              "created_at": "2026-09-23T12:53:37.357223+00:00",
+              "missing_fields": [
+                "clearings.A.adjacent_to",
+                "clearings.A.presence.marquise.warriors"
+              ],
+              "questions": [
+                {
+                  "field": "clearings.A.adjacent_to",
+                  "question": "Which clearings are adjacent to A? State whether the list is complete if you know it."
+                },
+                {
+                  "field": "clearings.A.presence.marquise.warriors",
+                  "question": "How many marquise warriors are in clearing A? State whether this is a complete list if relevant."
+                }
+              ]
+            },
+            {
+              "id": 7,
+              "run_id": "cfbc18d6-4bcd-44c7-b0e4-2e1c98d318b7",
+              "type": "decision_computed",
+              "payload": "{\"status\": \"unknown\", \"reason_codes\": [\"MOVE_STATE_MISSING\"], \"rule_ids\": [\"root-2.2.1\", \"root-4.2\"]}",
+              "created_at": "2026-09-23T12:53:37.364772+00:00",
+              "status": "unknown",
+              "reason_codes": [
+                "MOVE_STATE_MISSING"
+              ],
+              "rule_ids": [
+                "root-2.2.1",
+                "root-4.2"
+              ]
+            },
+            {
+              "id": 8,
+              "run_id": "cfbc18d6-4bcd-44c7-b0e4-2e1c98d318b7",
+              "type": "verification_finished",
+              "payload": "{\"status\": \"passed\", \"rule_ids\": [\"root-2.2.1\", \"root-4.2\"]}",
+              "created_at": "2026-09-23T12:53:37.372203+00:00",
+              "status": "passed",
+              "rule_ids": [
+                "root-2.2.1",
+                "root-4.2"
+              ]
+            },
+            {
+              "id": 9,
+              "run_id": "cfbc18d6-4bcd-44c7-b0e4-2e1c98d318b7",
+              "type": "investigation_finished",
+              "payload": "{\"strategy\": \"fixed_workflow\", \"strategy_version\": \"fixed-workflow-v1\", \"model\": \"deepseek-flash\", \"provider\": \"openai\", \"stop_reason\": \"completed\", \"failure_reason\": null, \"budget_dimension\": null, \"usage\": {\"iterations\": 1, \"tool_calls\": 0, \"tool_failures\": 0, \"provider_calls\": 0, \"input_tokens\": 0, \"output_tokens\": 0, \"total_tokens\": 0, \"latency_ms\": 38}}",
+              "created_at": "2026-09-23T12:53:37.396439+00:00",
+              "strategy": "fixed_workflow",
+              "strategy_version": "fixed-workflow-v1",
+              "model": "deepseek-flash",
+              "provider": "openai",
+              "stop_reason": "completed",
+              "failure_reason": null,
+              "budget_dimension": null,
+              "usage": {
+                "iterations": 1,
+                "tool_calls": 0,
+                "tool_failures": 0,
+                "provider_calls": 0,
+                "input_tokens": 0,
+                "output_tokens": 0,
+                "total_tokens": 0,
+                "latency_ms": 38
+              }
+            },
+            {
+              "id": 10,
+              "run_id": "5c3e36e9-ddeb-4c71-a405-07e0b3fe8f46",
+              "type": "message_received",
+              "payload": "{}",
+              "created_at": "2026-09-23T12:53:37.432372+00:00"
+            },
+            {
+              "id": 11,
+              "run_id": "5c3e36e9-ddeb-4c71-a405-07e0b3fe8f46",
+              "type": "clarification_resumed",
+              "payload": "{\"previous_verdict_id\": \"9c875593-0e26-4468-808b-53361ceaff9d\", \"state_revision\": 1, \"source_message_id\": \"39aca968-3cd0-4235-8716-437d3e0e543b\"}",
+              "created_at": "2026-09-23T12:53:37.439542+00:00",
+              "previous_verdict_id": "9c875593-0e26-4468-808b-53361ceaff9d",
+              "state_revision": 1,
+              "source_message_id": "39aca968-3cd0-4235-8716-437d3e0e543b"
+            },
+            {
+              "id": 12,
+              "run_id": "5c3e36e9-ddeb-4c71-a405-07e0b3fe8f46",
+              "type": "state_accepted",
+              "payload": "{\"state_revision\": 2, \"issues\": []}",
+              "created_at": "2026-09-23T12:53:37.459138+00:00",
+              "state_revision": 2,
+              "issues": []
+            },
+            {
+              "id": 13,
+              "run_id": "5c3e36e9-ddeb-4c71-a405-07e0b3fe8f46",
+              "type": "investigation_started",
+              "payload": "{\"strategy\": \"fixed_workflow\", \"strategy_version\": \"fixed-workflow-v1\", \"resumed\": true, \"model\": \"deepseek-flash\", \"provider\": \"openai\", \"budget\": {\"max_duration_seconds\": 60.0, \"max_iterations\": 3, \"max_tool_calls\": 8, \"max_total_tokens\": 32768, \"configuration_status\": \"development_trial\", \"source\": \"t14-example\"}, \"cumulative_usage\": {\"iterations\": 1, \"tool_calls\": 0, \"tool_failures\": 0, \"provider_calls\": 0, \"input_tokens\": 0, \"output_tokens\": 0, \"total_tokens\": 0, \"latency_ms\": 38}}",
+              "created_at": "2026-09-23T12:53:37.473396+00:00",
+              "strategy": "fixed_workflow",
+              "strategy_version": "fixed-workflow-v1",
+              "resumed": true,
+              "model": "deepseek-flash",
+              "provider": "openai",
+              "budget": {
+                "max_duration_seconds": 60.0,
+                "max_iterations": 3,
+                "max_tool_calls": 8,
+                "max_total_tokens": 32768,
+                "configuration_status": "development_trial",
+                "source": "t14-example"
+              },
+              "cumulative_usage": {
+                "iterations": 1,
+                "tool_calls": 0,
+                "tool_failures": 0,
+                "provider_calls": 0,
+                "input_tokens": 0,
+                "output_tokens": 0,
+                "total_tokens": 0,
+                "latency_ms": 38
+              }
+            },
+            {
+              "id": 14,
+              "run_id": "5c3e36e9-ddeb-4c71-a405-07e0b3fe8f46",
+              "type": "fixed_workflow_started",
+              "payload": "{\"workflow\": \"m0-root-move\", \"workflow_version\": \"fixed-workflow-v1\", \"template_version\": \"m0-fixed-template-v1\", \"route_source\": \"hand_authored\", \"llm_routing\": false}",
+              "created_at": "2026-09-23T12:53:37.481862+00:00",
+              "workflow": "m0-root-move",
+              "workflow_version": "fixed-workflow-v1",
+              "template_version": "m0-fixed-template-v1",
+              "route_source": "hand_authored",
+              "llm_routing": false
+            },
+            {
+              "id": 15,
+              "run_id": "5c3e36e9-ddeb-4c71-a405-07e0b3fe8f46",
+              "type": "verdict",
+              "payload": "{\"verdict_id\": \"7a587391-d300-4bcb-91ea-bcbc6a92d6ff\", \"status\": \"INSUFFICIENT_INFORMATION\"}",
+              "created_at": "2026-09-23T12:53:37.489749+00:00",
+              "verdict_id": "7a587391-d300-4bcb-91ea-bcbc6a92d6ff",
+              "status": "INSUFFICIENT_INFORMATION"
+            },
+            {
+              "id": 16,
+              "run_id": "5c3e36e9-ddeb-4c71-a405-07e0b3fe8f46",
+              "type": "clarification_requested",
+              "payload": "{\"missing_fields\": [\"clearings.A.presence.eyrie.warriors\", \"clearings.A.presence.eyrie.buildings\", \"clearings.A.presence.marquise.buildings\", \"clearings.B.presence\"], \"questions\": [{\"field\": \"clearings.A.presence.eyrie.warriors\", \"question\": \"How many eyrie warriors are in clearing A? State whether this is a complete list if relevant.\"}, {\"field\": \"clearings.A.presence.eyrie.buildings\", \"question\": \"How many eyrie buildings are in clearing A? State whether this is a complete list if relevant.\"}, {\"field\": \"clearings.A.presence.marquise.buildings\", \"question\": \"How many marquise buildings are in clearing A? State whether this is a complete list if relevant.\"}, {\"field\": \"clearings.B.presence\", \"question\": \"Please provide the confirmed value for clearings.B.presence.\"}]}",
+              "created_at": "2026-09-23T12:53:37.497818+00:00",
+              "missing_fields": [
+                "clearings.A.presence.eyrie.warriors",
+                "clearings.A.presence.eyrie.buildings",
+                "clearings.A.presence.marquise.buildings",
+                "clearings.B.presence"
+              ],
+              "questions": [
+                {
+                  "field": "clearings.A.presence.eyrie.warriors",
+                  "question": "How many eyrie warriors are in clearing A? State whether this is a complete list if relevant."
+                },
+                {
+                  "field": "clearings.A.presence.eyrie.buildings",
+                  "question": "How many eyrie buildings are in clearing A? State whether this is a complete list if relevant."
+                },
+                {
+                  "field": "clearings.A.presence.marquise.buildings",
+                  "question": "How many marquise buildings are in clearing A? State whether this is a complete list if relevant."
+                },
+                {
+                  "field": "clearings.B.presence",
+                  "question": "Please provide the confirmed value for clearings.B.presence."
+                }
+              ]
+            },
+            {
+              "id": 17,
+              "run_id": "5c3e36e9-ddeb-4c71-a405-07e0b3fe8f46",
+              "type": "decision_computed",
+              "payload": "{\"status\": \"unknown\", \"reason_codes\": [\"MOVE_RULE_STATE_MISSING\"], \"rule_ids\": [\"root-2.2.1\", \"root-4.2\", \"root-4.2.1\", \"root-2.5\"]}",
+              "created_at": "2026-09-23T12:53:37.505229+00:00",
+              "status": "unknown",
+              "reason_codes": [
+                "MOVE_RULE_STATE_MISSING"
+              ],
+              "rule_ids": [
+                "root-2.2.1",
+                "root-4.2",
+                "root-4.2.1",
+                "root-2.5"
+              ]
+            },
+            {
+              "id": 18,
+              "run_id": "5c3e36e9-ddeb-4c71-a405-07e0b3fe8f46",
+              "type": "verification_finished",
+              "payload": "{\"status\": \"passed\", \"rule_ids\": [\"root-2.2.1\", \"root-2.5\", \"root-4.2\", \"root-4.2.1\"]}",
+              "created_at": "2026-09-23T12:53:37.512475+00:00",
+              "status": "passed",
+              "rule_ids": [
+                "root-2.2.1",
+                "root-2.5",
+                "root-4.2",
+                "root-4.2.1"
+              ]
+            },
+            {
+              "id": 19,
+              "run_id": "5c3e36e9-ddeb-4c71-a405-07e0b3fe8f46",
+              "type": "investigation_finished",
+              "payload": "{\"strategy\": \"fixed_workflow\", \"strategy_version\": \"fixed-workflow-v1\", \"model\": \"deepseek-flash\", \"provider\": \"openai\", \"stop_reason\": \"completed\", \"failure_reason\": null, \"budget_dimension\": null, \"usage\": {\"iterations\": 1, \"tool_calls\": 0, \"tool_failures\": 0, \"provider_calls\": 0, \"input_tokens\": 0, \"output_tokens\": 0, \"total_tokens\": 0, \"latency_ms\": 39}}",
+              "created_at": "2026-09-23T12:53:37.534637+00:00",
+              "strategy": "fixed_workflow",
+              "strategy_version": "fixed-workflow-v1",
+              "model": "deepseek-flash",
+              "provider": "openai",
+              "stop_reason": "completed",
+              "failure_reason": null,
+              "budget_dimension": null,
+              "usage": {
+                "iterations": 1,
+                "tool_calls": 0,
+                "tool_failures": 0,
+                "provider_calls": 0,
+                "input_tokens": 0,
+                "output_tokens": 0,
+                "total_tokens": 0,
+                "latency_ms": 39
+              }
+            },
+            {
+              "id": 20,
+              "run_id": "3ca11b79-cb9a-4ab9-b024-9abb5c652e5e",
+              "type": "message_received",
+              "payload": "{}",
+              "created_at": "2026-09-23T12:53:37.570318+00:00"
+            },
+            {
+              "id": 21,
+              "run_id": "3ca11b79-cb9a-4ab9-b024-9abb5c652e5e",
+              "type": "clarification_resumed",
+              "payload": "{\"previous_verdict_id\": \"7a587391-d300-4bcb-91ea-bcbc6a92d6ff\", \"state_revision\": 2, \"source_message_id\": \"3c8bfa34-09f2-4fb0-9e55-c31c122ad9ce\"}",
+              "created_at": "2026-09-23T12:53:37.577215+00:00",
+              "previous_verdict_id": "7a587391-d300-4bcb-91ea-bcbc6a92d6ff",
+              "state_revision": 2,
+              "source_message_id": "3c8bfa34-09f2-4fb0-9e55-c31c122ad9ce"
+            },
+            {
+              "id": 22,
+              "run_id": "3ca11b79-cb9a-4ab9-b024-9abb5c652e5e",
+              "type": "state_accepted",
+              "payload": "{\"state_revision\": 3, \"issues\": []}",
+              "created_at": "2026-09-23T12:53:37.597602+00:00",
+              "state_revision": 3,
+              "issues": []
+            },
+            {
+              "id": 23,
+              "run_id": "3ca11b79-cb9a-4ab9-b024-9abb5c652e5e",
+              "type": "investigation_started",
+              "payload": "{\"strategy\": \"fixed_workflow\", \"strategy_version\": \"fixed-workflow-v1\", \"resumed\": true, \"model\": \"deepseek-flash\", \"provider\": \"openai\", \"budget\": {\"max_duration_seconds\": 60.0, \"max_iterations\": 3, \"max_tool_calls\": 8, \"max_total_tokens\": 32768, \"configuration_status\": \"development_trial\", \"source\": \"t14-example\"}, \"cumulative_usage\": {\"iterations\": 2, \"tool_calls\": 0, \"tool_failures\": 0, \"provider_calls\": 0, \"input_tokens\": 0, \"output_tokens\": 0, \"total_tokens\": 0, \"latency_ms\": 77}}",
+              "created_at": "2026-09-23T12:53:37.613259+00:00",
+              "strategy": "fixed_workflow",
+              "strategy_version": "fixed-workflow-v1",
+              "resumed": true,
+              "model": "deepseek-flash",
+              "provider": "openai",
+              "budget": {
+                "max_duration_seconds": 60.0,
+                "max_iterations": 3,
+                "max_tool_calls": 8,
+                "max_total_tokens": 32768,
+                "configuration_status": "development_trial",
+                "source": "t14-example"
+              },
+              "cumulative_usage": {
+                "iterations": 2,
+                "tool_calls": 0,
+                "tool_failures": 0,
+                "provider_calls": 0,
+                "input_tokens": 0,
+                "output_tokens": 0,
+                "total_tokens": 0,
+                "latency_ms": 77
+              }
+            },
+            {
+              "id": 24,
+              "run_id": "3ca11b79-cb9a-4ab9-b024-9abb5c652e5e",
+              "type": "fixed_workflow_started",
+              "payload": "{\"workflow\": \"m0-root-move\", \"workflow_version\": \"fixed-workflow-v1\", \"template_version\": \"m0-fixed-template-v1\", \"route_source\": \"hand_authored\", \"llm_routing\": false}",
+              "created_at": "2026-09-23T12:53:37.621528+00:00",
+              "workflow": "m0-root-move",
+              "workflow_version": "fixed-workflow-v1",
+              "template_version": "m0-fixed-template-v1",
+              "route_source": "hand_authored",
+              "llm_routing": false
+            },
+            {
+              "id": 25,
+              "run_id": "3ca11b79-cb9a-4ab9-b024-9abb5c652e5e",
+              "type": "verdict",
+              "payload": "{\"verdict_id\": \"5014ba98-b91f-4df6-8e10-10ca65bb2f88\", \"status\": \"LEGAL\"}",
+              "created_at": "2026-09-23T12:53:37.629834+00:00",
+              "verdict_id": "5014ba98-b91f-4df6-8e10-10ca65bb2f88",
+              "status": "LEGAL"
+            },
+            {
+              "id": 26,
+              "run_id": "3ca11b79-cb9a-4ab9-b024-9abb5c652e5e",
+              "type": "clarification_resumed",
+              "payload": "{\"resolved_fields\": []}",
+              "created_at": "2026-09-23T12:53:37.640012+00:00",
+              "resolved_fields": []
+            },
+            {
+              "id": 27,
+              "run_id": "3ca11b79-cb9a-4ab9-b024-9abb5c652e5e",
+              "type": "decision_computed",
+              "payload": "{\"status\": \"allow\", \"reason_codes\": [\"MOVE_RULES_ORIGIN\"], \"rule_ids\": [\"root-2.2.1\", \"root-4.2\", \"root-4.2.1\", \"root-2.5\"]}",
+              "created_at": "2026-09-23T12:53:37.647385+00:00",
+              "status": "allow",
+              "reason_codes": [
+                "MOVE_RULES_ORIGIN"
+              ],
+              "rule_ids": [
+                "root-2.2.1",
+                "root-4.2",
+                "root-4.2.1",
+                "root-2.5"
+              ]
+            },
+            {
+              "id": 28,
+              "run_id": "3ca11b79-cb9a-4ab9-b024-9abb5c652e5e",
+              "type": "verification_finished",
+              "payload": "{\"status\": \"passed\", \"rule_ids\": [\"root-2.2.1\", \"root-2.5\", \"root-4.2\", \"root-4.2.1\"]}",
+              "created_at": "2026-09-23T12:53:37.654169+00:00",
+              "status": "passed",
+              "rule_ids": [
+                "root-2.2.1",
+                "root-2.5",
+                "root-4.2",
+                "root-4.2.1"
+              ]
+            },
+            {
+              "id": 29,
+              "run_id": "3ca11b79-cb9a-4ab9-b024-9abb5c652e5e",
+              "type": "investigation_finished",
+              "payload": "{\"strategy\": \"fixed_workflow\", \"strategy_version\": \"fixed-workflow-v1\", \"model\": \"deepseek-flash\", \"provider\": \"openai\", \"stop_reason\": \"completed\", \"failure_reason\": null, \"budget_dimension\": null, \"usage\": {\"iterations\": 1, \"tool_calls\": 0, \"tool_failures\": 0, \"provider_calls\": 0, \"input_tokens\": 0, \"output_tokens\": 0, \"total_tokens\": 0, \"latency_ms\": 40}}",
+              "created_at": "2026-09-23T12:53:37.675989+00:00",
+              "strategy": "fixed_workflow",
+              "strategy_version": "fixed-workflow-v1",
+              "model": "deepseek-flash",
+              "provider": "openai",
+              "stop_reason": "completed",
+              "failure_reason": null,
+              "budget_dimension": null,
+              "usage": {
+                "iterations": 1,
+                "tool_calls": 0,
+                "tool_failures": 0,
+                "provider_calls": 0,
+                "input_tokens": 0,
+                "output_tokens": 0,
+                "total_tokens": 0,
+                "latency_ms": 40
+              }
+            }
+          ],
+          "tool_call_count": 0,
+          "findings": []
+        },
+        "findings": []
+      },
+      "valid_for_comparison": true,
+      "difference_class": "budget",
+      "difference_reason": "strategies ended with different budget outcomes"
+    }
+  ],
+  "paired_case_ids": [
+    "ordinary-legal-01"
+  ],
+  "excluded_case_ids": {
+    "draft": [
+      "ordinary-legal-01"
+    ]
+  },
+  "excluded_counts": {
+    "draft": 1
+  },
+  "initial": {
+    "dynamic": {
+      "sample_count": 0,
+      "decision_domain_count": 0,
+      "refusal_domain_count": 0,
+      "correct_ruling_rate": {
+        "numerator": 0,
+        "denominator": 0,
+        "value": null
+      },
+      "coverage_rate": {
+        "numerator": 0,
+        "denominator": 0,
+        "value": null
+      },
+      "adjudicated_accuracy": {
+        "numerator": 0,
+        "denominator": 0,
+        "value": null
+      },
+      "wrong_allow_rate": {
+        "numerator": 0,
+        "denominator": 0,
+        "value": null
+      },
+      "correct_refusal_rate": {
+        "numerator": 0,
+        "denominator": 0,
+        "value": null
+      },
+      "four_state_label_match": {
+        "numerator": 0,
+        "denominator": 0,
+        "value": null
+      },
+      "by_category": {}
+    },
+    "fixed": {
+      "sample_count": 0,
+      "decision_domain_count": 0,
+      "refusal_domain_count": 0,
+      "correct_ruling_rate": {
+        "numerator": 0,
+        "denominator": 0,
+        "value": null
+      },
+      "coverage_rate": {
+        "numerator": 0,
+        "denominator": 0,
+        "value": null
+      },
+      "adjudicated_accuracy": {
+        "numerator": 0,
+        "denominator": 0,
+        "value": null
+      },
+      "wrong_allow_rate": {
+        "numerator": 0,
+        "denominator": 0,
+        "value": null
+      },
+      "correct_refusal_rate": {
+        "numerator": 0,
+        "denominator": 0,
+        "value": null
+      },
+      "four_state_label_match": {
+        "numerator": 0,
+        "denominator": 0,
+        "value": null
+      },
+      "by_category": {}
+    },
+    "metrics": {
+      "correct_ruling_rate": {
+        "dynamic": {
+          "numerator": 0,
+          "denominator": 0,
+          "value": null
+        },
+        "fixed": {
+          "numerator": 0,
+          "denominator": 0,
+          "value": null
+        },
+        "numerator_delta": 0,
+        "denominator_delta": 0,
+        "value_delta": null
+      },
+      "coverage_rate": {
+        "dynamic": {
+          "numerator": 0,
+          "denominator": 0,
+          "value": null
+        },
+        "fixed": {
+          "numerator": 0,
+          "denominator": 0,
+          "value": null
+        },
+        "numerator_delta": 0,
+        "denominator_delta": 0,
+        "value_delta": null
+      },
+      "adjudicated_accuracy": {
+        "dynamic": {
+          "numerator": 0,
+          "denominator": 0,
+          "value": null
+        },
+        "fixed": {
+          "numerator": 0,
+          "denominator": 0,
+          "value": null
+        },
+        "numerator_delta": 0,
+        "denominator_delta": 0,
+        "value_delta": null
+      },
+      "wrong_allow_rate": {
+        "dynamic": {
+          "numerator": 0,
+          "denominator": 0,
+          "value": null
+        },
+        "fixed": {
+          "numerator": 0,
+          "denominator": 0,
+          "value": null
+        },
+        "numerator_delta": 0,
+        "denominator_delta": 0,
+        "value_delta": null
+      },
+      "correct_refusal_rate": {
+        "dynamic": {
+          "numerator": 0,
+          "denominator": 0,
+          "value": null
+        },
+        "fixed": {
+          "numerator": 0,
+          "denominator": 0,
+          "value": null
+        },
+        "numerator_delta": 0,
+        "denominator_delta": 0,
+        "value_delta": null
+      },
+      "four_state_label_match": {
+        "dynamic": {
+          "numerator": 0,
+          "denominator": 0,
+          "value": null
+        },
+        "fixed": {
+          "numerator": 0,
+          "denominator": 0,
+          "value": null
+        },
+        "numerator_delta": 0,
+        "denominator_delta": 0,
+        "value_delta": null
+      }
+    }
+  },
+  "complete": {
+    "dynamic": {
+      "sample_count": 0,
+      "decision_domain_count": 0,
+      "refusal_domain_count": 0,
+      "correct_ruling_rate": {
+        "numerator": 0,
+        "denominator": 0,
+        "value": null
+      },
+      "coverage_rate": {
+        "numerator": 0,
+        "denominator": 0,
+        "value": null
+      },
+      "adjudicated_accuracy": {
+        "numerator": 0,
+        "denominator": 0,
+        "value": null
+      },
+      "wrong_allow_rate": {
+        "numerator": 0,
+        "denominator": 0,
+        "value": null
+      },
+      "correct_refusal_rate": {
+        "numerator": 0,
+        "denominator": 0,
+        "value": null
+      },
+      "four_state_label_match": {
+        "numerator": 0,
+        "denominator": 0,
+        "value": null
+      },
+      "by_category": {}
+    },
+    "fixed": {
+      "sample_count": 0,
+      "decision_domain_count": 0,
+      "refusal_domain_count": 0,
+      "correct_ruling_rate": {
+        "numerator": 0,
+        "denominator": 0,
+        "value": null
+      },
+      "coverage_rate": {
+        "numerator": 0,
+        "denominator": 0,
+        "value": null
+      },
+      "adjudicated_accuracy": {
+        "numerator": 0,
+        "denominator": 0,
+        "value": null
+      },
+      "wrong_allow_rate": {
+        "numerator": 0,
+        "denominator": 0,
+        "value": null
+      },
+      "correct_refusal_rate": {
+        "numerator": 0,
+        "denominator": 0,
+        "value": null
+      },
+      "four_state_label_match": {
+        "numerator": 0,
+        "denominator": 0,
+        "value": null
+      },
+      "by_category": {}
+    },
+    "metrics": {
+      "correct_ruling_rate": {
+        "dynamic": {
+          "numerator": 0,
+          "denominator": 0,
+          "value": null
+        },
+        "fixed": {
+          "numerator": 0,
+          "denominator": 0,
+          "value": null
+        },
+        "numerator_delta": 0,
+        "denominator_delta": 0,
+        "value_delta": null
+      },
+      "coverage_rate": {
+        "dynamic": {
+          "numerator": 0,
+          "denominator": 0,
+          "value": null
+        },
+        "fixed": {
+          "numerator": 0,
+          "denominator": 0,
+          "value": null
+        },
+        "numerator_delta": 0,
+        "denominator_delta": 0,
+        "value_delta": null
+      },
+      "adjudicated_accuracy": {
+        "dynamic": {
+          "numerator": 0,
+          "denominator": 0,
+          "value": null
+        },
+        "fixed": {
+          "numerator": 0,
+          "denominator": 0,
+          "value": null
+        },
+        "numerator_delta": 0,
+        "denominator_delta": 0,
+        "value_delta": null
+      },
+      "wrong_allow_rate": {
+        "dynamic": {
+          "numerator": 0,
+          "denominator": 0,
+          "value": null
+        },
+        "fixed": {
+          "numerator": 0,
+          "denominator": 0,
+          "value": null
+        },
+        "numerator_delta": 0,
+        "denominator_delta": 0,
+        "value_delta": null
+      },
+      "correct_refusal_rate": {
+        "dynamic": {
+          "numerator": 0,
+          "denominator": 0,
+          "value": null
+        },
+        "fixed": {
+          "numerator": 0,
+          "denominator": 0,
+          "value": null
+        },
+        "numerator_delta": 0,
+        "denominator_delta": 0,
+        "value_delta": null
+      },
+      "four_state_label_match": {
+        "dynamic": {
+          "numerator": 0,
+          "denominator": 0,
+          "value": null
+        },
+        "fixed": {
+          "numerator": 0,
+          "denominator": 0,
+          "value": null
+        },
+        "numerator_delta": 0,
+        "denominator_delta": 0,
+        "value_delta": null
+      }
+    }
+  },
+  "resource_deltas": [
+    {
+      "case_id": "ordinary-legal-01",
+      "valid_for_comparison": true,
+      "delta": {
+        "iterations": 0,
+        "tool_calls": 6,
+        "tool_failures": 0,
+        "provider_calls": 0,
+        "input_tokens": 6147,
+        "output_tokens": 990,
+        "total_tokens": 7137,
+        "latency_ms": 7091,
+        "cost_usd": null
+      }
+    }
+  ],
+  "difference_counts": {
+    "budget": 1
+  },
+  "determinism": [],
+  "attribution_note": "Only Dynamic Agent versus Fixed Workflow is an Agent-increment comparison; external baseline differences must not be attributed to planning."
+}

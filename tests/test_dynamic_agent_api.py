@@ -7,13 +7,15 @@ from test_eyrie_decree_api import install_verified_package
 from rulecourt.api import create_app
 
 RULE_IDS = [
-    "root-2.1",
-    "root-2.2",
+    "root-2.1.1",
+    "root-2.2.1",
+    "root-2.2.2",
     "root-2.5",
     "root-4.2",
     "root-4.2.1",
     "root-7.2.2",
     "root-7.5.2",
+    "root-7.5.2.II",
 ]
 
 

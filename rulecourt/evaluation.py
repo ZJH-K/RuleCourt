@@ -988,6 +988,78 @@ class ReplayResult(BaseModel):
         )
 
 
+def validate_ai_trial_attestation(
+    dataset: CaseDataset,
+    rule_package: Mapping[str, Any],
+    attestation: Mapping[str, Any],
+) -> list[EvaluationCase]:
+    """Bind a clearly labelled AI trial review to exact candidate inputs.
+
+    This does not satisfy the independent-human gate used for formal scoring.
+    """
+
+    if (
+        attestation.get("artifact_type") != "rulecourt_ai_review_attestation"
+        or attestation.get("status") != "ai_reviewed_for_development_only"
+        or attestation.get("reviewer_kind") != "ai"
+        or attestation.get("human_verified") is not False
+        or attestation.get("formal_scoring_approved") is not False
+    ):
+        raise ValueError("AI trial attestation must identify itself as non-human and non-formal")
+    if not str(attestation.get("signed_by", "")).strip():
+        raise ValueError("AI trial attestation requires a named AI reviewer")
+
+    payload = dict(attestation)
+    expected_digest = payload.pop("attestation_payload_sha256", None)
+    canonical = json.dumps(payload, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+    if hashlib.sha256(canonical.encode("utf-8")).hexdigest() != expected_digest:
+        raise ValueError("AI trial attestation payload digest does not match")
+
+    subject = attestation.get("subject")
+    if not isinstance(subject, Mapping):
+        raise TypeError("AI trial attestation subject must be an object")
+    if (
+        subject.get("dataset_version") != dataset.dataset_version
+        or subject.get("dataset_approval_digest") != dataset.approval_digest()
+        or subject.get("case_count") != len(dataset.cases)
+    ):
+        raise ValueError("AI trial attestation does not match the dataset")
+    package_canonical = json.dumps(
+        dict(rule_package), ensure_ascii=False, sort_keys=True, separators=(",", ":")
+    )
+    package_digest = hashlib.sha256(package_canonical.encode("utf-8")).hexdigest()
+    source_content = rule_package.get("source_content")
+    source_digest = (
+        hashlib.sha256(source_content.encode("utf-8")).hexdigest()
+        if isinstance(source_content, str)
+        else None
+    )
+    if (
+        subject.get("rule_package_revision") != rule_package.get("revision")
+        or subject.get("rule_package_canonical_sha256") != package_digest
+        or subject.get("rule_package_source_content_sha256") != source_digest
+        or source_digest != rule_package.get("checksum")
+    ):
+        raise ValueError("AI trial attestation does not match the rule package")
+
+    reviewed = attestation.get("case_reviews")
+    if not isinstance(reviewed, list) or len(reviewed) != len(dataset.cases):
+        raise ValueError("AI trial attestation must review every Case exactly once")
+    rows = {row.get("case_id"): row for row in reviewed if isinstance(row, dict)}
+    if len(rows) != len(reviewed) or set(rows) != {case.id for case in dataset.cases}:
+        raise ValueError("AI trial attestation Case IDs do not match")
+    for case in dataset.cases:
+        row = rows[case.id]
+        if (
+            case.review.status == "disputed"
+            or row.get("initial_label") != case.initial_label
+            or row.get("complete_label") != case.complete_label
+            or row.get("ai_assessment") != "consistent_with_stated_local_scope"
+        ):
+            raise ValueError(f"AI trial attestation does not approve Case {case.id}")
+    return list(dataset.cases)
+
+
 class CaseAdapter(Protocol):
     """The small seam a replay runner needs from a system under evaluation."""
 
@@ -1283,6 +1355,7 @@ class EvaluationReport(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     dataset_version: str
+    review_basis: Literal["human_gate", "ai_trial"] = "human_gate"
     scored_case_count: int = Field(ge=0)
     excluded_counts: dict[str, int]
     excluded_case_ids: dict[str, list[str]] = Field(default_factory=dict)
@@ -1309,6 +1382,7 @@ class EvaluationReport(BaseModel):
             f"# RuleCourt evaluation report ({self.dataset_version})",
             "",
             f"Scored cases: {self.scored_case_count}",
+            f"Review basis: {self.review_basis}",
             f"Excluded draft cases: {self.excluded_counts.get('draft', 0)}",
             f"Excluded disputed cases: {self.excluded_counts.get('disputed', 0)}",
         ]
@@ -1562,6 +1636,38 @@ def score_results(
     )
 
 
+def score_results_ai_trial(
+    dataset: CaseDataset,
+    results: list[ReplayResult],
+    *,
+    rule_package: Mapping[str, Any],
+    attestation: Mapping[str, Any],
+) -> EvaluationReport:
+    """Score development Cases under a bound AI review, never as formal truth."""
+
+    cases = validate_ai_trial_attestation(dataset, rule_package, attestation)
+    outcomes = {result.case_id: result for result in results}
+    return EvaluationReport(
+        dataset_version=dataset.dataset_version,
+        review_basis="ai_trial",
+        scored_case_count=len(cases),
+        excluded_counts={"draft": 0, "disputed": 0},
+        outcomes=list(results),
+        initial=_score_view(
+            cases,
+            outcomes,
+            label_attribute="initial_label",
+            result_attribute="initial_result",
+        ),
+        complete=_score_view(
+            cases,
+            outcomes,
+            label_attribute="complete_label",
+            result_attribute="complete_result",
+        ),
+    )
+
+
 def main(argv: list[str] | None = None) -> int:
     """View or validate an exported evaluation artifact from the command line."""
 
@@ -1572,6 +1678,8 @@ def main(argv: list[str] | None = None) -> int:
     validate.add_argument("dataset", type=Path)
     validate.add_argument("--formal", action="store_true")
     validate.add_argument("--signoff", type=Path)
+    validate.add_argument("--ai-attestation", type=Path)
+    validate.add_argument("--rules", type=Path)
 
     report = subparsers.add_parser("report", help="view an exported evaluation report")
     report.add_argument("report", type=Path)
@@ -1592,6 +1700,16 @@ def main(argv: list[str] | None = None) -> int:
         dataset = CaseDataset.from_json(args.dataset)
         signoff = HumanSignoff.from_json(args.signoff) if args.signoff else None
         signing_key = os.getenv(SIGNOFF_KEY_ENV)
+        if args.ai_attestation:
+            if args.formal or args.signoff:
+                raise ValueError("AI trial attestation cannot be used as a human formal signoff")
+            if args.rules is None:
+                raise ValueError("AI trial validation requires --rules")
+            attestation = json.loads(args.ai_attestation.read_text(encoding="utf-8"))
+            rule_package = json.loads(args.rules.read_text(encoding="utf-8"))
+            ai_trial_cases = validate_ai_trial_attestation(dataset, rule_package, attestation)
+        else:
+            ai_trial_cases = []
         if args.formal:
             dataset.validate_for_scoring(
                 require_split=True,
@@ -1603,6 +1721,7 @@ def main(argv: list[str] | None = None) -> int:
             "dataset_version": dataset.dataset_version,
             "case_count": len(dataset.cases),
             "verified_count": len(dataset.verified_cases),
+            "ai_trial_count": len(ai_trial_cases),
             "excluded_counts": dataset.excluded_counts,
             "split_manifest": (
                 dataset.split_manifest.model_dump(mode="json")
