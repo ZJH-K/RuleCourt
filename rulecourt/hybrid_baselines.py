@@ -23,6 +23,7 @@ import httpx
 from pydantic import ConfigDict, Field, field_validator, model_validator
 
 from . import baselines as _legacy
+from .dashscope import dashscope_origin
 from .embeddings import EmbeddingProvider, HTTPEmbeddingProvider
 
 _TOKEN_RE = re.compile(r"\w+", re.UNICODE)
@@ -109,6 +110,40 @@ class HTTPRerankerProvider:
             ),
             total_tokens=_optional_nonnegative_int(usage.get("total_tokens")),
             cost_usd=_optional_nonnegative_float(usage.get("cost_usd", usage.get("cost"))),
+        )
+
+
+class DashScopeRerankerProvider:
+    """Call the native qwen3.7 text rerank API with its own API key."""
+
+    provider_name = "dashscope"
+
+    def __init__(self, *, model: str, api_host: str):
+        self.model = model
+        self.endpoint = (
+            dashscope_origin(api_host) + "/api/v1/services/rerank/text-rerank/text-rerank"
+        )
+
+    async def rerank(self, query: str, documents: list[str]) -> RerankBatch:
+        async with httpx.AsyncClient() as client:
+            response = await client.post(
+                self.endpoint,
+                headers={"Authorization": f"Bearer {os.environ['DASHSCOPE_API_KEY']}"},
+                json={
+                    "model": self.model,
+                    "input": {"query": query, "documents": documents},
+                    "parameters": {"top_n": len(documents)},
+                },
+            )
+            response.raise_for_status()
+            payload = response.json()
+        output = payload.get("output", {})
+        scores = _aligned_rerank_scores(output, len(documents))
+        usage = payload.get("usage", {})
+        return RerankBatch(
+            scores=scores,
+            input_tokens=_optional_nonnegative_int(usage.get("prompt_tokens")),
+            total_tokens=_optional_nonnegative_int(usage.get("total_tokens")),
         )
 
 
@@ -1166,6 +1201,21 @@ def main(argv: list[str] | None = None) -> int:
     ):
         if getattr(args, name) is not None:
             values[name] = getattr(args, name)
+    for name, env_name in (
+        ("model", "RULECOURT_MODEL"),
+        ("embedding_model", "DASHSCOPE_EMBEDDING_MODEL"),
+        ("reranker_model", "DASHSCOPE_RERANK_MODEL"),
+    ):
+        current = values.get(name)
+        if (not current or str(current).startswith("replace-with-")) and os.getenv(env_name):
+            values[name] = os.environ[env_name]
+    api_host = os.getenv("DASHSCOPE_API_HOST")
+    if api_host and str(values.get("embedding_model", "")).startswith("qwen3.7-text-embedding"):
+        values["embedding_base_url"] = dashscope_origin(api_host) + "/compatible-mode/v1"
+    if api_host and values.get("reranker_model") == "qwen3.7-text-rerank":
+        values["reranker_base_url"] = (
+            dashscope_origin(api_host) + "/api/v1/services/rerank/text-rerank/text-rerank"
+        )
     values.setdefault("ruleset_id", corpus.ruleset_id)
     values.setdefault("ruleset_version", corpus.version)
     config = HybridBaselineConfig.model_validate(values)
@@ -1210,9 +1260,11 @@ def main(argv: list[str] | None = None) -> int:
         }
         output = json.dumps(payload, ensure_ascii=False, indent=2) + "\n"
     else:
+        qwen_embedding = config.embedding_model.startswith("qwen3.7-text-embedding")
         embedder = HTTPEmbeddingProvider(
             model=config.embedding_model,
             base_url=config.embedding_base_url,
+            api_key_env="DASHSCOPE_API_KEY" if qwen_embedding else "OPENAI_API_KEY",
         )
         llm_provider = _legacy._cli_provider(config.model)
         runners: dict[str, Any] = {
@@ -1231,9 +1283,16 @@ def main(argv: list[str] | None = None) -> int:
                 corpus=corpus,
                 config=config,
                 embedder=embedder,
-                reranker=HTTPRerankerProvider(
-                    model=config.reranker_model,
-                    base_url=config.reranker_base_url,
+                reranker=(
+                    DashScopeRerankerProvider(
+                        model=config.reranker_model,
+                        api_host=config.reranker_base_url,
+                    )
+                    if config.reranker_model == "qwen3.7-text-rerank"
+                    else HTTPRerankerProvider(
+                        model=config.reranker_model,
+                        base_url=config.reranker_base_url,
+                    )
                 ),
             )
         report = run_baselines(
