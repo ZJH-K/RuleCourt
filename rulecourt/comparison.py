@@ -176,6 +176,7 @@ class TreatmentConfig(BaseModel):
     fixed_route_source: str = "hand_authored"
     fixed_workflow_llm_routing: bool = False
     planning_cost_included: bool = True
+    cache_condition: str = "no-cache"
     run_kind: Literal["development_trial", "formal"] = "development_trial"
     budget: dict[str, Any] = Field(default_factory=lambda: InvestigationBudget().to_dict())
     max_clarification_rounds: int = Field(default=8, gt=0)
@@ -227,6 +228,8 @@ class TreatmentConfig(BaseModel):
             raise ValueError("fixed workflow must not use LLM routing")
         if not self.planning_cost_included:
             raise ValueError("dynamic planning cost must be included")
+        if not self.cache_condition.strip():
+            raise ValueError("cache_condition must not be empty")
         budget = InvestigationBudget.from_mapping(self.budget)
         if self.run_kind == "formal" and budget.configuration_status != "frozen":
             raise ValueError("formal T14 comparison requires a frozen budget")
@@ -251,6 +254,7 @@ class TreatmentConfig(BaseModel):
             "max_fact_requests": self.max_fact_requests,
             "model": self.model,
             "provider": self.provider,
+            "cache_condition": self.cache_condition,
         }
 
 
@@ -1029,6 +1033,7 @@ class TreatmentComparisonRunner:
         signoff: Any | None = None,
         signing_key: str | None = None,
         determinism_adapters: Mapping[str, Mapping[str, TreatmentAdapter]] | None = None,
+        holdout_only: bool = False,
     ) -> TreatmentComparisonReport:
         if formal and self.config.run_kind != "formal":
             raise ValueError("formal=True requires a formal T14 configuration")
@@ -1044,6 +1049,10 @@ class TreatmentComparisonRunner:
                 signoff=signoff,
                 signing_key=signing_key,
             )
+            if holdout_only:
+                cases = [case for case in cases if case.split == "holdout"]
+                if not cases:
+                    raise ValueError("formal T14 replay requires a non-empty holdout partition")
             if determinism_adapters is None or len(determinism_adapters) < 2:
                 raise ValueError(
                     "formal T14 comparison requires at least two model/provider adapter sets"
@@ -1194,6 +1203,7 @@ class TreatmentComparisonRunner:
         )
         dynamic_results = [pair.dynamic for pair in valid]
         fixed_results = [pair.fixed for pair in valid]
+        selected_case_ids = sorted({case.id for case in cases if case.id in valid_ids})
         dynamic_usage = _usage(dynamic_results, self.config, "dynamic_agent")
         fixed_usage = _usage(fixed_results, self.config, "fixed_workflow")
         if formal and any(
@@ -1222,6 +1232,7 @@ class TreatmentComparisonRunner:
             formal=formal,
             signoff=signoff,
             signing_key=signing_key,
+            case_ids=selected_case_ids if formal else None,
         )
         fixed_eval = score_results(
             score_dataset,
@@ -1229,6 +1240,7 @@ class TreatmentComparisonRunner:
             formal=formal,
             signoff=signoff,
             signing_key=signing_key,
+            case_ids=selected_case_ids if formal else None,
         )
         configs = {
             "dynamic_agent": {
@@ -1694,6 +1706,7 @@ def compare_treatments(
     signoff: Any | None = None,
     signing_key: str | None = None,
     determinism_adapters: Mapping[str, Mapping[str, TreatmentAdapter]] | None = None,
+    holdout_only: bool = False,
 ) -> TreatmentComparisonReport:
     return TreatmentComparisonRunner(adapters, config=config).run_dataset(
         dataset,
@@ -1702,6 +1715,7 @@ def compare_treatments(
         signoff=signoff,
         signing_key=signing_key,
         determinism_adapters=determinism_adapters,
+        holdout_only=holdout_only,
     )
 
 

@@ -16,7 +16,7 @@ import random
 import re
 import sys
 from argparse import ArgumentParser
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from pathlib import Path
 from typing import Any, Literal, Protocol
 
@@ -1504,6 +1504,7 @@ def score_results(
     formal: bool = False,
     signoff: HumanSignoff | None = None,
     signing_key: str | None = None,
+    case_ids: Sequence[str] | None = None,
 ) -> EvaluationReport:
     """Score Cases, optionally enforcing the complete formal release gate."""
 
@@ -1513,6 +1514,15 @@ def score_results(
         signoff=signoff,
         signing_key=signing_key,
     )
+    if case_ids is None:
+        scored_cases = verified
+    else:
+        requested = set(case_ids)
+        available = {case.id for case in verified}
+        missing = requested - available
+        if missing:
+            raise ValueError("score case IDs are not verified: " + ", ".join(sorted(missing)))
+        scored_cases = [case for case in verified if case.id in requested]
     outcomes = {
         result.case_id: result
         for result in results
@@ -1524,7 +1534,7 @@ def score_results(
     }
     return EvaluationReport(
         dataset_version=dataset.dataset_version,
-        scored_case_count=len(verified),
+        scored_case_count=len(scored_cases),
         excluded_counts=dataset.excluded_counts,
         excluded_case_ids=excluded_case_ids,
         excluded_reviews={
@@ -1537,13 +1547,13 @@ def score_results(
         },
         outcomes=list(results),
         initial=_score_view(
-            verified,
+            scored_cases,
             outcomes,
             label_attribute="initial_label",
             result_attribute="initial_result",
         ),
         complete=_score_view(
-            verified,
+            scored_cases,
             outcomes,
             label_attribute="complete_label",
             result_attribute="complete_result",

@@ -20,7 +20,7 @@ from argparse import ArgumentParser
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 from uuid import uuid4
 
 from httpx import TimeoutException
@@ -28,11 +28,13 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 
 from .embeddings import EmbeddingProvider, HTTPEmbeddingProvider
 from .evaluation import (
+    SIGNOFF_KEY_ENV,
     CaseAdapter,
     CaseDataset,
     EvaluationCase,
     EvaluationReport,
     EvaluationRunner,
+    HumanSignoff,
     ReplayResult,
     VerdictLabel,
     score_results,
@@ -277,6 +279,9 @@ class BaselineConfig(BaseModel):
     input_cost_per_1k_tokens: float | None = Field(default=None, ge=0, allow_inf_nan=False)
     output_cost_per_1k_tokens: float | None = Field(default=None, ge=0, allow_inf_nan=False)
     embedding_cost_per_1k_tokens: float | None = Field(default=None, ge=0, allow_inf_nan=False)
+    run_kind: Literal["development_trial", "formal"] = "development_trial"
+    configuration_status: Literal["development_trial", "frozen"] = "development_trial"
+    cache_condition: str = "no-cache"
 
     @field_validator("config_version", "ruleset_id", "ruleset_version", "prompt_version")
     @classmethod
@@ -299,6 +304,14 @@ class BaselineConfig(BaseModel):
         if value < 0:
             raise ValueError("configuration numeric values must be non-negative")
         return value
+
+    @model_validator(mode="after")
+    def validate_run_kind(self) -> BaselineConfig:
+        if self.run_kind == "formal" and self.configuration_status != "frozen":
+            raise ValueError("formal baseline configuration requires frozen status")
+        if not self.cache_condition.strip():
+            raise ValueError("cache_condition must not be empty")
+        return self
 
     @property
     def config_hash(self) -> str:
@@ -344,7 +357,7 @@ class BaselineRunReport(BaseModel):
     usage: dict[str, Any] = Field(default_factory=dict)
     retrieval: dict[str, Any] = Field(default_factory=dict)
     citation_error_count: int = Field(ge=0)
-    timeout_count: int = Field(ge=0)
+    timeout_count: int = Field(default=0, ge=0)
     evidence: dict[str, Any] = Field(default_factory=dict)
     results: list[dict[str, Any]] = Field(default_factory=list)
 
@@ -696,7 +709,7 @@ class _ProviderBaselineRunner(CaseAdapter):
         return response
 
     def run_case(self, case: EvaluationCase) -> ReplayResult:
-        if case.split == "holdout":
+        if case.split == "holdout" and self.config.run_kind != "formal":
             raise ValueError("T12 development runners do not permit holdout cases")
         if case.ruleset_id != self.config.ruleset_id:
             raise ValueError("case and runner ruleset versions differ")
@@ -707,10 +720,22 @@ class _ProviderBaselineRunner(CaseAdapter):
         ).run_case(case)
 
     def run_dataset(
-        self, dataset: CaseDataset, *, verified_only: bool = False
+        self,
+        dataset: CaseDataset,
+        *,
+        verified_only: bool = False,
+        case_ids: Sequence[str] | None = None,
     ) -> list[ReplayResult]:
         cases = dataset.verified_cases if verified_only else dataset.cases
-        if any(case.split == "holdout" for case in cases):
+        if case_ids is not None:
+            requested = set(case_ids)
+            cases = [case for case in cases if case.id in requested]
+            missing = requested - {case.id for case in cases}
+            if missing:
+                raise ValueError(
+                    "requested Case IDs are unavailable: " + ", ".join(sorted(missing))
+                )
+        if self.config.run_kind != "formal" and any(case.split == "holdout" for case in cases):
             raise ValueError("T12 development runners do not permit holdout cases")
         if any(case.ruleset_id != self.config.ruleset_id for case in cases):
             raise ValueError("case and runner ruleset versions differ")
@@ -1212,11 +1237,23 @@ def _t12_run_baselines(
     runners: Mapping[str, _ProviderBaselineRunner],
     *,
     verified_only: bool = False,
+    formal: bool = False,
+    signoff: HumanSignoff | None = None,
+    signing_key: str | None = None,
+    holdout_only: bool = True,
 ) -> BaselineReport:
     """Run the two T12 strategies with one shared dataset and score them together."""
 
-    dataset.validate_for_scoring(require_split=False)
-    if any(case.split == "holdout" for case in dataset.cases):
+    formal_run = formal or any(runner.config.run_kind == "formal" for runner in runners.values())
+    dataset.validate_for_scoring(
+        require_split=formal_run,
+        require_coverage=formal_run,
+        signoff=signoff,
+        signing_key=signing_key,
+    )
+    if formal_run and not all(runner.config.run_kind == "formal" for runner in runners.values()):
+        raise ValueError("all baseline runners must use a formal configuration")
+    if not formal_run and any(case.split == "holdout" for case in dataset.cases):
         raise ValueError("T12 development runners do not permit holdout cases")
     normalized: dict[str, _ProviderBaselineRunner] = {}
     aliases = {
@@ -1253,6 +1290,9 @@ def _t12_run_baselines(
         "max_tokens",
         "temperature",
         "prompt_version",
+        "run_kind",
+        "configuration_status",
+        "cache_condition",
     )
     for name in shared:
         if len({getattr(runner.config, name) for runner in normalized.values()}) != 1:
@@ -1265,9 +1305,18 @@ def _t12_run_baselines(
 
     run_reports: dict[str, BaselineRunReport] = {}
     result_ids: list[set[str]] = []
+    selected_case_ids = (
+        sorted(case.id for case in dataset.verified_cases if case.split == "holdout")
+        if formal_run and holdout_only
+        else None
+    )
+    if formal_run and holdout_only and not selected_case_ids:
+        raise ValueError("formal baseline replay requires a non-empty holdout partition")
     for strategy, runner in normalized.items():
         try:
-            results = runner.run_dataset(dataset, verified_only=verified_only)
+            results = runner.run_dataset(
+                dataset, verified_only=verified_only, case_ids=selected_case_ids
+            )
         finally:
             runner.close()
         result_ids.append({result.case_id for result in results})
@@ -1282,7 +1331,14 @@ def _t12_run_baselines(
                     + Path(__file__).with_name("evaluation.py").read_bytes()
                 ).hexdigest(),
             },
-            evaluation=score_results(dataset, results),
+            evaluation=score_results(
+                dataset,
+                results,
+                formal=formal_run,
+                signoff=signoff,
+                signing_key=signing_key,
+                case_ids=selected_case_ids,
+            ),
             usage=_summarize_usage(results),
             retrieval=runner.retrieval_metadata(),
             citation_error_count=sum(
@@ -1305,6 +1361,7 @@ def _t12_run_baselines(
         ruleset_version=config.ruleset_version,
         runs=run_reports,
         paired_case_ids=paired_case_ids,
+        run_kind="formal" if formal_run else "development_trial",
         corpus_hash=str(normalized["vanilla_rag"].retrieval_metadata()["corpus_hash"]),
         dataset_hash=hashlib.sha256(
             json.dumps(dataset.to_dict(), sort_keys=True).encode()
@@ -1335,6 +1392,7 @@ def _t12_main(argv: list[str] | None = None) -> int:
     parser.add_argument("--output", type=Path)
     parser.add_argument("--format", choices=("json", "markdown"), default="json")
     parser.add_argument("--config", type=Path)
+    parser.add_argument("--signoff", type=Path)
     parser.add_argument("--model")
     parser.add_argument("--embedding-model")
     parser.add_argument("--embedding-base-url")
@@ -1346,8 +1404,6 @@ def _t12_main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
     dataset = CaseDataset.from_json(args.dataset)
     corpus = RuleCorpus.from_json(args.rules)
-    if any(case.split == "holdout" for case in dataset.cases):
-        parser.error("T12 development runs cannot access holdout cases")
     if args.output and args.output.exists():
         parser.error("output already exists; choose a new experiment artifact path")
     values = json.loads(args.config.read_text(encoding="utf-8")) if args.config else {}
@@ -1365,6 +1421,11 @@ def _t12_main(argv: list[str] | None = None) -> int:
     values.setdefault("ruleset_id", corpus.ruleset_id)
     values.setdefault("ruleset_version", corpus.version)
     config = BaselineConfig.model_validate(values)
+    signoff = HumanSignoff.from_json(args.signoff) if args.signoff else None
+    if config.run_kind == "development_trial" and any(
+        case.split == "holdout" for case in dataset.cases
+    ):
+        parser.error("T12 development runs cannot access holdout cases")
     if config.ruleset_id != corpus.ruleset_id or config.ruleset_version != corpus.version:
         parser.error("corpus and configuration rule versions differ")
     if not config.embedding_model:
@@ -1397,6 +1458,10 @@ def _t12_main(argv: list[str] | None = None) -> int:
                     ),
                 ),
             },
+            formal=config.run_kind == "formal",
+            signoff=signoff,
+            signing_key=os.getenv(SIGNOFF_KEY_ENV),
+            holdout_only=True,
         )
         output = (
             report.to_markdown()

@@ -934,11 +934,23 @@ def run_baselines(
     runners: Mapping[str, _legacy._ProviderBaselineRunner],
     *,
     verified_only: bool = False,
+    formal: bool = False,
+    signoff: _legacy.HumanSignoff | None = None,
+    signing_key: str | None = None,
+    holdout_only: bool = True,
 ) -> _legacy.BaselineReport:
     """Run T12's pair or the complete T13 three-strategy comparison."""
     normalized = _normalize_runners(runners)
     if "hybrid_rag" not in normalized:
-        return _T12_RUN_BASELINES(dataset, runners, verified_only=verified_only)
+        return _T12_RUN_BASELINES(
+            dataset,
+            runners,
+            verified_only=verified_only,
+            formal=formal,
+            signoff=signoff,
+            signing_key=signing_key,
+            holdout_only=holdout_only,
+        )
     required = {"llm_only", "vanilla_rag", "hybrid_rag"}
     if set(normalized) != required:
         missing = required - set(normalized)
@@ -947,8 +959,16 @@ def run_baselines(
         raise ValueError("runner strategy names must match the T13 strategies")
     if any(name != runner.strategy for name, runner in normalized.items()):
         raise ValueError("runner strategy names must match the T13 strategies")
-    dataset.validate_for_scoring(require_split=False)
-    if any(case.split == "holdout" for case in dataset.cases):
+    formal_run = formal or any(runner.config.run_kind == "formal" for runner in normalized.values())
+    dataset.validate_for_scoring(
+        require_split=formal_run,
+        require_coverage=formal_run,
+        signoff=signoff,
+        signing_key=signing_key,
+    )
+    if formal_run and not all(runner.config.run_kind == "formal" for runner in normalized.values()):
+        raise ValueError("all baseline runners must use a formal configuration")
+    if not formal_run and any(case.split == "holdout" for case in dataset.cases):
         raise ValueError("T13 development runners do not permit holdout cases")
     config_keys = {
         runner.config.ruleset_id + "\0" + runner.config.ruleset_version
@@ -966,6 +986,9 @@ def run_baselines(
         "max_tokens",
         "temperature",
         "prompt_version",
+        "run_kind",
+        "configuration_status",
+        "cache_condition",
     )
     for name in shared:
         if len({getattr(runner.config, name) for runner in normalized.values()}) != 1:
@@ -987,9 +1010,18 @@ def run_baselines(
         raise ValueError("vanilla and hybrid runners must use the same rule corpus")
     reports: dict[str, _legacy.BaselineRunReport] = {}
     result_ids: list[set[str]] = []
+    selected_case_ids = (
+        sorted(case.id for case in dataset.verified_cases if case.split == "holdout")
+        if formal_run and holdout_only
+        else None
+    )
+    if formal_run and holdout_only and not selected_case_ids:
+        raise ValueError("formal baseline replay requires a non-empty holdout partition")
     for strategy, runner in normalized.items():
         try:
-            results = runner.run_dataset(dataset, verified_only=verified_only)
+            results = runner.run_dataset(
+                dataset, verified_only=verified_only, case_ids=selected_case_ids
+            )
         finally:
             runner.close()
         result_ids.append({result.case_id for result in results})
@@ -1005,7 +1037,14 @@ def run_baselines(
                     + Path(_legacy.__file__).with_name("evaluation.py").read_bytes()
                 ).hexdigest(),
             },
-            evaluation=_legacy.score_results(dataset, results),
+            evaluation=_legacy.score_results(
+                dataset,
+                results,
+                formal=formal_run,
+                signoff=signoff,
+                signing_key=signing_key,
+                case_ids=selected_case_ids,
+            ),
             usage=(
                 _summarize_hybrid_usage(results)
                 if strategy == "hybrid_rag"
@@ -1031,6 +1070,7 @@ def run_baselines(
         ruleset_version=config.ruleset_version,
         runs=reports,
         paired_case_ids=sorted(set.intersection(*result_ids)) if result_ids else [],
+        run_kind="formal" if formal_run else "development_trial",
         corpus_hash=next(iter(corpus_hashes)),
         dataset_hash=hashlib.sha256(
             json.dumps(dataset.to_dict(), sort_keys=True).encode()
@@ -1085,6 +1125,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--output", type=Path)
     parser.add_argument("--format", choices=("json", "markdown"), default="json")
     parser.add_argument("--config", type=Path)
+    parser.add_argument("--signoff", type=Path)
     parser.add_argument("--model")
     parser.add_argument("--embedding-model")
     parser.add_argument("--embedding-base-url")
@@ -1104,8 +1145,6 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(command_args)
     dataset = _legacy.CaseDataset.from_json(args.dataset)
     corpus = _legacy.RuleCorpus.from_json(args.rules)
-    if any(case.split == "holdout" for case in dataset.cases):
-        parser.error("T13 development runs cannot access holdout cases")
     if args.output and args.output.exists():
         parser.error("output already exists; choose a new experiment artifact path")
     values = json.loads(args.config.read_text(encoding="utf-8")) if args.config else {}
@@ -1130,6 +1169,11 @@ def main(argv: list[str] | None = None) -> int:
     values.setdefault("ruleset_id", corpus.ruleset_id)
     values.setdefault("ruleset_version", corpus.version)
     config = HybridBaselineConfig.model_validate(values)
+    signoff = _legacy.HumanSignoff.from_json(args.signoff) if args.signoff else None
+    if config.run_kind == "development_trial" and any(
+        case.split == "holdout" for case in dataset.cases
+    ):
+        parser.error("T13 development runs cannot access holdout cases")
     if config.ruleset_id != corpus.ruleset_id or config.ruleset_version != corpus.version:
         parser.error("corpus and configuration rule versions differ")
     shared_config = _legacy.BaselineConfig.model_validate(
@@ -1192,7 +1236,14 @@ def main(argv: list[str] | None = None) -> int:
                     base_url=config.reranker_base_url,
                 ),
             )
-        report = run_baselines(dataset, runners)
+        report = run_baselines(
+            dataset,
+            runners,
+            formal=config.run_kind == "formal",
+            signoff=signoff,
+            signing_key=os.getenv(_legacy.SIGNOFF_KEY_ENV),
+            holdout_only=True,
+        )
         output = (
             report.to_markdown()
             if args.format == "markdown"

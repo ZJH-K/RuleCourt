@@ -298,3 +298,14 @@ to its dynamic and fixed StrategyRunReport artifacts and their per-case public
 observations. Formal StrategyRunReport artifacts include an HMAC over the exact
 config, results, and observations; replay requires the protected
 RULECOURT_GOLDEN_SIGNOFF_KEY to validate that signature.
+
+## T16 frozen M0 release
+
+`rulecourt.release` combines the T12/T13 external baselines and the T14 Dynamic Agent / Fixed Workflow treatment into one signed formal release. Freeze every budget, clarification and fact-request limit, repeat count, statistical method, minimum quality gain, wrong-allow constraint, model/strategy version, ruleset/coverage version, and cache condition from development before running holdout Cases. `examples/t16-freeze-config.json` is an intentionally incomplete template; see [`docs/t16-release.md`](docs/t16-release.md) for the reproduction flow.
+
+The release reports initial and complete results, category and paired Dynamic/Fixed metrics, resources, artifact digests, family/repeat counts, review references, limitations, and one of `quality_gain`, `efficiency_gain`, `insufficient_evidence`, or `unproven_gain`. Repeated runs and canonical families use unique sample denominators. A signed config hash prevents post-hoc threshold changes from replacing a formal failure. View a saved artifact with:
+
+~~~powershell
+$env:RULECOURT_T16_RELEASE_KEY = "<protected release key>"
+uv run rulecourt-release report t16-release.json --format markdown
+~~~
