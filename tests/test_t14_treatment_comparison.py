@@ -1,5 +1,7 @@
+import asyncio
 import json
 from collections.abc import Mapping
+from types import SimpleNamespace
 
 import pytest
 
@@ -11,6 +13,9 @@ from rulecourt.comparison import (
     check_determinism,
 )
 from rulecourt.evaluation import CaseDataset, EvaluationCase, ReplayResult
+from rulecourt.runtime import RuleCourtController
+from rulecourt.state_store import StateStore
+from rulecourt.store import CaseStore
 
 
 def _case(case_id: str = "case-1", *, split: str | None = None) -> EvaluationCase:
@@ -104,10 +109,12 @@ class _Adapter:
         return {"id": case_id, "strategy": self.strategy, "messages": self.messages}
 
     def get_events(self, case_id):
-        return [
+        route_events = [
             {"type": "investigation_started", "strategy": self.strategy},
-            *self.events,
         ]
+        if self.strategy == "fixed_workflow":
+            route_events.append({"type": "fixed_workflow_started"})
+        return [*route_events, *self.events]
 
     def comparison_metadata(self):
         return {"strategy": self.strategy, **self.metadata}
@@ -229,6 +236,43 @@ def test_tool_order_is_audit_data_not_a_quality_success_metric():
     assert report.pairs[0].audit.fixed.tool_call_count == 2
 
 
+def test_fixed_workflow_unavailable_is_persisted(tmp_path):
+    database = tmp_path / "fixed-unavailable.sqlite3"
+    store = CaseStore(database)
+    state_store = StateStore(database)
+    controller = RuleCourtController(
+        store,
+        SimpleNamespace(provider_name="test-provider"),
+        "test-model",
+        state_store,
+        rule_store=None,
+    )
+    case = store.create("fixed_workflow")
+    response = asyncio.run(
+        controller.investigate(
+            case["id"],
+            (
+                "确认本次只裁决 Marquise 普通移动范围。"
+                "Marquise 在 A 有 3 个 warriors。"
+                "Marquise 在 A 有 0 个 buildings。"
+                "Eyrie 在 A 有 0 个 warriors。"
+                "Eyrie 在 A 有 0 个 buildings。"
+                "A 只与 B 相邻。"
+                "Marquise 从 A 移动 1 个 warriors 到 B。"
+            ),
+        )
+    )
+
+    assert response["reason"] == "FIXED_WORKFLOW_UNAVAILABLE"
+    persisted = store.get(case["id"])
+    assert persisted is not None
+    assert persisted["verdicts"][-1]["reason"] == "FIXED_WORKFLOW_UNAVAILABLE"
+    assert any(
+        event["type"] == "fixed_workflow_unavailable"
+        for event in store.events(case["id"])
+    )
+
+
 def test_missing_audit_projection_is_invalid():
     audit = VisibilityAuditor.audit(
         "dynamic_agent",
@@ -239,9 +283,12 @@ def test_missing_audit_projection_is_invalid():
 
     assert audit.valid is False
     assert audit.observation_available is False
-    assert {finding.code for finding in audit.findings} == {
-        "missing_audit_projection"
-    }
+    assert {
+        "missing_audit_projection",
+        "empty_context_projection",
+        "missing_strategy_observation",
+        "missing_route_observation",
+    } <= {finding.code for finding in audit.findings}
 
 
 def test_treatment_config_rejects_route_generated_from_private_coverage_table():
@@ -299,10 +346,14 @@ def test_runner_records_determinism_for_two_provider_model_sets():
     provider_a = _runner(
         _Adapter("dynamic_agent", [_response("LEGAL")]),
         _Adapter("fixed_workflow", [_response("LEGAL")]),
+        provider="provider-a",
+        model="model-a",
     ).adapters
     provider_b = _runner(
         _Adapter("dynamic_agent", [_response("LEGAL")]),
         _Adapter("fixed_workflow", [_response("LEGAL")]),
+        provider="provider-b",
+        model="model-b",
     ).adapters
 
     report = base.run_dataset(
@@ -321,6 +372,59 @@ def test_runner_records_determinism_for_two_provider_model_sets():
     assert all(
         item.providers == ["provider-a/model-a", "provider-b/model-b"]
         for item in report.determinism
+    )
+    assert report.determinism[0].provider_identities == {
+        "provider-a/model-a": "provider-a/model-a",
+        "provider-b/model-b": "provider-b/model-b",
+    }
+
+
+def test_formal_config_requires_a_frozen_budget():
+    with pytest.raises(ValueError, match="frozen budget"):
+        TreatmentConfig(run_kind="formal")
+
+
+def test_exported_run_artifacts_use_the_verified_builder_and_observations(
+    tmp_path, capsys
+):
+    case = _case()
+    dataset = CaseDataset(dataset_version="trial-v1", cases=[case])
+    report = _runner(
+        _Adapter("dynamic_agent", [_response("LEGAL")]),
+        _Adapter("fixed_workflow", [_response("LEGAL")]),
+    ).run_dataset(dataset)
+
+    dynamic_path = tmp_path / "dynamic.json"
+    fixed_path = tmp_path / "fixed.json"
+    dynamic_path.write_text(
+        json.dumps(report.runs["dynamic_agent"].model_dump(mode="json")),
+        encoding="utf-8",
+    )
+    fixed_path.write_text(
+        json.dumps(report.runs["fixed_workflow"].model_dump(mode="json")),
+        encoding="utf-8",
+    )
+    dataset_path = tmp_path / "cases.json"
+    dataset.save_json(dataset_path)
+
+    from rulecourt.comparison import main
+
+    assert (
+        main(
+            [
+                str(dataset_path),
+                "--dynamic-results",
+                str(dynamic_path),
+                "--fixed-results",
+                str(fixed_path),
+            ]
+        )
+        == 0
+    )
+    payload = json.loads(capsys.readouterr().out)
+    assert payload["paired_case_ids"] == [case.id]
+    assert payload["runs"]["fixed_workflow"]["observations"][case.id]["observed_route"] == (
+        "fixed_workflow"
     )
 
 

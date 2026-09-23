@@ -288,4 +288,6 @@ counters; cumulative Dynamic Agent usage and cost always remain included.
 Invalid audit pairs are retained but excluded from the main comparison.
 Development runs reject holdout Cases. Formal replay additionally requires a
 frozen budget, split/coverage validation, detached human signoff, and at least
-two model/provider adapter sets.
+two model/provider adapter sets. For exported formal replay, pass
+--signoff together with --determinism-manifest; the manifest maps each provider
+or model identity to its dynamic and fixed StrategyRunReport artifacts.

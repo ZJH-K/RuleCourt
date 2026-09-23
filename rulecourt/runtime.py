@@ -390,6 +390,19 @@ class RuleCourtController:
             return "duration"
         return None
 
+    @staticmethod
+    def _public_usage(strategy: str, usage: BudgetUsage) -> dict[str, Any]:
+        values: dict[str, Any] = usage.to_dict()
+        if strategy == "dynamic_agent":
+            values.update(
+                {
+                    "planning_tokens": values["total_tokens"],
+                    "planning_calls": values["provider_calls"],
+                    "planning_usage_scope": "dynamic_agent_provider_calls",
+                }
+            )
+        return values
+
     def _investigation_view(
         self,
         investigation: dict[str, Any],
@@ -418,9 +431,9 @@ class RuleCourtController:
             "model": self.model,
             "provider": self._provider_name(),
             "budget": budget.to_dict(),
-            "usage": cumulative.to_dict(),
+            "usage": self._public_usage(investigation["strategy"], cumulative),
             "remaining": cumulative.remaining(budget),
-            "run_usage": run_usage.to_dict(),
+            "run_usage": self._public_usage(investigation["strategy"], run_usage),
             "stop_reason": stop_reason,
             "failure_reason": failure_reason,
         }
@@ -627,6 +640,72 @@ class RuleCourtController:
             response["state_update"] = state_update
         return response
 
+    def _fixed_workflow_unavailable(
+        self,
+        case_id: str,
+        investigation: dict[str, Any],
+        budget: InvestigationBudget,
+        *,
+        run_id: str,
+        resumed: bool,
+        expected_revision: int,
+        state_update: dict[str, Any] | None,
+    ) -> dict[str, Any]:
+        self.store.add_event(
+            case_id,
+            run_id,
+            "fixed_workflow_unavailable",
+            strategy="fixed_workflow",
+            strategy_version=self._strategy_version("fixed_workflow"),
+        )
+        tracker = _BudgetTracker(BudgetUsage.from_mapping(investigation["usage"]))
+        verdict = self.store.add_verdict_if_current(
+            case_id,
+            run_id,
+            "UNRESOLVED",
+            "FIXED_WORKFLOW_UNAVAILABLE",
+            expected_revision=expected_revision,
+            details={
+                "public_reason": (
+                    "The requested fixed workflow is not configured for this runtime."
+                )
+            },
+        )
+        if verdict is None:
+            stale_response = self._discard_stale_adjudication(
+                case_id,
+                run_id,
+                expected_revision=expected_revision,
+                state_update=state_update,
+            )
+            return self._record_run(
+                case_id,
+                investigation,
+                budget,
+                run_id=run_id,
+                strategy="fixed_workflow",
+                resumed=resumed,
+                response=stale_response,
+                tracker=tracker,
+                stop_reason="state_revision_conflict",
+                failure_reason="STATE_REVISION_CONFLICT",
+            )
+        response = self._record_run(
+            case_id,
+            investigation,
+            budget,
+            run_id=run_id,
+            strategy="fixed_workflow",
+            resumed=resumed,
+            response=verdict,
+            tracker=tracker,
+            stop_reason="fixed_workflow_unavailable",
+            failure_reason="FIXED_WORKFLOW_UNAVAILABLE",
+        )
+        if state_update is not None:
+            response["state_update"] = state_update
+        return response
+
     async def investigate(self, case_id: str, text: str) -> dict[str, Any]:
         run_id = str(uuid4())
         before = self.store.get(case_id)
@@ -720,18 +799,18 @@ class RuleCourtController:
             strategy = "dynamic_agent"
         elif requested_strategy == "fixed_workflow":
             if self.workflow is None:
-                return {
-                    "case_id": case_id,
-                    "status": "UNRESOLVED",
-                    "reason": "FIXED_WORKFLOW_UNAVAILABLE",
-                    "failure_reason": "FIXED_WORKFLOW_UNAVAILABLE",
-                    "stop_reason": "fixed_workflow_unavailable",
-                    "details": {
-                        "public_reason": (
-                            "The requested fixed workflow is not configured for this runtime."
-                        )
-                    },
-                }
+                investigation, resumed, budget = self._select_investigation(
+                    case_id, "fixed_workflow"
+                )
+                return self._fixed_workflow_unavailable(
+                    case_id,
+                    investigation,
+                    budget,
+                    run_id=run_id,
+                    resumed=resumed,
+                    expected_revision=expected_revision,
+                    state_update=state_update,
+                )
             strategy = "fixed_workflow"
         else:
             strategy = (
