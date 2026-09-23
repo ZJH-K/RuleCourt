@@ -283,7 +283,7 @@ def test_missing_adjacency_returns_insufficient_information(tmp_path):
         assert "clearings.A.adjacent_to" in result["missing_fields"]
 
 
-def test_eyrie_ordinary_move_is_explicitly_unsupported_in_t05(tmp_path):
+def test_eyrie_ordinary_move_requires_eyrie_rule_coverage(tmp_path):
     with TestClient(
         create_app(
             tmp_path / "cases.sqlite3",
@@ -301,7 +301,7 @@ def test_eyrie_ordinary_move_is_explicitly_unsupported_in_t05(tmp_path):
         result = client.post(f"/api/cases/{case_id}/messages", json={"text": text}).json()
 
         assert result["status"] == "UNRESOLVED"
-        assert result["reason"] == "UNSUPPORTED_FACTION"
+        assert result["reason"] == "VERIFICATION_NOT_SATISFIED"
 
 
 def test_missing_verified_rule_package_fails_closed_at_verification_gate(tmp_path):
