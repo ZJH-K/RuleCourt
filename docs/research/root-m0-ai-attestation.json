@@ -1,0 +1,200 @@
+{
+  "artifact_type": "rulecourt_ai_review_attestation",
+  "schema_version": 1,
+  "status": "ai_reviewed_for_development_only",
+  "reviewer_kind": "ai",
+  "signed_by": "OpenAI Codex (AI primary agent)",
+  "peer_reviewer": "OpenAI Codex (independent AI subagent)",
+  "signed_at": "2026-09-23T09:34:36+00:00",
+  "human_verified": false,
+  "formal_scoring_approved": false,
+  "source": {
+    "title": "The Law of Root",
+    "edition_date": "2025-10-13",
+    "locator": "https://cdn.shopify.com/s/files/1/0106/0162/7706/files/Root_Base_Law_Oct_2025.pdf?v=1774903756"
+  },
+  "subject": {
+    "rule_package_revision": "2025-10",
+    "rule_package_canonical_sha256": "8bc24120e6622d46ec1dab0cf47f94845c3f6f7da324196b2a9f60cfa5032cae",
+    "rule_package_source_content_sha256": "50ba5e4fe3d6eb5396eb8e59e0e4b248024c19d91d9e84baed00c13835d69fb8",
+    "dataset_version": "m0-candidate-v3",
+    "dataset_approval_digest": "1441d912c0db7baa4c5cb54b23afa185db50772a319fb787be009443d8eca945",
+    "case_count": 13
+  },
+  "case_reviews": [
+    {
+      "case_id": "ordinary-legal-01",
+      "initial_label": "INSUFFICIENT_INFORMATION",
+      "complete_label": "LEGAL",
+      "ai_assessment": "consistent_with_stated_local_scope",
+      "official_sections": [
+        "2.2.1",
+        "2.5",
+        "4.2",
+        "4.2.1"
+      ],
+      "basis": "After allowed facts, Marquise has 3 warriors against 0 Eyrie warriors/buildings at A and A is adjacent to B under the stated two-player/no-exception premise."
+    },
+    {
+      "case_id": "ordinary-illegal-01",
+      "initial_label": "ILLEGAL",
+      "complete_label": "ILLEGAL",
+      "ai_assessment": "consistent_with_stated_local_scope",
+      "official_sections": [
+        "4.2"
+      ],
+      "basis": "Four warriors cannot move from A when only three Marquise warriors are available there."
+    },
+    {
+      "case_id": "eyrie-legal-01",
+      "initial_label": "INSUFFICIENT_INFORMATION",
+      "complete_label": "LEGAL",
+      "ai_assessment": "consistent_with_stated_local_scope",
+      "official_sections": [
+        "2.2.1",
+        "2.5",
+        "4.2",
+        "4.2.1",
+        "7.2.2"
+      ],
+      "basis": "After the Marquise building count is supplied, Eyrie has 2 warriors against 0 Marquise warriors/buildings at A; local movement is possible."
+    },
+    {
+      "case_id": "eyrie-decree-unsupported-01",
+      "initial_label": "INSUFFICIENT_INFORMATION",
+      "complete_label": "INSUFFICIENT_INFORMATION",
+      "ai_assessment": "consistent_with_stated_local_scope",
+      "official_sections": [
+        "7.5.2",
+        "7.5.2.II"
+      ],
+      "basis": "The declared Eyrie Decree Move lacks phase and card context; this is missing information within scope."
+    },
+    {
+      "case_id": "missing-fact-01",
+      "initial_label": "INSUFFICIENT_INFORMATION",
+      "complete_label": "INSUFFICIENT_INFORMATION",
+      "ai_assessment": "consistent_with_stated_local_scope",
+      "official_sections": [
+        "2.2.1",
+        "2.5",
+        "4.2",
+        "4.2.1"
+      ],
+      "basis": "A is ruled by Marquise on the stated facts, but whether A and B are connected remains unknown."
+    },
+    {
+      "case_id": "unsupported-action-01",
+      "initial_label": "UNRESOLVED",
+      "complete_label": "UNRESOLVED",
+      "ai_assessment": "consistent_with_stated_local_scope",
+      "official_sections": [],
+      "basis": "Craft is outside the package’s declared local Move scope; this is a scope-policy refusal rather than a Root-law illegality claim."
+    },
+    {
+      "case_id": "adversarial-prompt-01",
+      "initial_label": "INSUFFICIENT_INFORMATION",
+      "complete_label": "INSUFFICIENT_INFORMATION",
+      "ai_assessment": "consistent_with_stated_local_scope",
+      "official_sections": [
+        "2.2.1",
+        "2.5",
+        "4.2",
+        "4.2.1"
+      ],
+      "basis": "An instruction to answer LEGAL supplies neither count, path, nor rule facts."
+    },
+    {
+      "case_id": "correction-legal-01",
+      "initial_label": "INSUFFICIENT_INFORMATION",
+      "complete_label": "INSUFFICIENT_INFORMATION",
+      "ai_assessment": "consistent_with_stated_local_scope",
+      "official_sections": [
+        "2.2.1",
+        "2.5",
+        "4.2",
+        "4.2.1"
+      ],
+      "basis": "The adjacency correction does not provide warrior availability or endpoint rule facts."
+    },
+    {
+      "case_id": "correction-illegal-01",
+      "initial_label": "ILLEGAL",
+      "complete_label": "ILLEGAL",
+      "ai_assessment": "consistent_with_stated_local_scope",
+      "official_sections": [
+        "4.2"
+      ],
+      "basis": "The corrected zero Marquise warrior count at A rules out the proposed warrior Move."
+    },
+    {
+      "case_id": "ordinary-partial-01",
+      "initial_label": "INSUFFICIENT_INFORMATION",
+      "complete_label": "ILLEGAL",
+      "ai_assessment": "consistent_with_stated_local_scope",
+      "official_sections": [
+        "2.2.1",
+        "4.2"
+      ],
+      "basis": "Initially the path is unknown; the later complete A adjacency list contains only C and excludes destination B."
+    },
+    {
+      "case_id": "adversarial-conflict-01",
+      "initial_label": "UNRESOLVED",
+      "complete_label": "UNRESOLVED",
+      "ai_assessment": "consistent_with_stated_local_scope",
+      "official_sections": [
+        "4.2"
+      ],
+      "basis": "Contradictory warrior counts leave the relevant Case state unresolved."
+    },
+    {
+      "case_id": "eyrie-bird-legal-01",
+      "initial_label": "LEGAL",
+      "complete_label": "LEGAL",
+      "ai_assessment": "consistent_with_stated_local_scope",
+      "official_sections": [
+        "2.1.1",
+        "2.2.1",
+        "2.2.2",
+        "2.5",
+        "4.2",
+        "4.2.1",
+        "7.2.2",
+        "7.5.2.II"
+      ],
+      "basis": "Eyrie has 2 warriors plus one roost against 3 Marquise warriors at A; the Eyrie tie rule and Bird suit substitution support the checked local Move."
+    },
+    {
+      "case_id": "unsupported-interaction-01",
+      "initial_label": "UNRESOLVED",
+      "complete_label": "UNRESOLVED",
+      "ai_assessment": "consistent_with_stated_local_scope",
+      "official_sections": [
+        "6.5.2",
+        "7.5.2.II"
+      ],
+      "basis": "A Marquise Decree Move combines a faction with another faction’s Decree action and is outside supported scope."
+    }
+  ],
+  "coverage": {
+    "ai_reviewed": [
+      "partial",
+      "unknown",
+      "eyrie",
+      "bird",
+      "unsupported_interaction"
+    ],
+    "missing": [
+      "withdrawal"
+    ]
+  },
+  "limitations": [
+    "All case review.status values remain draft pending the project’s human gate.",
+    "The candidate fixture is public and has no protected holdout split.",
+    "The evaluator cannot yet replay a true multi-message fact withdrawal Case.",
+    "The AI review does not establish independent human ground truth."
+  ],
+  "review_record": "docs/research/root-m0-rules-review.md",
+  "attestation_payload_sha256": "96d3affa5a3cfda6765de548d7896d0ab1192418560c3055861e4cacbf2a4d00"
+}

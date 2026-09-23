@@ -56,3 +56,7 @@ A separate AI agent independently compared the current draft rules and all 13 Ca
 - The package separates generic movement-piece/rule coverage from the Eyrie highest-count tie exception; the Bird relation is explicitly noted as conditional on a Bird card.
 
 This was **AI peer review**, not human verification. It has no human reviewer identity, cannot independently attest the source or labels, and must not change any `draft` status. The evaluator still cannot replay a true multi-message withdrawal Case from one `initial_input`; that coverage requires a replay-model change or a documented human waiver. The formal scoring gate remains closed.
+
+## AI attestation for personal development
+
+`docs/research/root-m0-ai-attestation.json` records the two AI reviewers' conclusion for the exact canonical rule-package JSON and `m0-candidate-v3` dataset digest. It lists all 13 Case labels, brief source reasoning, the five coverage categories present, and the missing withdrawal category. Its payload SHA-256 binds the record contents for comparison; it is **not** a cryptographic proof of human identity or a `HumanSignoff` accepted by the formal gate. `review.status` stays `draft` and the rule package remains unverified. The user may use this explicitly labelled AI assessment for personal development trials, but formal human-ground-truth claims would be inaccurate.
