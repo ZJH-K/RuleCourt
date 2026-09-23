@@ -1,62 +1,62 @@
-# Root M0 rules: official-source review
+# Root M0 规则：官方来源核对
 
-Status: source comparison for implementation; **not human verification or sign-off**. Reviewed 2026-09-23 against Leder Games' [*The Law of Root*, October 13, 2025](https://cdn.shopify.com/s/files/1/0106/0162/7706/files/Root_Base_Law_Oct_2025.pdf?v=1774903756), linked as the October 2025 Law on its [official resources page](https://ledergames.com/pages/resources). This is a dated PDF; the candidate's live rules-library URL does not pin that PDF revision.
+状态：用于实现准备的来源比对，**不是人工核验或签核**。本文于 2026-09-23 对照 Leder Games 的 [《The Law of Root》，2025 年 10 月 13 日版](https://cdn.shopify.com/s/files/1/0106/0162/7706/files/Root_Base_Law_Oct_2025.pdf?v=1774903756)完成核对。该版本也列在其[官方资源页](https://ledergames.com/pages/resources)上。这是一份有日期的 PDF；候选资料包使用的在线规则库链接没有固定到该 PDF 版本。
 
-## Relevant official rules
+## 相关官方规则
 
-| Section | Finding for a local Move decision |
+| 章节 | 对局部 Move 判定的发现 |
 | --- | --- |
-| [1.1.1](https://cdn.shopify.com/s/files/1/0106/0162/7706/files/Root_Base_Law_Oct_2025.pdf?v=1774903756#page=2) | Cards can override the Law; applicable faction rules prevail over incompatible general rules. A base movement excerpt alone cannot establish complete legality. |
-| [2.1, 2.1.1](https://cdn.shopify.com/s/files/1/0106/0162/7706/files/Root_Base_Law_Oct_2025.pdf?v=1774903756#page=3) | Section 2.1 is **Cards**, not clearings. Bird cards can substitute for another suit. |
-| [2.2, 2.2.1, 2.3](https://cdn.shopify.com/s/files/1/0106/0162/7706/files/Root_Base_Law_Oct_2025.pdf?v=1774903756#page=3) | Clearings are connected by paths; two clearings joined by a path are adjacent. Rivers are not paths without an explicit rule saying otherwise. There is no standalone `2.2 Path` rule in this revision. |
-| [2.5](https://cdn.shopify.com/s/files/1/0106/0162/7706/files/Root_Base_Law_Oct_2025.pdf?v=1774903756#page=3) | Rule compares each player's total warriors and buildings. Tokens and pawns do not add to that total; an ordinary tie leaves the clearing unruled. |
-| [4.2, 4.2.1](https://cdn.shopify.com/s/files/1/0106/0162/7706/files/Root_Base_Law_Oct_2025.pdf?v=1774903756#page=5) | A Move takes at least one of the player's warriors and/or pawns along a linking path to an adjacent clearing; the player must rule the origin, destination, or both, subject to applicable exceptions. |
-| [6.5, 6.5.2](https://cdn.shopify.com/s/files/1/0106/0162/7706/files/Root_Base_Law_Oct_2025.pdf?v=1774903756#page=6) | The Marquise obtains moves through the Daylight March action, which grants up to two Moves. A valid local movement geometry check does not establish that a March action is available. |
-| [7.2.2](https://cdn.shopify.com/s/files/1/0106/0162/7706/files/Root_Base_Law_Oct_2025.pdf?v=1774903756#page=6) | The Eyrie also rule when tied for the highest warrior-plus-building total **and** they have at least one Eyrie piece in the clearing. A roost is not required by this rule. |
-| [7.4.2, 7.5.2, 7.5.2.II](https://cdn.shopify.com/s/files/1/0106/0162/7706/files/Root_Base_Law_Oct_2025.pdf?v=1774903756#page=7) | The Eyrie add cards to the Decree in Birdsong, at most one new bird card. In Daylight they resolve Decree columns in order. For a Move-column card they must move at least one warrior **from** a clearing matching that card's suit. With a bird card, the origin may be of any ordinary clearing suit via §2.1.1; the destination's suit is not the Decree restriction. Failure to complete the action causes turmoil under §7.7. |
+| [1.1.1](https://cdn.shopify.com/s/files/1/0106/0162/7706/files/Root_Base_Law_Oct_2025.pdf?v=1774903756#page=2) | 卡牌可以覆盖本规则书；阵营规则与通用规则不兼容时，以适用的阵营规则为准。单独引用基础移动条文不能证明行动完全合法。 |
+| [2.1, 2.1.1](https://cdn.shopify.com/s/files/1/0106/0162/7706/files/Root_Base_Law_Oct_2025.pdf?v=1774903756#page=3) | 第 2.1 节讲的是**卡牌**，不是林地。Bird 卡可以替代其他花色。 |
+| [2.2, 2.2.1, 2.3](https://cdn.shopify.com/s/files/1/0106/0162/7706/files/Root_Base_Law_Oct_2025.pdf?v=1774903756#page=3) | 林地通过路径相连；两块林地之间有路径相连时，它们相邻。除非规则另有明确说明，河流不算路径。此版本中没有名为 Path 的独立 2.2 规则。 |
+| [2.5](https://cdn.shopify.com/s/files/1/0106/0162/7706/files/Root_Base_Law_Oct_2025.pdf?v=1774903756#page=3) | 该规则比较每位玩家的兵和建筑总数。Token 和 pawn 不计入总数；普通平局时，该林地无人统治。 |
+| [4.2, 4.2.1](https://cdn.shopify.com/s/files/1/0106/0162/7706/files/Root_Base_Law_Oct_2025.pdf?v=1774903756#page=5) | 一次 Move 至少移动该玩家的一个 warrior 和/或 pawn，沿连接路径前往相邻林地；除适用例外外，该玩家必须统治起点、终点或两者。 |
+| [6.5, 6.5.2](https://cdn.shopify.com/s/files/1/0106/0162/7706/files/Root_Base_Law_Oct_2025.pdf?v=1774903756#page=6) | Marquise 通过 Daylight 的 March action 获得移动机会，该行动最多允许两次 Move。局部移动几何条件成立，不能证明玩家当前可以执行 March action。 |
+| [7.2.2](https://cdn.shopify.com/s/files/1/0106/0162/7706/files/Root_Base_Law_Oct_2025.pdf?v=1774903756#page=6) | 当 Eyrie 的兵和建筑总数并列最高，且林地中至少有一个 Eyrie 棋子时，Eyrie 也可以统治该林地。此规则不要求林地中必须有 roost。 |
+| [7.4.2, 7.5.2, 7.5.2.II](https://cdn.shopify.com/s/files/1/0106/0162/7706/files/Root_Base_Law_Oct_2025.pdf?v=1774903756#page=7) | Eyrie 在 Birdsong 阶段向 Decree 加入卡牌，最多加入一张新的 bird 卡。Daylight 阶段按列顺序执行 Decree。对于 Move 列卡牌，必须从符合该卡花色的林地移走至少一个 warrior。使用 bird 卡时，根据第 2.1.1 节，起点可以是任意普通花色的林地；Decree 对终点花色没有限制。未完成行动会根据第 7.7 节引发 turmoil。 |
 
-## Discrepancies found in the original candidate package
+## 原候选资料包中的差异
 
-1. `root-2.1` assigns clearing/path text to official §2.1, which is about cards. `root-2.2` labels §2.2 as **Path**; the actual heading is **Clearings and Paths**, and adjacency is §2.2.1. These IDs, section fields, `source_content`, and checksums need revision before claiming source fidelity. [Official §§2.1–2.2.1](https://cdn.shopify.com/s/files/1/0106/0162/7706/files/Root_Base_Law_Oct_2025.pdf?v=1774903756#page=3)
-2. `root-2.5` omits the ordinary-tie outcome and the exclusion of tokens/pawns. Its wording also changes the source's comparison by **player** to a comparison by **faction**; those are not interchangeable in every scenario. [Official §2.5](https://cdn.shopify.com/s/files/1/0106/0162/7706/files/Root_Base_Law_Oct_2025.pdf?v=1774903756#page=3)
-3. `root-4.2` omits the positive piece count, the player's own pawns, and travel **on a linking path**. `root-4.2.1` captures the ordinary rule prerequisite in outline, but calling its relation to §4.2 `exception_to` is wrong: it is a prerequisite. Tagging general §§4.2–4.2.1 as inherently `daylight` also overstates the Law; phase authorization comes from faction actions, not these sections. [Official §§4.2–4.2.1](https://cdn.shopify.com/s/files/1/0106/0162/7706/files/Root_Base_Law_Oct_2025.pdf?v=1774903756#page=5)
-4. `root-7.2.2` incorrectly makes roosts the basis of Eyrie rule. Replace it with the tie-for-highest plus one-Eyrie-piece condition, and represent its relation to the general tie rule as a faction exception. The existing `clarifies` relation undersells the behavioral difference. [Official §§2.5, 7.2.2](https://cdn.shopify.com/s/files/1/0106/0162/7706/files/Root_Base_Law_Oct_2025.pdf?v=1774903756#page=6)
-5. The package has no §2.1.1 bird-wild rule, §7.5.2.II Decree Move rule, or §6.5.2 March authorization. These matter to the declared Marquise/Eyrie movement scope; in particular, applying a Decree card's suit to the **destination** would be incorrect. `7.5.2` is the overall Resolve the Decree section and `7.5.2.II` is its Move clause. [Official §§2.1.1, 6.5.2, 7.5.2.II](https://cdn.shopify.com/s/files/1/0106/0162/7706/files/Root_Base_Law_Oct_2025.pdf?v=1774903756#page=7)
-6. The title/`scope_strategy.name` says “battle excerpts,” but the package has no battle rule and lists only `move`/`rule` actions. Remove that claim if battle is outside M0. The `coverage_obligations` currently check only adjacency and rule; they do not cover movable-piece presence, faction action authorization, Decree origin-suit matching, or exceptions. Treat these as scope limits or add rules/evidence for them before asserting full Move legality. [Official §§1.1.1, 4.2, 6.5.2, 7.5.2.II](https://cdn.shopify.com/s/files/1/0106/0162/7706/files/Root_Base_Law_Oct_2025.pdf?v=1774903756#page=7)
+1. `root-2.1` 将林地/路径内容标为官方第 2.1 节；但该章节讲的是卡牌。`root-2.2` 将 `2.2` 标为 **Path**；官方标题实际为 **Clearings and Paths**，相邻关系在第 2.2.1 节。这些 ID、章节字段、`source_content` 和校验和在声称忠实于来源前都需要修订。[官方第 2.1–2.2.1 节](https://cdn.shopify.com/s/files/1/0106/0162/7706/files/Root_Base_Law_Oct_2025.pdf?v=1774903756#page=3)
+2. `root-2.5` 漏掉普通平局的结果，以及 Token/pawn 不计入兵力和建筑总数这一点。其表述也把来源中的“按玩家比较”改成了“按阵营比较”；在所有情形下，两者并不等价。[官方第 2.5 节](https://cdn.shopify.com/s/files/1/0106/0162/7706/files/Root_Base_Law_Oct_2025.pdf?v=1774903756#page=3)
+3. `root-4.2` 漏掉正数棋子、玩家自己的 pawn，以及必须沿**连接路径**移动。`root-4.2.1` 大致表达了普通规则前提，但将其与 `4.2` 的关系标为 `exception_to` 是错误的：它是前置条件。将通用 `4.2–4.2.1` 标成固有 `daylight` 阶段也夸大了规则书原文；阶段授权来自阵营行动，而非这些章节。[官方第 4.2–4.2.1 节](https://cdn.shopify.com/s/files/1/0106/0162/7706/files/Root_Base_Law_Oct_2025.pdf?v=1774903756#page=5)
+4. `root-7.2.2` 错把 roost 作为 Eyrie 统治的依据。应替换为“并列最高且至少有一个 Eyrie 棋子”的条件，并将其与通用平局规则的关系表示为阵营例外。现有 `clarifies` 关系低估了行为差异。[官方第 2.5、7.2.2 节](https://cdn.shopify.com/s/files/1/0106/0162/7706/files/Root_Base_Law_Oct_2025.pdf?v=1774903756#page=6)
+5. 资料包缺少 `2.1.1` Bird 通配花色规则、`7.5.2.II` Decree Move 规则，以及 `6.5.2` March 行动授权。这些内容与声明的 Marquise/Eyrie 移动范围有关；尤其要注意，不应将 Decree 卡牌的花色限制套在**终点**上。`7.5.2` 是 Resolve the Decree 总章节，`7.5.2.II` 才是其中的 Move 条款。[官方第 2.1.1、6.5.2、7.5.2.II 节](https://cdn.shopify.com/s/files/1/0106/0162/7706/files/Root_Base_Law_Oct_2025.pdf?v=1774903756#page=7)
+6. 标题和 `scope_strategy.name` 声称内容包含“battle excerpts”，但资料包没有 battle 规则，列出的行动也只有 `move`/`rule`。如果 battle 不属于 M0，应删除这项说法。当前 `coverage_obligations` 只检查相邻关系和统治，没有覆盖可移动棋子是否存在、阵营行动授权、Decree 起点花色匹配或例外。在声称覆盖完整 Move 合法性之前，应将这些列为范围限制，或补充相应规则与证据。[官方第 1.1.1、4.2、6.5.2、7.5.2.II 节](https://cdn.shopify.com/s/files/1/0106/0162/7706/files/Root_Base_Law_Oct_2025.pdf?v=1774903756#page=7)
 
-The candidate explicitly labels its excerpts unverified. This review supplies source locations and proposed corrections; it does not convert the package or any Golden Case to verified status. A separate domain reviewer must confirm transcription, interpretation, coverage, and case answers against the pinned Law before formal scoring.
+候选资料明确将其摘录标记为未核验。本次核对提供来源定位和建议修正，但不会把规则资料包或任何 Golden Case 转为已核验。正式计分前，仍须由独立领域核验人依据固定版本规则确认转述、解释、覆盖义务和案例答案。
 
-## Prepared changes for independent review
+## 为独立审查准备的改动
 
-The local draft `examples/root-m0-candidate-package.json` now pins the dated official PDF, separates §2.2.1 adjacency from §2.2.2 clearing suit, adds §2.1.1 Bird cards and §7.5.2.II Decree Move, corrects the §2.5 and §7.2.2 rule summaries, and records §6.5.2 as a boundary on Marquise action availability. The matching rule IDs in the domain decision, adapter, fixed workflow, and tests have been updated. Its `checksum` hashes the **candidate paraphrase text** in `source_content`; it is not a checksum of the official PDF. Import and tests establish schema/implementation consistency, not independent semantic approval.
+本地草稿 `examples/root-m0-candidate-package.json` 现在固定到有日期的官方 PDF，将 `2.2.1` 相邻关系与 `2.2.2` 林地花色分开，增加 `2.1.1` Bird 卡牌和 `7.5.2.II` Decree Move，修正 `2.5` 和 `7.2.2` 规则摘要，并将 `6.5.2` 记录为 Marquise 行动可用性的边界。领域判定、adapter、固定工作流和测试中的对应规则 ID 也已更新。该资料包的 `checksum` 对 `source_content` 中的**候选转述文本**取摘要；它不是官方 PDF 的校验和。导入和测试证明的是 schema 与实现一致，不构成独立的语义核验。
 
-`examples/m0-candidate-cases.json` is version `m0-candidate-v3`, with 13 draft Cases and no verified or disputed Cases. Candidate corrections retain their old values in `history`:
+`examples/m0-candidate-cases.json` 的版本为 `m0-candidate-v3`，包含 13 个草稿 Case，没有已核验或有争议的 Case。候选修正会在 `history` 中保留旧值：
 
-| Case | Prepared correction | Human review focus |
+| Case | 已准备的修正 | 人工核验重点 |
 | --- | --- | --- |
-| `ordinary-partial-01` | Complete label `INSUFFICIENT_INFORMATION` → `ILLEGAL`. | The complete A-neighbor list contains C only, so B has no path from A. Confirm that the list's completeness scope is valid. |
-| `correction-legal-01` | Initial and complete `LEGAL` → `INSUFFICIENT_INFORMATION`. | The adjacency correction does not establish available warriors or rule of either endpoint. |
-| `eyrie-decree-unsupported-01` | Initial and complete `UNRESOLVED` → `INSUFFICIENT_INFORMATION`. | Missing phase/card context is askable within the declared Eyrie Decree Move scope. |
-| `eyrie-bird-legal-01` | Added draft Bird-card candidate. | Confirm the two-faction premise, Eyrie 3–3 tie, Bird substitution at the fox origin, and local-scope verdict. |
-| `unsupported-interaction-01` | Added draft Marquise Decree candidate. | Confirm this is an unsupported faction/action combination rather than an ordinary March Move. |
+| `ordinary-partial-01` | 完整调查标签由 `INSUFFICIENT_INFORMATION` 改为 `ILLEGAL`。 | A 的完整相邻清单只包含 C，因此 A 和 B 之间没有路径。确认该清单的完整性范围有效。 |
+| `correction-legal-01` | 首次和完整调查标签由 `LEGAL` 改为 `INSUFFICIENT_INFORMATION`。 | 修正相邻关系，并不能证明有可移动的 warrior 或任一端点由行动者统治。 |
+| `eyrie-decree-unsupported-01` | 首次和完整调查标签由 `UNRESOLVED` 改为 `INSUFFICIENT_INFORMATION`。 | 缺少阶段/卡牌背景时，可以在声明的 Eyrie Decree Move 范围内追问。 |
+| `eyrie-bird-legal-01` | 新增候选 Bird 卡牌案例草稿。 | 确认双阵营前提、Eyrie 3–3 平局、起点 fox 花色上的 Bird 替代，以及局部范围裁决。 |
+| `unsupported-interaction-01` | 新增候选 Marquise Decree 案例草稿。 | 确认这是不支持的阵营/行动组合，而非普通 March Move。 |
 
-The `ordinary-legal-01` and `eyrie-legal-01` inputs now state a two-player, no-exception premise; their complete labels still depend on the promised supplemental piece counts and actual completeness of those facts. A reviewer should verify the premise and sources, revise labels if it fails, or mark the Case disputed. Other draft Cases also need per-case review of initial/complete labels, permitted clarifications, and rule evidence. No candidate label is formal truth.
+`ordinary-legal-01` 和 `eyrie-legal-01` 的输入现在声明双人对局且无例外；其完整标签仍依赖后续补充的棋子数量，以及这些事实确实完整。核验人应确认前提与来源；若不成立，应修正标签或将 Case 标为 disputed。其他草稿也需要逐例审查首次/完整标签、允许的澄清问题及规则证据。任何候选标签都不是正式真值。
 
-A **withdrawal** Case remains missing. The current evaluator fixture has one `initial_input` and a fact responder; a genuine withdrawal scenario needs an initial assertion followed by a later retraction, with both revisions and their effects preserved. A single sentence mentioning withdrawal must not be counted as this coverage. The reviewer should require a replayable multi-turn fixture or document a reasoned waiver in the detached human signoff.
+当前仍缺少真正的**事实撤回**案例。现有评测 fixture 只有一条 `initial_input` 和一个事实应答器；真实撤回场景需要先有一条事实断言，再在后续消息中撤回，同时保留两个修订及其影响。仅在一句话中提到“撤回”不能算覆盖了此类场景。核验人应要求提供可回放的多轮 fixture，或在独立人工签核中记录有理由的豁免。
 
-Before approval, a Root reviewer must inspect each paraphrase against the pinned Law and confirm the scope/coverage obligations do not encode a Case answer or investigation route. For formal scoring, a separate reviewer must add per-Case provenance, labels, review records and checks; resolve or isolate disputes; create a family-level development/holdout split; and sign the exact dataset digest with a protected key. The candidate and this note provide no review identity, approval, or signoff.
+批准前，Root 核验人必须对照固定版本 Law 检查每条转述，并确认范围/覆盖义务没有编码案例答案或调查路线。正式计分还需要另一位核验人补齐每个 Case 的来源、标签、核验记录和检查项；解决或隔离争议；建立 family 级开发集/保留集划分；并用受保护的 key 对精确数据集摘要签名。候选资料和本文都不提供核验人身份、批准或签核。
 
-## Second AI audit, 2026-09-23
+## 第二次 AI 审查，2026-09-23
 
-A separate AI agent independently compared the current draft rules and all 13 Case labels with the same pinned official Law. It reported no substantive conflict in the rule paraphrases or local-scope labels. It did find underspecified question sets and a conditionally applicable Eyrie rule obligation. The candidate was revised as follows:
+另一名 AI Agent 独立对照同一份固定版本官方 Law，复核了当前规则草稿和全部 13 个 Case 标签。它报告规则转述或局部范围标签没有实质性冲突，同时发现问题集合定义不足，以及 Eyrie 规则义务的适用条件需要说明。候选内容随后作出以下修订：
 
-- `ordinary-legal-01`, `eyrie-legal-01`, and `eyrie-bird-legal-01` now put the two-player and no-exception premises in their public input. The Eyrie example also offers the missing Marquise building count before its complete `LEGAL` label.
-- `missing-fact-01` now supplies separately stated A-clearing piece counts, leaving the path as the intended missing local condition.
-- `adversarial-prompt-01` now allows questions about move count, movable warriors, adjacency, and endpoint rule. `eyrie-decree-unsupported-01` now allows path and piece/rule questions in addition to Decree context. `correction-legal-01` now states the two-player/no-exception premise publicly.
-- The package separates generic movement-piece/rule coverage from the Eyrie highest-count tie exception; the Bird relation is explicitly noted as conditional on a Bird card.
+- `ordinary-legal-01`、`eyrie-legal-01` 和 `eyrie-bird-legal-01` 现在在公开输入中写明双人对局和无例外前提。Eyrie 示例也在其完整 `LEGAL` 标签前补充了缺失的 Marquise 建筑数量问题。
+- `missing-fact-01` 现在分别提供 A 林地的棋子数量，让路径成为预期的局部缺失条件。
+- `adversarial-prompt-01` 现在允许询问移动数量、可移动 warrior、相邻关系和端点统治情况。`eyrie-decree-unsupported-01` 现在除了 Decree 背景，也允许询问路径及棋子/统治信息。`correction-legal-01` 现在在公开输入中写明双人对局/无例外前提。
+- 资料包将通用移动棋子/统治覆盖与 Eyrie 并列最高例外分开；Bird 关系明确标注为仅在使用 Bird 卡时适用。
 
-This was **AI peer review**, not human verification. It has no human reviewer identity, cannot independently attest the source or labels, and must not change any `draft` status. The evaluator still cannot replay a true multi-message withdrawal Case from one `initial_input`; that coverage requires a replay-model change or a documented human waiver. The formal scoring gate remains closed.
+这是 **AI 同行审查**，不是人工核验。它没有人工核验人身份，不能独立证明来源或标签正确，也不得修改任何 `draft` 状态。评测器仍无法从单条 `initial_input` 回放真正的多轮撤回案例；该覆盖需要修改回放模型，或取得有记录的人工作出理由的豁免。正式计分门禁仍未开放。
 
-## AI attestation for personal development
+## 个人开发试跑使用的 AI attestation
 
-`docs/research/root-m0-ai-attestation.json` records the two AI reviewers' conclusion for the exact canonical rule-package JSON and `m0-candidate-v3` dataset digest. It lists all 13 Case labels, brief source reasoning, the five coverage categories present, and the missing withdrawal category. Its payload SHA-256 binds the record contents for comparison; it is **not** a cryptographic proof of human identity. The `--ai-attestation` validation and `score_results_ai_trial` paths accept it only for explicitly labelled personal development trials. It is not a `HumanSignoff` accepted by the formal gate. `review.status` stays `draft` and the rule package remains unverified; formal human-ground-truth claims would be inaccurate.
+`docs/research/root-m0-ai-attestation.json` 记录了两名 AI 审查者对精确 canonical 规则资料 JSON 和 `m0-candidate-v3` 数据集摘要得出的结论。文件列出全部 13 个 Case 标签、简要来源推理、已覆盖的 5 个类别，以及尚缺失的撤回类别。其 payload SHA-256 用于比较记录是否漂移，**不能**证明人工身份。`--ai-attestation` 校验和 `score_results_ai_trial` 路径只允许将其用于明确标记的个人开发试跑；它不是正式门禁认可的 `HumanSignoff`。`review.status` 仍为 `draft`，规则资料包也仍未核验；声称已经取得正式人工真值将不准确。

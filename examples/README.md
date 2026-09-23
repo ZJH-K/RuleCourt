@@ -1,14 +1,7 @@
-# T2 candidate rule package
+# T2 候选规则资料包
 
-`root-m0-candidate-package.json` is a deliberately **unverified** package for the
-T2 review workflow. It records a candidate October 2025 target revision, the
-official rules locator, a checksum over the imported source text, six package-local
-rule IDs, public relations, an explicit scope strategy, and a private coverage
-draft.
+`root-m0-candidate-package.json` 是供 T2 审阅流程使用的候选资料包，明确标记为 **未核验**（`unverified`）。其中记录了候选的 2025 年 10 月规则版本、官方规则来源、导入文本的校验和、6 个资料包内部规则 ID、公开关系、明确的范围策略，以及一份私有覆盖表草稿。
 
-The short excerpts are fixture material for the local demo. A human must compare
-them with the official source before recording a `verified` review in the app.
-The package starts as `draft`; disputed or unreviewed packages cannot be enabled.
-Coverage entries contain only applicability conditions, acceptable evidence, and
-satisfaction criteria. They intentionally do not contain queries, tool order,
-recommended routes, or evaluation answers.
+简短摘录仅用于本地演示。必须由人工对照官方来源后，才能在应用中将资料包登记为 `verified`。资料包初始状态为 `draft`；存在争议或尚未审阅的资料包不能启用。
+
+覆盖表条目只包含适用条件、可接受证据和满足判据。表中不包含查询、工具调用顺序、推荐调查路线或评测答案。
