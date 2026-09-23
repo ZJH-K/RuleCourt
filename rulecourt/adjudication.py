@@ -28,13 +28,15 @@ class Decision(BaseModel):
 
 
 DEFAULT_RULE_IDS = {
-    "suit": "root-2.1",
-    "path": "root-2.2",
+    "suit": "root-2.2.2",
+    "path": "root-2.2.1",
     "rule": "root-2.5",
     "move": "root-4.2",
     "move_restriction": "root-4.2.1",
     "eyrie_rule": "root-7.2.2",
+    "bird_wild": "root-2.1.1",
     "decree": "root-7.5.2",
+    "decree_move": "root-7.5.2.II",
 }
 
 
@@ -436,6 +438,8 @@ def validate_eyrie_decree_move(
             "DECREE_ORIGIN_SUIT_MISSING",
         )
         rule_ids_for_context = [ids["decree"]]
+        if "decree.card_suit" in missing_fields:
+            rule_ids_for_context.append(ids["decree_move"])
         if any(field.startswith("clearings.") for field in missing_fields):
             rule_ids_for_context.append(ids["suit"])
         if "action.origin" in missing_fields:
@@ -464,7 +468,7 @@ def validate_eyrie_decree_move(
 
     card_suit = decree["card_suit"]
     if card_suit not in {"fox", "rabbit", "mouse", "bird"}:
-        return _decision("deny", ["DECREE_CARD_SUIT_INVALID"], [ids["decree"]])
+        return _decision("deny", ["DECREE_CARD_SUIT_INVALID"], [ids["decree_move"]])
 
     origin = action["origin"]
     origin_data = _clearing(state, origin)
@@ -473,7 +477,7 @@ def validate_eyrie_decree_move(
         return _decision(
             "deny",
             ["DECREE_ORIGIN_SUIT_INVALID"],
-            [ids["suit"], ids["decree"]],
+            [ids["suit"], ids["decree_move"]],
         )
 
     derived_context = {
@@ -490,7 +494,10 @@ def validate_eyrie_decree_move(
             "reason_codes": [
                 "DECREE_BIRD_WILDCARD" if card_suit == "bird" else "DECREE_CARD_SUIT_RESOLVED"
             ],
-            "rule_ids": [ids["decree"]],
+            "rule_ids": [
+                ids["decree_move"],
+                *([ids["bird_wild"]] if card_suit == "bird" else []),
+            ],
             "missing_fields": [],
         },
         "decree_phase": {
@@ -505,14 +512,16 @@ def validate_eyrie_decree_move(
         return _decision(
             "deny",
             ["DECREE_SUIT_MISMATCH"],
-            [ids["suit"], ids["decree"]],
+            [ids["suit"], ids["decree_move"]],
             derived_facts=derived_context,
         )
 
     move = validate_move(state, rule_ids=ids)
     derived = dict(move.derived_facts)
     derived.update(derived_context)
-    result_rule_ids = move.rule_ids + [ids["suit"], ids["decree"]]
+    result_rule_ids = move.rule_ids + [ids["suit"], ids["decree"], ids["decree_move"]]
+    if card_suit == "bird":
+        result_rule_ids.append(ids["bird_wild"])
     if move.status == "allow":
         return _decision(
             "allow",

@@ -5,6 +5,7 @@ from pathlib import Path
 from fastapi.testclient import TestClient
 
 from rulecourt.api import create_app
+from rulecourt.root_adapter import RootAdapter
 
 
 def package_payload(**overrides):
@@ -167,7 +168,30 @@ def test_candidate_fixture_is_explicitly_unverified_and_importable(tmp_path):
         result = response.json()
         assert result["status"] == "draft"
         assert "unverified" in result["title"]
-        assert len(result["rules"]) == 6
+        assert len(result["rules"]) == 11
+        decree_state = {
+            "action": {
+                "type": "move",
+                "actor": "eyrie",
+                "origin": "A",
+                "destination": "B",
+                "warrior_count": 1,
+            },
+            "decree": {"column": "move", "card_suit": "bird"},
+        }
+        index = RootAdapter().rule_index(package, decree_state)
+        assert index is not None
+        assert index["path"] == "root-2.2.1"
+        assert index["suit"] == "root-2.2.2"
+        assert index["bird_wild"] == "root-2.1.1"
+        assert index["decree_move"] == "root-7.5.2.II"
+        ordinary_eyrie = {"action": {"type": "move", "actor": "eyrie"}}
+        assert RootAdapter().rule_index(package, ordinary_eyrie)["eyrie_rule"] == "root-7.2.2"
+        missing_eyrie_rule = {
+            **package,
+            "rules": [rule for rule in package["rules"] if rule["section"] != "7.2.2"],
+        }
+        assert RootAdapter().rule_index(missing_eyrie_rule, ordinary_eyrie) is None
         assert {"applies_when", "acceptable_evidence", "satisfied_when"} <= {
             key for obligation in result["coverage_obligations"] for key in obligation
         }

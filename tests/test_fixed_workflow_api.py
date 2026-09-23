@@ -36,10 +36,10 @@ def package_payload():
         "checksum": hashlib.sha256(source_content.encode()).hexdigest(),
         "rules": [
             {
-                "id": "root-2.2",
-                "section": "2.2",
-                "title": "Path",
-                "text": "A path connects adjacent clearings for movement.",
+                "id": "root-2.2.1",
+                "section": "2.2.1",
+                "title": "Adjacency",
+                "text": "Clearings linked by a path are adjacent.",
                 "scope": {"actions": ["move"], "tags": ["movement"]},
                 "keywords": ["path", "adjacent"],
             },
@@ -81,9 +81,9 @@ def package_payload():
             },
             {
                 "id": "movement-path",
-                "rule_ids": ["root-2.2"],
+                "rule_ids": ["root-2.2.1"],
                 "applies_when": ["The requested action moves warriors between clearings."],
-                "acceptable_evidence": ["Verified source section 2.2."],
+                "acceptable_evidence": ["Verified source section 2.2.1."],
                 "satisfied_when": ["The clearings are connected by a path."],
             },
             {
@@ -161,7 +161,7 @@ def test_verified_marquise_move_returns_legal_with_rule_evidence(tmp_path):
         assert result["status"] == "LEGAL"
         assert result["state_update"]["sufficient"] is True
         assert result["scope"] == "local_move_conditions"
-        assert result["evidence"] == ["root-2.2", "root-2.5", "root-4.2", "root-4.2.1"]
+        assert result["evidence"] == ["root-2.2.1", "root-2.5", "root-4.2", "root-4.2.1"]
         assert result["checks"] == {"state_sufficient": True, "evidence_verified": True}
         assert "full_turn_action_availability" in result["not_checked"]
         assert result["decision"]["status"] == "allow"
