@@ -5,6 +5,7 @@ from types import SimpleNamespace
 
 import pytest
 
+from rulecourt.budget import BudgetUsage
 from rulecourt.comparison import (
     DeterminismReport,
     TreatmentComparisonRunner,
@@ -110,10 +111,23 @@ class _Adapter:
 
     def get_events(self, case_id):
         route_events = [
-            {"type": "investigation_started", "strategy": self.strategy},
+            {
+                "type": "investigation_started",
+                "strategy": self.strategy,
+                "strategy_version": self.metadata.get("strategy_version"),
+                "budget": self.configured_budget,
+            },
         ]
         if self.strategy == "fixed_workflow":
-            route_events.append({"type": "fixed_workflow_started"})
+            route_events.append(
+                {
+                    "type": "fixed_workflow_started",
+                    "workflow_version": self.metadata.get("strategy_version"),
+                    "template_version": self.metadata.get("fixed_template_version"),
+                    "route_source": self.metadata.get("fixed_route_source"),
+                    "llm_routing": self.metadata.get("fixed_workflow_llm_routing"),
+                }
+            )
         return [*route_events, *self.events]
 
     def comparison_metadata(self):
@@ -271,6 +285,91 @@ def test_fixed_workflow_unavailable_is_persisted(tmp_path):
         event["type"] == "fixed_workflow_unavailable"
         for event in store.events(case["id"])
     )
+
+
+def test_visibility_audit_rejects_next_step_leak():
+    audit = VisibilityAuditor.audit(
+        "dynamic_agent",
+        initial_input="input",
+        initial_result={"status": "LEGAL", "next_step": "inspect another rule"},
+        complete_result={"status": "LEGAL"},
+        context=["input"],
+        tool_results=[],
+        log_projection=[],
+        observed_strategy="dynamic_agent",
+        observed_route="dynamic_agent",
+    )
+
+    assert audit.valid is False
+    assert any(
+        finding.code == "diagnostic_route_leak"
+        for finding in audit.findings
+    )
+
+
+def test_fixed_workflow_unavailable_remains_a_paired_adapter_failure():
+    case = _case()
+    dataset = CaseDataset(dataset_version="trial-v1", cases=[case])
+    dynamic = _Adapter("dynamic_agent", [_response("LEGAL")])
+    fixed = _Adapter(
+        "fixed_workflow",
+        [
+            _response(
+                "UNRESOLVED",
+                reason="FIXED_WORKFLOW_UNAVAILABLE",
+                failure_reason="FIXED_WORKFLOW_UNAVAILABLE",
+            )
+        ],
+    )
+    runner = _runner(dynamic, fixed)
+    fixed.get_events = lambda case_id: [
+        {
+            "type": "investigation_started",
+            "strategy": "fixed_workflow",
+            "strategy_version": runner.config.fixed_workflow_version,
+            "budget": fixed.configured_budget,
+        },
+        {
+            "type": "fixed_workflow_unavailable",
+            "strategy": "fixed_workflow",
+            "strategy_version": runner.config.fixed_workflow_version,
+            "budget": fixed.configured_budget,
+            "workflow_version": runner.config.fixed_workflow_version,
+            "template_version": runner.config.fixed_template_version,
+            "route_source": runner.config.fixed_route_source,
+            "llm_routing": False,
+        },
+    ]
+
+    report = runner.run_dataset(dataset)
+
+    assert report.paired_case_ids == [case.id]
+    assert report.pairs[0].valid_for_comparison is True
+    assert report.pairs[0].difference_class == "adapter_failure"
+    assert report.pairs[0].audit.fixed.observed_route == "fixed_workflow"
+
+
+def test_builder_rejects_formal_scoring_from_a_development_config():
+    case = _case()
+    dataset = CaseDataset(dataset_version="trial-v1", cases=[case])
+    runner = _runner(
+        _Adapter("dynamic_agent", [_response("LEGAL")]),
+        _Adapter("fixed_workflow", [_response("LEGAL")]),
+    )
+
+    with pytest.raises(ValueError, match="formal flag"):
+        runner.build_report(dataset, [case], [], formal=True)
+
+
+def test_runtime_does_not_label_all_dynamic_provider_usage_as_planning():
+    usage = RuleCourtController._public_usage(
+        "dynamic_agent",
+        BudgetUsage(provider_calls=2, total_tokens=12),
+    )
+
+    assert "planning_tokens" not in usage
+    assert "planning_calls" not in usage
+    assert usage["usage_provenance"] == "controller_budget_ledger"
 
 
 def test_missing_audit_projection_is_invalid():

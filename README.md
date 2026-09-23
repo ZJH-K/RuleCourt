@@ -225,8 +225,9 @@ T14 runs the Dynamic Agent and Fixed Workflow arms through the same replay
 contract, fact responder, ruleset, domain controller, visible projection, and
 budget configuration. The fixed route and template are versioned hand-authored
 configuration; coverage obligations and diagnostic route details are never
-used to generate it. Dynamic planning tokens and calls remain in its cumulative
-resource usage.
+used to generate it. All Dynamic Agent provider usage remains in its cumulative
+resource usage; planning-specific counters are reported only when the provider
+supplies them explicitly.
 
 Start with the checked-in development-trial plan:
 
@@ -236,8 +237,10 @@ uv run rulecourt-compare examples/m0-candidate-cases.json --config examples/t14-
 
 A live comparison uses two injected CaseAdapter instances. Each adapter must
 declare the complete shared contract, expose configure_budget, and provide
-get_case/get_events projections; missing audit observations invalidate the
-pair. FastAPICaseAdapter supports this contract for local FastAPI TestClient
+get_case/get_events projections with authoritative strategy/version/budget
+events. Fixed-workflow events must also identify the hand-authored template,
+route source, and disabled LLM routing; missing audit observations invalidate
+the pair. FastAPICaseAdapter supports this contract for local FastAPI TestClient
 instances:
 
 ~~~python
@@ -288,6 +291,8 @@ counters; cumulative Dynamic Agent usage and cost always remain included.
 Invalid audit pairs are retained but excluded from the main comparison.
 Development runs reject holdout Cases. Formal replay additionally requires a
 frozen budget, split/coverage validation, detached human signoff, and at least
-two model/provider adapter sets. For exported formal replay, pass
---signoff together with --determinism-manifest; the manifest maps each provider
-or model identity to its dynamic and fixed StrategyRunReport artifacts.
+two model/provider adapter sets, complete resource dimensions, and usage
+provenance for both arms. For exported formal replay, pass --signoff together
+with --determinism-manifest; the manifest maps each provider or model identity
+to its dynamic and fixed StrategyRunReport artifacts and their per-case public
+observations.

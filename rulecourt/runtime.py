@@ -393,14 +393,8 @@ class RuleCourtController:
     @staticmethod
     def _public_usage(strategy: str, usage: BudgetUsage) -> dict[str, Any]:
         values: dict[str, Any] = usage.to_dict()
-        if strategy == "dynamic_agent":
-            values.update(
-                {
-                    "planning_tokens": values["total_tokens"],
-                    "planning_calls": values["provider_calls"],
-                    "planning_usage_scope": "dynamic_agent_provider_calls",
-                }
-            )
+        values["cost_usd"] = None
+        values["usage_provenance"] = "controller_budget_ledger"
         return values
 
     def _investigation_view(
@@ -657,6 +651,11 @@ class RuleCourtController:
             "fixed_workflow_unavailable",
             strategy="fixed_workflow",
             strategy_version=self._strategy_version("fixed_workflow"),
+            budget=budget.to_dict(),
+            workflow_version="fixed-workflow-v1",
+            template_version="m0-fixed-template-v1",
+            route_source="hand_authored",
+            llm_routing=False,
         )
         tracker = _BudgetTracker(BudgetUsage.from_mapping(investigation["usage"]))
         verdict = self.store.add_verdict_if_current(
@@ -936,6 +935,10 @@ class RuleCourtController:
                     run_id,
                     "fixed_workflow_started",
                     workflow="m0-root-move",
+                    workflow_version="fixed-workflow-v1",
+                    template_version="m0-fixed-template-v1",
+                    route_source="hand_authored",
+                    llm_routing=False,
                 )
                 controller_gate_passed = self._controller_finalization_gate(result)
                 if controller_gate_passed:

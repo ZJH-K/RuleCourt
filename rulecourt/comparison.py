@@ -43,6 +43,7 @@ _RESOURCE_FIELDS = (
     "latency_ms",
     "cost_usd",
 )
+_USAGE_EVIDENCE_FIELDS = _RESOURCE_FIELDS
 _ADAPTER_FAILURES = {"ADAPTER_ERROR", "FIXED_WORKFLOW_UNAVAILABLE"}
 _BUDGET_FAILURES = {
     "BUDGET_EXHAUSTED",
@@ -121,6 +122,14 @@ def _number(value: Any) -> int | float:
         return 0
     return max(0, value)
 
+
+def _is_nonnegative_number(value: Any) -> bool:
+    return (
+        isinstance(value, (int, float))
+        and not isinstance(value, bool)
+        and math.isfinite(float(value))
+        and value >= 0
+    )
 
 def _provider_model_identity(metadata: Mapping[str, Any]) -> str:
     provider = str(metadata.get("provider") or "").strip()
@@ -235,7 +244,15 @@ class StrategyAudit(BaseModel):
 
     strategy: StrategyName
     observed_strategy: str | None = None
+    observed_strategy_version: str | None = None
     observed_route: str | None = None
+    observed_route_source: str | None = None
+    observed_template_version: str | None = None
+    observed_llm_routing: bool | None = None
+    observed_budget: dict[str, Any] | None = None
+    runtime_contract_available: bool = False
+    usage_available: bool = False
+    usage_provenance: str | None = None
     observation_available: bool = False
     valid: bool = True
     context_hash: str = ""
@@ -419,6 +436,8 @@ class VisibilityAuditor:
         "recommendedquery",
         "nexttool",
         "nextaction",
+        "nextstep",
+        "nextsteps",
         "plannerhint",
         "unmetobligation",
         "missingruleid",
@@ -437,9 +456,21 @@ class VisibilityAuditor:
         tool_results: Sequence[Mapping[str, Any]] | None = None,
         log_projection: Sequence[Mapping[str, Any]] | None = None,
         observed_strategy: str | None = None,
+        observed_strategy_version: str | None = None,
         observed_route: str | None = None,
+        observed_route_source: str | None = None,
+        observed_template_version: str | None = None,
+        observed_llm_routing: bool | None = None,
+        observed_budget: Mapping[str, Any] | None = None,
+        expected_strategy_version: str | None = None,
+        expected_route_source: str | None = None,
+        expected_template_version: str | None = None,
+        expected_llm_routing: bool | None = None,
+        expected_budget: Mapping[str, Any] | None = None,
+        require_runtime_contract: bool = False,
         usage: Mapping[str, Any] | None = None,
         budget: InvestigationBudget | None = None,
+        require_usage: bool = False,
     ) -> StrategyAudit:
         context_items = list(context) if context is not None else []
         tools = [
@@ -507,6 +538,157 @@ class VisibilityAuditor:
                     detail=f"observed route {observed_route!r} does not match {expected_route!r}",
                 )
             )
+        if require_runtime_contract:
+            contract_checks = (
+                (
+                    "strategy_version",
+                    observed_strategy_version,
+                    expected_strategy_version,
+                    "missing_runtime_contract",
+                    "strategy_version_mismatch",
+                ),
+                (
+                    "route_source",
+                    observed_route_source,
+                    expected_route_source,
+                    "missing_runtime_contract",
+                    "route_source_mismatch",
+                ),
+                (
+                    "template_version",
+                    observed_template_version,
+                    expected_template_version,
+                    "missing_runtime_contract",
+                    "template_version_mismatch",
+                ),
+                (
+                    "llm_routing",
+                    observed_llm_routing,
+                    expected_llm_routing,
+                    "missing_runtime_contract",
+                    "llm_routing_mismatch",
+                ),
+            )
+            for location, observed, expected, missing_code, mismatch_code in contract_checks:
+                if expected is None:
+                    continue
+                if observed is None:
+                    findings.append(
+                        AuditFinding(
+                            code=missing_code,
+                            location=f"log_projection.{location}",
+                            detail="the replay did not expose the runtime contract field",
+                        )
+                    )
+                elif observed != expected:
+                    findings.append(
+                        AuditFinding(
+                            code=mismatch_code,
+                            location=f"log_projection.{location}",
+                            detail=f"observed {observed!r} does not match expected {expected!r}",
+                        )
+                    )
+            budget_contract_available = True
+            if expected_budget is not None and observed_budget is None:
+                budget_contract_available = False
+                findings.append(
+                    AuditFinding(
+                        code="missing_runtime_contract",
+                        location="log_projection.budget",
+                        detail="the replay did not expose the authoritative runtime budget",
+                    )
+                )
+            elif expected_budget is not None and observed_budget is not None:
+                for field in (
+                    "max_duration_seconds",
+                    "max_iterations",
+                    "max_tool_calls",
+                    "max_total_tokens",
+                    "configuration_status",
+                ):
+                    if observed_budget.get(field) != expected_budget.get(field):
+                        budget_contract_available = False
+                        findings.append(
+                            AuditFinding(
+                                code="budget_contract_mismatch",
+                                location=f"log_projection.budget.{field}",
+                                detail=(
+                                    f"observed {observed_budget.get(field)!r} does not match "
+                                    f"expected {expected_budget.get(field)!r}"
+                                ),
+                            )
+                        )
+            runtime_contract_available = (
+                budget_contract_available
+                and all(
+                    expected is None or observed is not None
+                    for observed, expected in (
+                        (observed_strategy_version, expected_strategy_version),
+                        (observed_route_source, expected_route_source),
+                        (observed_template_version, expected_template_version),
+                        (observed_llm_routing, expected_llm_routing),
+                    )
+                )
+                and not any(
+                    finding.code
+                    in {
+                        "strategy_version_mismatch",
+                        "route_source_mismatch",
+                        "template_version_mismatch",
+                        "llm_routing_mismatch",
+                        "budget_contract_mismatch",
+                    }
+                    for finding in findings
+                )
+            )
+        else:
+            runtime_contract_available = any(
+                value is not None
+                for value in (
+                    observed_strategy_version,
+                    observed_route_source,
+                    observed_template_version,
+                    observed_llm_routing,
+                    observed_budget,
+                )
+            )
+        usage_provenance = None
+        if usage is not None and isinstance(usage.get("usage_provenance"), str):
+            usage_provenance = usage["usage_provenance"].strip() or None
+        usage_available = bool(
+            isinstance(usage, Mapping)
+            and usage_provenance
+            and all(
+                field in usage
+                and (
+                    (field == "cost_usd" and usage[field] is None)
+                    or _is_nonnegative_number(usage.get(field))
+                )
+                for field in _USAGE_EVIDENCE_FIELDS
+            )
+        )
+        if require_usage and not usage_available:
+            missing_usage = [
+                field
+                for field in _USAGE_EVIDENCE_FIELDS
+                if field not in (usage or {})
+                or (
+                    field != "cost_usd"
+                    and not _is_nonnegative_number((usage or {}).get(field))
+                )
+            ]
+            if not usage_provenance:
+                missing_usage.append("usage_provenance")
+            findings.append(
+                AuditFinding(
+                    code="missing_usage_evidence",
+                    location="usage",
+                    detail=(
+                        "formal replay requires every resource field and usage provenance; "
+                        "missing " + ", ".join(dict.fromkeys(missing_usage))
+                    ),
+                )
+            )
         if budget is not None and usage is not None:
             limits = {
                 "iterations": budget.max_iterations,
@@ -543,7 +725,15 @@ class VisibilityAuditor:
         return StrategyAudit(
             strategy=strategy,
             observed_strategy=observed_strategy,
+            observed_strategy_version=observed_strategy_version,
             observed_route=observed_route,
+            observed_route_source=observed_route_source,
+            observed_template_version=observed_template_version,
+            observed_llm_routing=observed_llm_routing,
+            observed_budget=dict(observed_budget) if observed_budget is not None else None,
+            runtime_contract_available=runtime_contract_available,
+            usage_available=usage_available,
+            usage_provenance=usage_provenance,
             observation_available=(
                 context is not None
                 and tool_results is not None
@@ -598,7 +788,7 @@ class VisibilityAuditor:
                         detail="private coverage wording reached a visible projection",
                     )
                 )
-            if re.search(r"(?:recommended|next|diagnostic)\s+(?:tool|action|query|route)", text):
+            if re.search(r"(?:recommended|next|diagnostic)\s+(?:tool|action|query|route|step)", text):
                 findings.append(
                     AuditFinding(
                         code="diagnostic_route_leak",
@@ -754,9 +944,37 @@ class TreatmentComparisonRunner:
                 tool_results=snapshot["tools"],
                 log_projection=snapshot["logs"],
                 observed_strategy=snapshot["strategy"],
+                observed_strategy_version=snapshot["strategy_version"],
                 observed_route=snapshot["route"],
+                observed_route_source=snapshot["route_source"],
+                observed_template_version=snapshot["template_version"],
+                observed_llm_routing=snapshot["llm_routing"],
+                observed_budget=snapshot["budget"],
+                expected_strategy_version=(
+                    self.config.dynamic_strategy_version
+                    if strategy == "dynamic_agent"
+                    else self.config.fixed_workflow_version
+                ),
+                expected_route_source=(
+                    self.config.fixed_route_source
+                    if strategy == "fixed_workflow"
+                    else None
+                ),
+                expected_template_version=(
+                    self.config.fixed_template_version
+                    if strategy == "fixed_workflow"
+                    else None
+                ),
+                expected_llm_routing=(
+                    self.config.fixed_workflow_llm_routing
+                    if strategy == "fixed_workflow"
+                    else None
+                ),
+                expected_budget=self.config.budget,
+                require_runtime_contract=True,
                 usage=result.usage,
                 budget=self.budget,
+                require_usage=self.config.run_kind == "formal",
             )
         pair_audit = _pair_audit(case.initial_input, audits["dynamic_agent"], audits["fixed_workflow"])
         difference, reason = _classify_difference(results["dynamic_agent"], results["fixed_workflow"])
@@ -889,6 +1107,8 @@ class TreatmentComparisonRunner:
         determinism: Sequence[DeterminismReport] | None = None,
     ) -> TreatmentComparisonReport:
         """Build a report from already replayed, audited pairs."""
+        if formal != (self.config.run_kind == "formal"):
+            raise ValueError("formal flag must match the T14 configuration run_kind")
 
         return self._report(
             dataset,
@@ -911,6 +1131,8 @@ class TreatmentComparisonRunner:
         signing_key: str | None = None,
         determinism: Sequence[DeterminismReport] | None = None,
     ) -> TreatmentComparisonReport:
+        if formal and self.config.run_kind != "formal":
+            raise ValueError("formal T14 reports require a formal T14 configuration")
         valid = [pair for pair in pairs if pair.valid_for_comparison]
         if formal and len(valid) != len(pairs):
             raise ValueError("formal T14 comparison cannot score invalid audit pairs")
@@ -944,6 +1166,22 @@ class TreatmentComparisonRunner:
         fixed_results = [pair.fixed for pair in valid]
         dynamic_usage = _usage(dynamic_results, self.config, "dynamic_agent")
         fixed_usage = _usage(fixed_results, self.config, "fixed_workflow")
+        if formal and any(
+            not audit.usage_available
+            for pair in valid
+            for audit in (pair.audit.dynamic, pair.audit.fixed)
+        ):
+            raise ValueError(
+                "formal T14 comparison requires complete resource usage evidence for both arms"
+            )
+        if formal and any(
+            not audit.runtime_contract_available
+            for pair in valid
+            for audit in (pair.audit.dynamic, pair.audit.fixed)
+        ):
+            raise ValueError(
+                "formal T14 comparison requires authoritative runtime contract evidence"
+            )
         if formal and not dynamic_usage["planning_usage_available"]:
             raise ValueError(
                 "formal T14 comparison requires explicit Dynamic Agent planning usage"
@@ -1007,7 +1245,15 @@ class TreatmentComparisonRunner:
                             "tool_results",
                             "log_projection",
                             "observed_strategy",
+                            "observed_strategy_version",
                             "observed_route",
+                            "observed_route_source",
+                            "observed_template_version",
+                            "observed_llm_routing",
+                            "observed_budget",
+                            "runtime_contract_available",
+                            "usage_available",
+                            "usage_provenance",
                         },
                     )
                     for pair in pairs
@@ -1079,23 +1325,52 @@ def _snapshot(adapter: TreatmentAdapter, result: ReplayResult) -> dict[str, Any]
     tools: list[dict[str, Any]] | None = None
     logs: list[dict[str, Any]] | None = None
     observed_strategy: str | None = None
+    observed_strategy_version: str | None = None
+    observed_route: str | None = None
+    observed_route_source: str | None = None
+    observed_template_version: str | None = None
+    observed_llm_routing: bool | None = None
+    observed_budget: dict[str, Any] | None = None
     if events is not None:
         logs = [dict(item) for item in events]
         tools = [item for item in logs if item.get("type") == "tool_call"]
         for event in reversed(logs):
-            if event.get("type") == "investigation_started" and event.get("strategy"):
-                observed_strategy = str(event["strategy"])
-                break
+            event_type = event.get("type")
+            if event_type in {"investigation_started", "fixed_workflow_unavailable"}:
+                if observed_strategy is None and event.get("strategy"):
+                    observed_strategy = str(event["strategy"])
+                if observed_strategy_version is None and event.get("strategy_version"):
+                    observed_strategy_version = str(event["strategy_version"])
+                raw_budget = event.get("budget")
+                if observed_budget is None and isinstance(raw_budget, Mapping):
+                    observed_budget = dict(raw_budget)
+            if event_type in {"fixed_workflow_started", "fixed_workflow_unavailable"}:
+                observed_route = "fixed_workflow"
+                if observed_route_source is None and event.get("route_source") is not None:
+                    observed_route_source = str(event["route_source"])
+                if (
+                    observed_template_version is None
+                    and event.get("template_version") is not None
+                ):
+                    observed_template_version = str(event["template_version"])
+                if (
+                    observed_llm_routing is None
+                    and isinstance(event.get("llm_routing"), bool)
+                ):
+                    observed_llm_routing = event["llm_routing"]
+        if observed_route is None:
+            observed_route = observed_strategy
     return {
         "context": context,
         "tools": tools,
         "logs": logs,
         "strategy": observed_strategy,
-        "route": (
-            "fixed_workflow"
-            if any(item.get("type") == "fixed_workflow_started" for item in logs or [])
-            else observed_strategy
-        ),
+        "strategy_version": observed_strategy_version,
+        "route": observed_route,
+        "route_source": observed_route_source,
+        "template_version": observed_template_version,
+        "llm_routing": observed_llm_routing,
+        "budget": observed_budget,
     }
 
 
@@ -1422,6 +1697,15 @@ def _artifact_contract_errors(
             errors.append(name)
     if artifact_config.get("strategy") != strategy:
         errors.append("strategy")
+    expected_strategy_version = (
+        config.dynamic_strategy_version
+        if strategy == "dynamic_agent"
+        else config.fixed_workflow_version
+    )
+    if artifact_config.get("strategy_version") != expected_strategy_version:
+        errors.append("strategy_version")
+    if strategy == "fixed_workflow" and artifact_config.get("template_version") != config.fixed_template_version:
+        errors.append("template_version")
     if artifact_config.get("budget_enforced") is not True:
         errors.append("budget_enforced")
     if not allow_model_provider_override and (
@@ -1478,7 +1762,13 @@ def _load_artifact(
     if not isinstance(payload, list):
         raise TypeError(f"result artifact {path} must contain a JSON list")
     results = [ReplayResult.model_validate(item) for item in payload]
-    if require_envelope and set(observations) != {item.case_id for item in results}:
+    case_ids = [item.case_id for item in results]
+    duplicates = sorted({case_id for case_id in case_ids if case_ids.count(case_id) > 1})
+    if duplicates:
+        raise ValueError(
+            "result artifact " + str(path) + " contains duplicate case IDs: " + ", ".join(duplicates)
+        )
+    if require_envelope and set(observations) != set(case_ids):
         raise ValueError(
             f"result artifact {path} must provide observations for every result"
         )
@@ -1715,8 +2005,27 @@ def main(argv: list[str] | None = None) -> int:
                 observed_route=_observation_value(
                     dynamic_observations, case.id, "observed_route"
                 ),
+                observed_strategy_version=_observation_value(
+                    dynamic_observations, case.id, "observed_strategy_version"
+                ),
+                observed_route_source=_observation_value(
+                    dynamic_observations, case.id, "observed_route_source"
+                ),
+                observed_template_version=_observation_value(
+                    dynamic_observations, case.id, "observed_template_version"
+                ),
+                observed_llm_routing=_observation_value(
+                    dynamic_observations, case.id, "observed_llm_routing"
+                ),
+                observed_budget=_observation_value(
+                    dynamic_observations, case.id, "observed_budget"
+                ),
+                expected_strategy_version=config.dynamic_strategy_version,
+                expected_budget=config.budget,
+                require_runtime_contract=True,
                 usage=dynamic[case.id].usage,
                 budget=InvestigationBudget.from_mapping(config.budget),
+                require_usage=formal_run,
             )
             fa = VisibilityAuditor.audit(
                 "fixed_workflow",
@@ -1736,8 +2045,30 @@ def main(argv: list[str] | None = None) -> int:
                 observed_route=_observation_value(
                     fixed_observations, case.id, "observed_route"
                 ),
+                observed_strategy_version=_observation_value(
+                    fixed_observations, case.id, "observed_strategy_version"
+                ),
+                observed_route_source=_observation_value(
+                    fixed_observations, case.id, "observed_route_source"
+                ),
+                observed_template_version=_observation_value(
+                    fixed_observations, case.id, "observed_template_version"
+                ),
+                observed_llm_routing=_observation_value(
+                    fixed_observations, case.id, "observed_llm_routing"
+                ),
+                observed_budget=_observation_value(
+                    fixed_observations, case.id, "observed_budget"
+                ),
+                expected_strategy_version=config.fixed_workflow_version,
+                expected_route_source=config.fixed_route_source,
+                expected_template_version=config.fixed_template_version,
+                expected_llm_routing=config.fixed_workflow_llm_routing,
+                expected_budget=config.budget,
+                require_runtime_contract=True,
                 usage=fixed[case.id].usage,
                 budget=InvestigationBudget.from_mapping(config.budget),
+                require_usage=formal_run,
             )
             difference, reason = _classify_difference(dynamic[case.id], fixed[case.id])
             pairs.append(
