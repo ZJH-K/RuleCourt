@@ -39,13 +39,18 @@ def test_unqualified_conflict_requires_clarification_and_removes_old_fact_from_c
         assert result["state_update"]["clarification_questions"][0]["field"] == (
             "clearings.A.presence.marquise.warriors"
         )
-        assert any(
-            issue["code"] == "FACT_CONFLICT"
-            for issue in result["state_update"]["issues"]
-        )
+        assert any(issue["code"] == "FACT_CONFLICT" for issue in result["state_update"]["issues"])
 
         case = client.get(f"/api/cases/{case_id}").json()
-        assert case["confirmed_state"].get("clearings", {}).get("A", {}).get("presence", {}).get("marquise", {}).get("warriors") is None
+        assert (
+            case["confirmed_state"]
+            .get("clearings", {})
+            .get("A", {})
+            .get("presence", {})
+            .get("marquise", {})
+            .get("warriors")
+            is None
+        )
         candidates = [
             fact
             for fact in case["state_facts"]

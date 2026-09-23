@@ -32,9 +32,7 @@ def test_retraction_keeps_a_source_backed_retraction_record(tmp_path):
         submit(client, case_id, "撤回 A 的老鹰兵数量。")
 
         case = client.get(f"/api/cases/{case_id}").json()
-        retraction = next(
-            fact for fact in case["state_facts"] if fact["operation"] == "retract"
-        )
+        retraction = next(fact for fact in case["state_facts"] if fact["operation"] == "retract")
         assert retraction["status"] == "retracted"
         assert retraction["value"] is None
         assert retraction["supersedes_id"] is not None

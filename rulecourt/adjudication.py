@@ -453,9 +453,7 @@ def validate_eyrie_decree_move(
     if phase != "daylight":
         return _decision("deny", ["DECREE_PHASE_NOT_DAYLIGHT"], [ids["decree"]])
 
-    missing_context = _missing_eyrie_decree_fields(
-        state, action, include_phase=False
-    )
+    missing_context = _missing_eyrie_decree_fields(state, action, include_phase=False)
     if missing_context:
         return missing_context_decision(missing_context)
 
@@ -490,9 +488,7 @@ def validate_eyrie_decree_move(
             "status": "resolved",
             "value": card_suit,
             "reason_codes": [
-                "DECREE_BIRD_WILDCARD"
-                if card_suit == "bird"
-                else "DECREE_CARD_SUIT_RESOLVED"
+                "DECREE_BIRD_WILDCARD" if card_suit == "bird" else "DECREE_CARD_SUIT_RESOLVED"
             ],
             "rule_ids": [ids["decree"]],
             "missing_fields": [],

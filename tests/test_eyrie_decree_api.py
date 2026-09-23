@@ -81,7 +81,11 @@ def package_payload():
         ],
         "relations": [
             {"source_rule_id": "root-7.2.2", "target_rule_id": "root-2.5", "relation": "overrides"},
-            {"source_rule_id": "root-7.5.2", "target_rule_id": "root-4.2", "relation": "depends_on"},
+            {
+                "source_rule_id": "root-7.5.2",
+                "target_rule_id": "root-4.2",
+                "relation": "depends_on",
+            },
         ],
         "coverage_obligations": [
             {
@@ -115,9 +119,7 @@ def install_verified_package(client):
     assert enabled.status_code == 200
 
 
-def golden_case(
-    *, marquise_a=3, eyrie_b=0, card_suit="Fox", origin_suit="fox", phase="Daylight"
-):
+def golden_case(*, marquise_a=3, eyrie_b=0, card_suit="Fox", origin_suit="fox", phase="Daylight"):
     return (
         "确认本次只裁决 Eyrie Decree Move 范围。"
         f"当前为 {phase}。"
@@ -168,9 +170,7 @@ def test_eyrie_decree_golden_case_uses_tie_override_and_returns_legal(tmp_path):
         install_verified_package(client)
         case_id = new_case(client)
 
-        result = client.post(
-            f"/api/cases/{case_id}/messages", json={"text": golden_case()}
-        ).json()
+        result = client.post(f"/api/cases/{case_id}/messages", json={"text": golden_case()}).json()
 
         assert result["status"] == "LEGAL"
         assert result["reason"] == "MOVE_LEGAL"

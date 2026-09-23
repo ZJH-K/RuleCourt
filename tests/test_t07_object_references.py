@@ -36,8 +36,12 @@ def test_cross_case_and_expired_replacement_objects_are_rejected_atomically(tmp_
     second_case = case_store.create()["id"]
     first_message = case_store.add_message(first_case, "A has 2 Marquise warriors.")
     second_message = case_store.add_message(second_case, "A has 5 Marquise warriors.")
-    first_correction_message = case_store.add_message(first_case, "Correction: A has 3 Marquise warriors.")
-    second_correction_message = case_store.add_message(second_case, "Correction: A has 6 Marquise warriors.")
+    first_correction_message = case_store.add_message(
+        first_case, "Correction: A has 3 Marquise warriors."
+    )
+    second_correction_message = case_store.add_message(
+        second_case, "Correction: A has 6 Marquise warriors."
+    )
 
     assert apply(
         first_case,
@@ -64,7 +68,12 @@ def test_cross_case_and_expired_replacement_objects_are_rejected_atomically(tmp_
     assert cross_case["accepted"] is False
     assert cross_case["issues"][0]["code"] == "CROSS_CASE_REFERENCE"
     assert state_store.view(second_case)["state_revision"] == 1
-    assert state_store.view(second_case)["confirmed_state"]["clearings"]["A"]["presence"]["marquise"]["warriors"] == 5
+    assert (
+        state_store.view(second_case)["confirmed_state"]["clearings"]["A"]["presence"]["marquise"][
+            "warriors"
+        ]
+        == 5
+    )
 
     assert apply(
         first_case,
@@ -89,7 +98,12 @@ def test_cross_case_and_expired_replacement_objects_are_rejected_atomically(tmp_
     assert stale["accepted"] is False
     assert stale["issues"][0]["code"] == "STALE_OBJECT_REFERENCE"
     assert state_store.view(first_case)["state_revision"] == 2
-    assert state_store.view(first_case)["confirmed_state"]["clearings"]["A"]["presence"]["marquise"]["warriors"] == 3
+    assert (
+        state_store.view(first_case)["confirmed_state"]["clearings"]["A"]["presence"]["marquise"][
+            "warriors"
+        ]
+        == 3
+    )
 
 
 def test_correction_requires_explicit_source_wording(tmp_path):

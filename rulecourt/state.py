@@ -582,8 +582,12 @@ class NaturalLanguageStateExtractor:
                 change.field_path == "decree.column" for change in changes
             ):
                 unknown_fields.append("decree.column")
-            if action_origin and not _has_path(state, f"clearings.{action_origin}.suit") and not any(
-                change.field_path == f"clearings.{action_origin}.suit" for change in changes
+            if (
+                action_origin
+                and not _has_path(state, f"clearings.{action_origin}.suit")
+                and not any(
+                    change.field_path == f"clearings.{action_origin}.suit" for change in changes
+                )
             ):
                 unknown_fields.append(f"clearings.{action_origin}.suit")
 

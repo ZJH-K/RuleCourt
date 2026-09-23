@@ -251,9 +251,7 @@ class StateStore:
             allowed_statuses: set[str],
             field_path: str | None = None,
         ) -> sqlite3.Row | None:
-            row = db.execute(
-                f"SELECT * FROM {table} WHERE id=?", (object_id,)
-            ).fetchone()
+            row = db.execute(f"SELECT * FROM {table} WHERE id=?", (object_id,)).fetchone()
             if row is None:
                 issues.append(
                     {
@@ -318,9 +316,7 @@ class StateStore:
                     "state_facts",
                     change.supersedes_id,
                     allowed_statuses=(
-                        {"active", "conflicted"}
-                        if change.operation == "correct"
-                        else {"active"}
+                        {"active", "conflicted"} if change.operation == "correct" else {"active"}
                     ),
                     field_path=change.field_path,
                 )
@@ -389,7 +385,10 @@ class StateStore:
                     assertion.supersedes_id,
                     allowed_statuses={"proposed", "confirmed"},
                 )
-                if target is not None and target["collection_target"] != assertion.collection_target:
+                if (
+                    target is not None
+                    and target["collection_target"] != assertion.collection_target
+                ):
                     issues.append(
                         {
                             "code": "INVALID_REPLACEMENT_TARGET",
@@ -398,6 +397,7 @@ class StateStore:
                         }
                     )
         return issues
+
     @staticmethod
     def _merge_evidence(old: str, additions: list[Any]) -> str:
         current = json.loads(old)
@@ -745,7 +745,10 @@ class StateStore:
                         else int(assumption.asserted_value),
                         assumption.ruleset_version,
                         assumption.scope_policy_version,
-                        _json(assumption.depends_on_fact_refs or self._scope_dependency_ids(db, case_id)),
+                        _json(
+                            assumption.depends_on_fact_refs
+                            or self._scope_dependency_ids(db, case_id)
+                        ),
                         _json([item.model_dump() for item in assumption.evidence_refs]),
                         current_revision + 1,
                         status,
@@ -896,15 +899,10 @@ class StateStore:
                     (case_id,),
                 )
             ]
-            active_fact_ids = {
-                item["id"] for item in facts if item["status"] == "active"
-            }
+            active_fact_ids = {item["id"] for item in facts if item["status"] == "active"}
             for assumption in assumptions:
                 dependencies = set(assumption["depends_on_fact_refs"])
-                valid = (
-                    assumption["status"] == "confirmed"
-                    and dependencies <= active_fact_ids
-                )
+                valid = assumption["status"] == "confirmed" and dependencies <= active_fact_ids
                 assumption["valid_for_state_revision"] = valid
                 assumption["validated_revision"] = case["revision"] if valid else None
             for assertion in assertions:

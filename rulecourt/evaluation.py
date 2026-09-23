@@ -1073,6 +1073,7 @@ class FastAPICaseAdapter:
             detail = getattr(response, "text", "")
             raise RuntimeError(f"case adapter request failed ({response.status_code}): {detail}")
 
+
 class EvaluationRunner:
     """Replay labelled Cases through an injected system adapter.
 

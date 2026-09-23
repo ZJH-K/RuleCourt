@@ -165,11 +165,21 @@ def test_treatment_runner_pairs_same_input_and_reports_first_complete_resource_d
         [
             _response(
                 "INSUFFICIENT_INFORMATION",
-                usage={"provider_calls": 1, "input_tokens": 10, "output_tokens": 5, "total_tokens": 15},
+                usage={
+                    "provider_calls": 1,
+                    "input_tokens": 10,
+                    "output_tokens": 5,
+                    "total_tokens": 15,
+                },
             ),
             _response(
                 "LEGAL",
-                usage={"provider_calls": 2, "input_tokens": 20, "output_tokens": 10, "total_tokens": 30},
+                usage={
+                    "provider_calls": 2,
+                    "input_tokens": 20,
+                    "output_tokens": 10,
+                    "total_tokens": 30,
+                },
             ),
         ],
     )
@@ -282,10 +292,7 @@ def test_fixed_workflow_unavailable_is_persisted(tmp_path):
     persisted = store.get(case["id"])
     assert persisted is not None
     assert persisted["verdicts"][-1]["reason"] == "FIXED_WORKFLOW_UNAVAILABLE"
-    assert any(
-        event["type"] == "fixed_workflow_unavailable"
-        for event in store.events(case["id"])
-    )
+    assert any(event["type"] == "fixed_workflow_unavailable" for event in store.events(case["id"]))
 
 
 def test_signed_replay_artifact_rejects_tampered_results(tmp_path):
@@ -333,10 +340,7 @@ def test_visibility_audit_rejects_next_step_leak():
     )
 
     assert audit.valid is False
-    assert any(
-        finding.code == "diagnostic_route_leak"
-        for finding in audit.findings
-    )
+    assert any(finding.code == "diagnostic_route_leak" for finding in audit.findings)
 
 
 def test_fixed_workflow_unavailable_remains_a_paired_adapter_failure():
@@ -523,9 +527,7 @@ def test_formal_config_requires_a_frozen_budget():
         TreatmentConfig(run_kind="formal")
 
 
-def test_exported_run_artifacts_use_the_verified_builder_and_observations(
-    tmp_path, capsys
-):
+def test_exported_run_artifacts_use_the_verified_builder_and_observations(tmp_path, capsys):
     case = _case()
     dataset = CaseDataset(dataset_version="trial-v1", cases=[case])
     report = _runner(

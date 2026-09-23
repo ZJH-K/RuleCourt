@@ -79,9 +79,7 @@ class FixedWorkflow:
             seen.add(field)
             parts = field.split(".")
             if field == "scope.root-local-move":
-                question = (
-                    "Please confirm that this Case is limited to Root local-move conditions."
-                )
+                question = "Please confirm that this Case is limited to Root local-move conditions."
             elif len(parts) == 3 and parts[0] == "clearings" and parts[2] == "adjacent_to":
                 question = (
                     f"Which clearings are adjacent to {parts[1]}? "
@@ -159,9 +157,7 @@ class FixedWorkflow:
             },
             "missing_fields": resolved_missing_fields,
             "clarification_questions": self._clarification_questions(resolved_missing_fields),
-            "explanation": self._explanation(
-                status, reason, case.get("confirmed_state", {})
-            ),
+            "explanation": self._explanation(status, reason, case.get("confirmed_state", {})),
         }
 
     def _explanation(self, status: str, reason: str, state: dict[str, Any]) -> str:
@@ -180,9 +176,7 @@ class FixedWorkflow:
                 package = self.rule_store.get_enabled_package("root", M0_RULESET_VERSION)
         except AmbiguousPublicRuleError:
             package = None
-        rule_ids = (
-            self.adapter.rule_index(package, state) if package is not None else None
-        )
+        rule_ids = self.adapter.rule_index(package, state) if package is not None else None
         if package is None or rule_ids is None:
             decision = Decision(status="unsupported", reason_codes=["VERIFICATION_NOT_SATISFIED"])
             verification = VerificationRecord(
