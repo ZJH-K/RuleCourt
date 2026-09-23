@@ -146,6 +146,18 @@ uv run rulecourt-eval manifest golden-cases-v1.json --signoff golden-signoff.jso
 The checked-in candidate fixture remains draft; it cannot be promoted by the
 replay runner or scored as formal truth.
 
+For personal development trials, the separately labelled AI attestation can be
+validated against the exact candidate dataset and rule package:
+
+```powershell
+uv run rulecourt-eval validate examples/m0-candidate-cases.json --ai-attestation docs/research/root-m0-ai-attestation.json --rules examples/root-m0-candidate-package.json
+```
+
+`score_results_ai_trial(...)` can score replay outcomes under that attestation;
+its report says `review_basis: ai_trial`. The AI payload checksum detects ordinary
+drift, but is not an authenticated human signature. Formal `--formal` validation
+still requires the independent human review, family split and detached signoff.
+
 ## T12 LLM-only and Vanilla Vector RAG baselines
 
 Both baselines use the T11 replay runner, fact responder, clarification limits,
