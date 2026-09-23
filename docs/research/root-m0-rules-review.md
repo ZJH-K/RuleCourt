@@ -30,7 +30,7 @@ The candidate explicitly labels its excerpts unverified. This review supplies so
 
 The local draft `examples/root-m0-candidate-package.json` now pins the dated official PDF, separates §2.2.1 adjacency from §2.2.2 clearing suit, adds §2.1.1 Bird cards and §7.5.2.II Decree Move, corrects the §2.5 and §7.2.2 rule summaries, and records §6.5.2 as a boundary on Marquise action availability. The matching rule IDs in the domain decision, adapter, fixed workflow, and tests have been updated. Its `checksum` hashes the **candidate paraphrase text** in `source_content`; it is not a checksum of the official PDF. Import and tests establish schema/implementation consistency, not independent semantic approval.
 
-`examples/m0-candidate-cases.json` is version `m0-candidate-v2`, with 13 draft Cases and no verified or disputed Cases. Candidate corrections retain their old values in `history`:
+`examples/m0-candidate-cases.json` is version `m0-candidate-v3`, with 13 draft Cases and no verified or disputed Cases. Candidate corrections retain their old values in `history`:
 
 | Case | Prepared correction | Human review focus |
 | --- | --- | --- |
@@ -40,8 +40,19 @@ The local draft `examples/root-m0-candidate-package.json` now pins the dated off
 | `eyrie-bird-legal-01` | Added draft Bird-card candidate. | Confirm the two-faction premise, Eyrie 3–3 tie, Bird substitution at the fox origin, and local-scope verdict. |
 | `unsupported-interaction-01` | Added draft Marquise Decree candidate. | Confirm this is an unsupported faction/action combination rather than an ordinary March Move. |
 
-The `ordinary-legal-01` and `eyrie-legal-01` labels still depend on complete endpoint presence and the absence of unlisted factions or exceptions. A reviewer should request explicit, sourced completeness and scope premises, revise their labels, or mark them disputed. Other draft Cases also need per-case review of initial/complete labels, permitted clarifications, and rule evidence. No candidate label is formal truth.
+The `ordinary-legal-01` and `eyrie-legal-01` inputs now state a two-player, no-exception premise; their complete labels still depend on the promised supplemental piece counts and actual completeness of those facts. A reviewer should verify the premise and sources, revise labels if it fails, or mark the Case disputed. Other draft Cases also need per-case review of initial/complete labels, permitted clarifications, and rule evidence. No candidate label is formal truth.
 
 A **withdrawal** Case remains missing. The current evaluator fixture has one `initial_input` and a fact responder; a genuine withdrawal scenario needs an initial assertion followed by a later retraction, with both revisions and their effects preserved. A single sentence mentioning withdrawal must not be counted as this coverage. The reviewer should require a replayable multi-turn fixture or document a reasoned waiver in the detached human signoff.
 
 Before approval, a Root reviewer must inspect each paraphrase against the pinned Law and confirm the scope/coverage obligations do not encode a Case answer or investigation route. For formal scoring, a separate reviewer must add per-Case provenance, labels, review records and checks; resolve or isolate disputes; create a family-level development/holdout split; and sign the exact dataset digest with a protected key. The candidate and this note provide no review identity, approval, or signoff.
+
+## Second AI audit, 2026-09-23
+
+A separate AI agent independently compared the current draft rules and all 13 Case labels with the same pinned official Law. It reported no substantive conflict in the rule paraphrases or local-scope labels. It did find underspecified question sets and a conditionally applicable Eyrie rule obligation. The candidate was revised as follows:
+
+- `ordinary-legal-01`, `eyrie-legal-01`, and `eyrie-bird-legal-01` now put the two-player and no-exception premises in their public input. The Eyrie example also offers the missing Marquise building count before its complete `LEGAL` label.
+- `missing-fact-01` now supplies separately stated A-clearing piece counts, leaving the path as the intended missing local condition.
+- `adversarial-prompt-01` now allows questions about move count, movable warriors, adjacency, and endpoint rule. `eyrie-decree-unsupported-01` now allows path and piece/rule questions in addition to Decree context. `correction-legal-01` now states the two-player/no-exception premise publicly.
+- The package separates generic movement-piece/rule coverage from the Eyrie highest-count tie exception; the Bird relation is explicitly noted as conditional on a Bird card.
+
+This was **AI peer review**, not human verification. It has no human reviewer identity, cannot independently attest the source or labels, and must not change any `draft` status. The evaluator still cannot replay a true multi-message withdrawal Case from one `initial_input`; that coverage requires a replay-model change or a documented human waiver. The formal scoring gate remains closed.

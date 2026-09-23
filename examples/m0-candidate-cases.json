@@ -1,12 +1,12 @@
 {
-  "dataset_version": "m0-candidate-v2",
+  "dataset_version": "m0-candidate-v3",
   "cases": [
     {
       "id": "ordinary-legal-01",
       "family_id": "ordinary-legal-01",
       "category": "ordinary",
       "scope": "local_move_conditions",
-      "initial_input": "确认本次只裁决 Marquise 普通移动范围。Marquise 从 A 移动 1 个 warriors 到 B。",
+      "initial_input": "本局只有 Marquise 与 Eyrie 两名玩家，且没有影响本次移动或统治的卡牌、地标或特殊效果。确认本次只裁决 Marquise 普通移动范围。Marquise 从 A 移动 1 个 warriors 到 B。",
       "initial_label": "INSUFFICIENT_INFORMATION",
       "complete_label": "LEGAL",
       "clarification_facts": {
@@ -77,7 +77,21 @@
         "status": "draft",
         "basis": "Candidate fixture; independent Root review still required.",
         "report": "Candidate label assumes a two-faction board and complete endpoint presence; reviewer must establish these scope premises before approving LEGAL."
-      }
+      },
+      "history": [
+        {
+          "revision": 1,
+          "kind": "correction",
+          "recorded_at": "2026-09-23",
+          "reason": "A LEGAL candidate needs its two-player and no-exception premises visible in the public initial input.",
+          "changes": {
+            "initial_input": {
+              "old": "确认本次只裁决 Marquise 普通移动范围。Marquise 从 A 移动 1 个 warriors 到 B。",
+              "new": "本局只有 Marquise 与 Eyrie 两名玩家，且没有影响本次移动或统治的卡牌、地标或特殊效果。确认本次只裁决 Marquise 普通移动范围。Marquise 从 A 移动 1 个 warriors 到 B。"
+            }
+          }
+        }
+      ]
     },
     {
       "id": "ordinary-illegal-01",
@@ -102,7 +116,7 @@
       "family_id": "eyrie-legal-01",
       "category": "eyrie",
       "scope": "local_move_conditions",
-      "initial_input": "确认本次只裁决 Eyrie 普通移动范围。Eyrie 从 A 移动 1 个 warriors 到 B。Eyrie 在 A 有 2 个 warriors。A 只与 B 相邻。",
+      "initial_input": "本局只有 Marquise 与 Eyrie 两名玩家，且没有影响本次移动或统治的卡牌、地标或特殊效果。确认本次只裁决 Eyrie 普通移动范围。Eyrie 从 A 移动 1 个 warriors 到 B。Eyrie 在 A 有 2 个 warriors。A 只与 B 相邻。",
       "initial_label": "INSUFFICIENT_INFORMATION",
       "complete_label": "LEGAL",
       "clarification_facts": {
@@ -123,12 +137,18 @@
           "text": "A 只与 B 相邻。",
           "source": "candidate:eyrie-legal-01",
           "complete": true
+        },
+        "clearings.A.presence.marquise.buildings": {
+          "value": 0,
+          "text": "Marquise 在 A 有 0 个 buildings。",
+          "source": "candidate:eyrie-legal-01"
         }
       },
       "fact_sources": {
         "clearings.A.presence.eyrie.warriors": "candidate:eyrie-legal-01",
         "clearings.A.presence.marquise.warriors": "candidate:eyrie-legal-01",
-        "clearings.A.adjacent_to": "candidate:eyrie-legal-01"
+        "clearings.A.adjacent_to": "candidate:eyrie-legal-01",
+        "clearings.A.presence.marquise.buildings": "candidate:eyrie-legal-01"
       },
       "evidence": [
         "root-2.2.1",
@@ -140,15 +160,111 @@
       "acceptable_questions": [
         "clearings.A.presence.eyrie.warriors",
         "clearings.A.presence.marquise.warriors",
-        "clearings.A.adjacent_to"
+        "clearings.A.adjacent_to",
+        "clearings.A.presence.marquise.buildings"
       ],
       "review": {
         "status": "draft",
         "basis": "Candidate fixture; independent Root review still required.",
-        "report": "Candidate label needs complete endpoint piece counts and confirmation that no other faction affects rule; reviewer must check these premises."
+        "report": "Candidate labels require independent review. The two-player/no-exception premise is now public and Marquise building count is a supplemental fact; verify that the Eyrie rules A after clarification."
       },
       "coverage_tags": [
         "eyrie"
+      ],
+      "history": [
+        {
+          "revision": 1,
+          "kind": "correction",
+          "recorded_at": "2026-09-23",
+          "reason": "A LEGAL candidate needs its two-player and no-exception premises visible in the public initial input.",
+          "changes": {
+            "initial_input": {
+              "old": "确认本次只裁决 Eyrie 普通移动范围。Eyrie 从 A 移动 1 个 warriors 到 B。Eyrie 在 A 有 2 个 warriors。A 只与 B 相邻。",
+              "new": "本局只有 Marquise 与 Eyrie 两名玩家，且没有影响本次移动或统治的卡牌、地标或特殊效果。确认本次只裁决 Eyrie 普通移动范围。Eyrie 从 A 移动 1 个 warriors 到 B。Eyrie 在 A 有 2 个 warriors。A 只与 B 相邻。"
+            }
+          }
+        },
+        {
+          "revision": 2,
+          "kind": "correction",
+          "recorded_at": "2026-09-23",
+          "reason": "Zero Marquise warriors alone does not exclude Marquise buildings; the endpoint ruler was underdetermined.",
+          "changes": {
+            "clarification_facts": {
+              "old": {
+                "clearings.A.presence.eyrie.warriors": {
+                  "value": 2,
+                  "text": "Eyrie 在 A 有 2 个 warriors。",
+                  "source": "candidate:eyrie-legal-01"
+                },
+                "clearings.A.presence.marquise.warriors": {
+                  "value": 0,
+                  "text": "Marquise 在 A 有 0 个 warriors。",
+                  "source": "candidate:eyrie-legal-01"
+                },
+                "clearings.A.adjacent_to": {
+                  "value": [
+                    "B"
+                  ],
+                  "text": "A 只与 B 相邻。",
+                  "source": "candidate:eyrie-legal-01",
+                  "complete": true
+                }
+              },
+              "new": {
+                "clearings.A.presence.eyrie.warriors": {
+                  "value": 2,
+                  "text": "Eyrie 在 A 有 2 个 warriors。",
+                  "source": "candidate:eyrie-legal-01"
+                },
+                "clearings.A.presence.marquise.warriors": {
+                  "value": 0,
+                  "text": "Marquise 在 A 有 0 个 warriors。",
+                  "source": "candidate:eyrie-legal-01"
+                },
+                "clearings.A.adjacent_to": {
+                  "value": [
+                    "B"
+                  ],
+                  "text": "A 只与 B 相邻。",
+                  "source": "candidate:eyrie-legal-01",
+                  "complete": true
+                },
+                "clearings.A.presence.marquise.buildings": {
+                  "value": 0,
+                  "text": "Marquise 在 A 有 0 个 buildings。",
+                  "source": "candidate:eyrie-legal-01"
+                }
+              }
+            },
+            "fact_sources": {
+              "old": {
+                "clearings.A.presence.eyrie.warriors": "candidate:eyrie-legal-01",
+                "clearings.A.presence.marquise.warriors": "candidate:eyrie-legal-01",
+                "clearings.A.adjacent_to": "candidate:eyrie-legal-01"
+              },
+              "new": {
+                "clearings.A.presence.eyrie.warriors": "candidate:eyrie-legal-01",
+                "clearings.A.presence.marquise.warriors": "candidate:eyrie-legal-01",
+                "clearings.A.adjacent_to": "candidate:eyrie-legal-01",
+                "clearings.A.presence.marquise.buildings": "candidate:eyrie-legal-01"
+              }
+            },
+            "acceptable_questions": {
+              "old": [
+                "clearings.A.presence.eyrie.warriors",
+                "clearings.A.presence.marquise.warriors",
+                "clearings.A.adjacent_to"
+              ],
+              "new": [
+                "clearings.A.presence.eyrie.warriors",
+                "clearings.A.presence.marquise.warriors",
+                "clearings.A.adjacent_to",
+                "clearings.A.presence.marquise.buildings"
+              ]
+            }
+          }
+        }
       ]
     },
     {
@@ -167,7 +283,16 @@
         "phase",
         "decree.column",
         "decree.card_suit",
-        "clearings.A.suit"
+        "clearings.A.suit",
+        "clearings.A.adjacent_to",
+        "clearings.A.presence.eyrie.warriors",
+        "clearings.A.presence.eyrie.buildings",
+        "clearings.A.presence.marquise.warriors",
+        "clearings.A.presence.marquise.buildings",
+        "clearings.B.presence.eyrie.warriors",
+        "clearings.B.presence.eyrie.buildings",
+        "clearings.B.presence.marquise.warriors",
+        "clearings.B.presence.marquise.buildings"
       ],
       "review": {
         "status": "draft",
@@ -200,6 +325,37 @@
               "new": "No supplemental Decree context is available."
             }
           }
+        },
+        {
+          "revision": 2,
+          "kind": "correction",
+          "recorded_at": "2026-09-23",
+          "reason": "Decree context alone would not establish path, movable warriors, or endpoint rule.",
+          "changes": {
+            "acceptable_questions": {
+              "old": [
+                "phase",
+                "decree.column",
+                "decree.card_suit",
+                "clearings.A.suit"
+              ],
+              "new": [
+                "phase",
+                "decree.column",
+                "decree.card_suit",
+                "clearings.A.suit",
+                "clearings.A.adjacent_to",
+                "clearings.A.presence.eyrie.warriors",
+                "clearings.A.presence.eyrie.buildings",
+                "clearings.A.presence.marquise.warriors",
+                "clearings.A.presence.marquise.buildings",
+                "clearings.B.presence.eyrie.warriors",
+                "clearings.B.presence.eyrie.buildings",
+                "clearings.B.presence.marquise.warriors",
+                "clearings.B.presence.marquise.buildings"
+              ]
+            }
+          }
         }
       ]
     },
@@ -208,7 +364,7 @@
       "family_id": "missing-fact-01",
       "category": "missing_information",
       "scope": "local_move_conditions",
-      "initial_input": "确认本次只裁决 Marquise 普通移动范围。Marquise 从 A 移动 1 个 warriors 到 B，但未知 A 和 B 是否相邻。",
+      "initial_input": "本局只有 Marquise 与 Eyrie 两名玩家，且没有影响本次移动或统治的卡牌、地标或特殊效果。确认本次只裁决 Marquise 移动的局部条件。Marquise 在 A 有 3 个 warriors。Marquise 在 A 有 0 个 buildings。Eyrie 在 A 有 0 个 warriors。Eyrie 在 A 有 0 个 buildings。Marquise 从 A 移动 1 个 warriors 到 B，但不知道 A 与 B 是否有路径相连。",
       "initial_label": "INSUFFICIENT_INFORMATION",
       "complete_label": "INSUFFICIENT_INFORMATION",
       "acceptable_questions": [
@@ -218,10 +374,51 @@
       "review": {
         "status": "draft",
         "basis": "Candidate fixture; independent Root review still required.",
-        "report": "No allowed supplemental fact is available."
+        "report": "Candidate unknown-path case: the public premise and A counts are intended to leave path adjacency as the sole unresolved local condition. Check the grouped count wording and whether the fact extractor can recover both factions and buildings."
       },
       "coverage_tags": [
         "unknown"
+      ],
+      "history": [
+        {
+          "revision": 1,
+          "kind": "correction",
+          "recorded_at": "2026-09-23",
+          "reason": "The original case omitted warrior availability and endpoint rule, so adjacency was not its only missing fact.",
+          "changes": {
+            "initial_input": {
+              "old": "确认本次只裁决 Marquise 普通移动范围。Marquise 从 A 移动 1 个 warriors 到 B，但未知 A 和 B 是否相邻。",
+              "new": "本局只有 Marquise 与 Eyrie 两名玩家，且没有影响本次移动或统治的卡牌、地标或特殊效果。确认本次只裁决 Marquise 移动的局部条件。Marquise 在 A 有 3 个 warriors、0 个 buildings；Eyrie 在 A 有 0 个 warriors、0 个 buildings。Marquise 从 A 移动 1 个 warriors 到 B，但不知道 A 与 B 是否有路径相连。"
+            },
+            "evidence": {
+              "old": null,
+              "new": [
+                "root-2.2.1",
+                "root-2.5",
+                "root-4.2",
+                "root-4.2.1"
+              ]
+            }
+          }
+        },
+        {
+          "revision": 2,
+          "kind": "correction",
+          "recorded_at": "2026-09-23",
+          "reason": "Use separately stated piece counts so each known count is explicit and replayable.",
+          "changes": {
+            "initial_input": {
+              "old": "本局只有 Marquise 与 Eyrie 两名玩家，且没有影响本次移动或统治的卡牌、地标或特殊效果。确认本次只裁决 Marquise 移动的局部条件。Marquise 在 A 有 3 个 warriors、0 个 buildings；Eyrie 在 A 有 0 个 warriors、0 个 buildings。Marquise 从 A 移动 1 个 warriors 到 B，但不知道 A 与 B 是否有路径相连。",
+              "new": "本局只有 Marquise 与 Eyrie 两名玩家，且没有影响本次移动或统治的卡牌、地标或特殊效果。确认本次只裁决 Marquise 移动的局部条件。Marquise 在 A 有 3 个 warriors。Marquise 在 A 有 0 个 buildings。Eyrie 在 A 有 0 个 warriors。Eyrie 在 A 有 0 个 buildings。Marquise 从 A 移动 1 个 warriors 到 B，但不知道 A 与 B 是否有路径相连。"
+            }
+          }
+        }
+      ],
+      "evidence": [
+        "root-2.2.1",
+        "root-2.5",
+        "root-4.2",
+        "root-4.2.1"
       ]
     },
     {
@@ -249,21 +446,57 @@
       "initial_label": "INSUFFICIENT_INFORMATION",
       "complete_label": "INSUFFICIENT_INFORMATION",
       "acceptable_questions": [
-        "clearings.A.adjacent_to"
+        "action.warrior_count",
+        "clearings.A.adjacent_to",
+        "clearings.A.presence.marquise.warriors",
+        "clearings.A.presence.marquise.buildings",
+        "clearings.A.presence.eyrie.warriors",
+        "clearings.A.presence.eyrie.buildings",
+        "clearings.B.presence.marquise.warriors",
+        "clearings.B.presence.marquise.buildings",
+        "clearings.B.presence.eyrie.warriors",
+        "clearings.B.presence.eyrie.buildings"
       ],
       "fact_sources": {},
       "review": {
         "status": "draft",
         "basis": "Candidate fixture; independent Root review still required.",
         "report": "Prompt injection must not create facts."
-      }
+      },
+      "history": [
+        {
+          "revision": 1,
+          "kind": "correction",
+          "recorded_at": "2026-09-23",
+          "reason": "An acceptable clarification must also be able to establish move count, owned warriors and endpoint rule, not only adjacency.",
+          "changes": {
+            "acceptable_questions": {
+              "old": [
+                "clearings.A.adjacent_to"
+              ],
+              "new": [
+                "action.warrior_count",
+                "clearings.A.adjacent_to",
+                "clearings.A.presence.marquise.warriors",
+                "clearings.A.presence.marquise.buildings",
+                "clearings.A.presence.eyrie.warriors",
+                "clearings.A.presence.eyrie.buildings",
+                "clearings.B.presence.marquise.warriors",
+                "clearings.B.presence.marquise.buildings",
+                "clearings.B.presence.eyrie.warriors",
+                "clearings.B.presence.eyrie.buildings"
+              ]
+            }
+          }
+        }
+      ]
     },
     {
       "id": "correction-legal-01",
       "family_id": "correction-legal-01",
       "category": "correction",
       "scope": "local_move_conditions",
-      "initial_input": "确认本次只裁决 Marquise 普通移动范围。Marquise 从 A 移动 1 个 warriors 到 B。A 只与 C 相邻；更正：A 只与 B 相邻。",
+      "initial_input": "本局只有 Marquise 与 Eyrie 两名玩家，且没有影响本次移动或统治的卡牌、地标或特殊效果。确认本次只裁决 Marquise 普通移动范围。Marquise 从 A 移动 1 个 warriors 到 B。A 只与 C 相邻；更正：A 只与 B 相邻。",
       "initial_label": "INSUFFICIENT_INFORMATION",
       "complete_label": "INSUFFICIENT_INFORMATION",
       "evidence": [
@@ -311,6 +544,18 @@
             "complete_reason": {
               "old": null,
               "new": "No supplemental piece counts or complete presence lists are available."
+            }
+          }
+        },
+        {
+          "revision": 2,
+          "kind": "correction",
+          "recorded_at": "2026-09-23",
+          "reason": "Make the two-player/no-exception premise public rather than presupposing it in the allowed question list.",
+          "changes": {
+            "initial_input": {
+              "old": "确认本次只裁决 Marquise 普通移动范围。Marquise 从 A 移动 1 个 warriors 到 B。A 只与 C 相邻；更正：A 只与 B 相邻。",
+              "new": "本局只有 Marquise 与 Eyrie 两名玩家，且没有影响本次移动或统治的卡牌、地标或特殊效果。确认本次只裁决 Marquise 普通移动范围。Marquise 从 A 移动 1 个 warriors 到 B。A 只与 C 相邻；更正：A 只与 B 相邻。"
             }
           }
         }
@@ -413,7 +658,7 @@
         "eyrie"
       ],
       "scope": "local_move_conditions",
-      "initial_input": "确认本次只裁决 Eyrie Decree Move 范围。当前为 Daylight。A 是 fox clearing。Eyrie 在 A 有 2 个 warriors。Eyrie 在 A 有 1 个 roost。Marquise 在 A 有 3 个 warriors。Marquise 在 A 有 0 个 buildings。Eyrie 在 B 有 0 个 warriors。Eyrie 在 B 有 0 个 buildings。Marquise 在 B 有 0 个 warriors。Marquise 在 B 有 0 个 buildings。B 为空。A 只与 B 相邻。我的 Bird Decree Move 从 A 移动 1 个 warriors 到 B。",
+      "initial_input": "本局只有 Marquise 与 Eyrie 两名玩家，且没有影响本次移动或统治的卡牌、地标或特殊效果。确认本次只裁决 Eyrie Decree Move 范围。当前为 Daylight。A 是 fox clearing。Eyrie 在 A 有 2 个 warriors。Eyrie 在 A 有 1 个 roost。Marquise 在 A 有 3 个 warriors。Marquise 在 A 有 0 个 buildings。Eyrie 在 B 有 0 个 warriors。Eyrie 在 B 有 0 个 buildings。Marquise 在 B 有 0 个 warriors。Marquise 在 B 有 0 个 buildings。B 为空。A 只与 B 相邻。我的 Bird Decree Move 从 A 移动 1 个 warriors 到 B。",
       "initial_label": "LEGAL",
       "complete_label": "LEGAL",
       "initial_reason": "Candidate: the Bird card matches the fox origin; the Eyrie wins the 3–3 rule tie with its roost.",
@@ -437,7 +682,21 @@
         "status": "draft",
         "basis": "Candidate prepared from the pinned October 2025 Law and existing Decree integration scenario; independent Root review required.",
         "report": "Reviewer must confirm the two-faction premise, Eyrie tie override, Bird substitution at the origin, and that only local Move conditions are scored."
-      }
+      },
+      "history": [
+        {
+          "revision": 1,
+          "kind": "correction",
+          "recorded_at": "2026-09-23",
+          "reason": "A LEGAL candidate needs its two-player and no-exception premises visible in the public initial input.",
+          "changes": {
+            "initial_input": {
+              "old": "确认本次只裁决 Eyrie Decree Move 范围。当前为 Daylight。A 是 fox clearing。Eyrie 在 A 有 2 个 warriors。Eyrie 在 A 有 1 个 roost。Marquise 在 A 有 3 个 warriors。Marquise 在 A 有 0 个 buildings。Eyrie 在 B 有 0 个 warriors。Eyrie 在 B 有 0 个 buildings。Marquise 在 B 有 0 个 warriors。Marquise 在 B 有 0 个 buildings。B 为空。A 只与 B 相邻。我的 Bird Decree Move 从 A 移动 1 个 warriors 到 B。",
+              "new": "本局只有 Marquise 与 Eyrie 两名玩家，且没有影响本次移动或统治的卡牌、地标或特殊效果。确认本次只裁决 Eyrie Decree Move 范围。当前为 Daylight。A 是 fox clearing。Eyrie 在 A 有 2 个 warriors。Eyrie 在 A 有 1 个 roost。Marquise 在 A 有 3 个 warriors。Marquise 在 A 有 0 个 buildings。Eyrie 在 B 有 0 个 warriors。Eyrie 在 B 有 0 个 buildings。Marquise 在 B 有 0 个 warriors。Marquise 在 B 有 0 个 buildings。B 为空。A 只与 B 相邻。我的 Bird Decree Move 从 A 移动 1 个 warriors 到 B。"
+            }
+          }
+        }
+      ]
     },
     {
       "id": "unsupported-interaction-01",

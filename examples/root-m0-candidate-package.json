@@ -20,11 +20,12 @@
       "Draft paraphrases against the official 2025-10-13 Law; independent human source review is required.",
       "M0 checks local warrior movement and Eyrie Decree Move origin-suit conditions, not full turn action availability or complete Decree progress.",
       "Pawn movement, other factions, card effects, map exceptions, and unmodelled interactions are outside this candidate package.",
-      "Package-local IDs mirror official section references; they are not independent official identifiers."
+      "Package-local IDs mirror official section references; they are not independent official identifiers.",
+      "The Bird wildcard relation is relevant to a Decree Move only when its card is Bird."
     ]
   },
-  "source_content": "Candidate paraphrases for human review; not verbatim official rule text.\nOfficial source: The Law of Root, October 13, 2025.\nLocator: https://cdn.shopify.com/s/files/1/0106/0162/7706/files/Root_Base_Law_Oct_2025.pdf?v=1774903756\n2.1.1 Birds Are Wild: A bird card can represent another card suit when matching a suit is required.\n2.2 Clearings and Paths: The Woodland map has clearings linked by paths.\n2.2.1 Adjacency: Two clearings joined by a path are adjacent.\n2.2.2 Suit: Each clearing has one of three suits: fox, rabbit, or mouse.\n2.5 Rule: Compare each player’s warriors plus buildings in a clearing; an ordinary tie leaves it unruled, while tokens and pawns do not contribute.\n4.2 Move: Move at least one of your own warriors and/or pawns from one clearing along a linking path to an adjacent clearing.\n4.2.1 You Must Rule: Taking a Move requires rule of the origin or the destination, subject to applicable faction and card exceptions.\n6.5.2 March: The Marquise Daylight March action permits up to two Moves; action availability is outside this local-condition package.\n7.2.2 Lords of the Forest: On a tie for the highest warrior-plus-building total, the Eyrie rule if at least one Eyrie piece is present.\n7.5.2 Resolve the Decree: During Daylight, the Eyrie resolve Decree columns in order and attempt each listed action; full Decree progress is outside M0.\n7.5.2.II Move column: A Decree Move card requires moving at least one warrior from a clearing whose suit matches the card.",
-  "checksum": "8adada22af2ffba938f849d1f361071d867ed596ee03fa15210c78335a7514a7",
+  "source_content": "Candidate paraphrases for human review; not verbatim official rule text.\nOfficial source: The Law of Root, October 13, 2025.\nLocator: https://cdn.shopify.com/s/files/1/0106/0162/7706/files/Root_Base_Law_Oct_2025.pdf?v=1774903756\n2.1.1 Birds Are Wild: A bird card can represent another card suit when matching a suit is required.\n2.2 Clearings and Paths: The Woodland map has clearings linked by paths.\n2.2.1 Adjacency: Two clearings joined by a path are adjacent.\n2.2.2 Suit: Each clearing has one of three suits: fox, rabbit, or mouse.\n2.5 Rule: Compare each player’s warriors plus buildings in a clearing; an ordinary tie leaves it unruled, while tokens and pawns do not contribute.\n4.2 Move: Move at least one of your own warriors and/or pawns from one clearing along a linking path to an adjacent clearing.\n4.2.1 You Must Rule: Taking a Move requires rule of the origin or the destination, subject to applicable faction and card exceptions.\n6.5.2 March: The Marquise Daylight March action permits up to two Moves; action availability is outside this local-condition package.\n7.2.2 Lords of the Forest: On a tie for the highest warrior-plus-building total, the Eyrie rule if at least one Eyrie piece is present.\n7.5.2 Resolve the Decree: During Daylight, the Eyrie resolve Decree columns in order and attempt each listed action; full Decree progress is outside M0.\n7.5.2.II Move column: A Decree Move card requires moving at least one warrior from a clearing whose suit matches the card.\nCoverage draft v2: generic movement conditions and the conditional Eyrie tie exception have separate review obligations.",
+  "checksum": "50ba5e4fe3d6eb5396eb8e59e0e4b248024c19d91d9e84baed00c13835d69fb8",
   "rules": [
     {
       "id": "root-2.1.1",
@@ -347,17 +348,32 @@
       "rule_ids": [
         "root-4.2",
         "root-4.2.1",
-        "root-2.5",
-        "root-7.2.2"
+        "root-2.5"
       ],
       "applies_when": [
         "The proposed local warrior Move depends on piece count and clearing rule."
       ],
       "acceptable_evidence": [
-        "Human-reviewed source references for sections 2.5, 4.2, 4.2.1, and applicable 7.2.2, plus current Case piece counts."
+        "Human-reviewed source references for sections 2.5, 4.2, and 4.2.1, plus current Case piece counts."
       ],
       "satisfied_when": [
-        "At least one owned warrior can move and the mover rules the origin or destination under the applicable tie rule."
+        "At least one owned warrior can move; endpoint rule is determined from current warriors and buildings, with the Eyrie tie obligation applied when relevant."
+      ]
+    },
+    {
+      "id": "eyrie-rule-tie",
+      "rule_ids": [
+        "root-2.5",
+        "root-7.2.2"
+      ],
+      "applies_when": [
+        "The proposed local Move is by the Eyrie and endpoint rule depends on a highest-count tie."
+      ],
+      "acceptable_evidence": [
+        "Human-reviewed sections 2.5 and 7.2.2, plus a complete current count of warriors and buildings by player and Eyrie piece presence."
+      ],
+      "satisfied_when": [
+        "For a highest-count tie at an endpoint, the Eyrie also rule it only when at least one Eyrie piece is present there."
       ]
     },
     {

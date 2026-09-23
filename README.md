@@ -49,12 +49,12 @@ signoff belong to T03.
 
 The unverified demo package is
 [`examples/root-m0-candidate-package.json`](examples/root-m0-candidate-package.json).
-It points to the official [Leder Games Root rules library](https://rules.ledergames.com/?locale=en-US&printing=p1&product=root),
-but its excerpts and package-local IDs still require T03 human review.
+It pins the official [October 2025 Law of Root PDF](https://cdn.shopify.com/s/files/1/0106/0162/7706/files/Root_Base_Law_Oct_2025.pdf?v=1774903756),
+but its candidate paraphrases and package-local IDs still require T03 human review.
 
 ## T05 fixed ordinary-move workflow
 
-After enabling a verified package that covers Root sections 2.2, 2.5, 4.2,
+After enabling a verified package that covers Root sections 2.2.1, 2.5, 4.2,
 and 4.2.1, submit a complete Marquise ordinary-move description in a Case.
 The result records the deterministic Decision, Verification, rule evidence,
 scope, and conditions that were not checked. Eyrie moves and full-turn
